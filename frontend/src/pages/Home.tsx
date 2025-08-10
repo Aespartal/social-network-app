@@ -30,7 +30,10 @@ import {
 } from '@mui/icons-material'
 import { useAuth } from '@/hooks/useAuth'
 import { postsAPI } from '@/services/api'
-import type { Post, CreatePostRequest } from 'aplica-shared/types/social'
+import type {
+  Post,
+  CreatePostRequest,
+} from 'social-network-app-shared/types/social'
 
 const Home: React.FC = () => {
   const { user, isAuthenticated } = useAuth()
@@ -152,7 +155,7 @@ const Home: React.FC = () => {
           textAlign='center'
         >
           <Typography variant='h4' gutterBottom>
-            Bienvenido a Aplica Social
+            Bienvenido a SocialNetworkApp
           </Typography>
           <Typography variant='body1' color='text.secondary' paragraph>
             Inicia sesión o regístrate para ver tu feed personalizado

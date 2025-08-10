@@ -5,13 +5,13 @@ export const About: React.FC = () => {
     <div className='px-4 py-6 sm:px-0'>
       <div className='border-4 border-dashed border-gray-200 rounded-lg p-8'>
         <h2 className='text-3xl font-bold text-gray-900 mb-6'>
-          Acerca de Aplica
+          Acerca de SocialNetworkApp
         </h2>
 
         <div className='prose max-w-none'>
           <p className='text-gray-600 mb-4'>
-            Aplica es una aplicación full-stack moderna construida con las
-            últimas tecnologías:
+            SocialNetworkApp es una aplicación full-stack moderna construida con
+            las últimas tecnologías:
           </p>
 
           <div className='grid md:grid-cols-2 gap-6 mt-6'>

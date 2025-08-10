@@ -11,7 +11,7 @@ import {
 } from '@mui/material'
 import { useAuth } from '@/hooks/useAuth'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import type { CreateUserRequest } from 'aplica-shared/types/social'
+import type { CreateUserRequest } from 'social-network-app-shared/types/social'
 
 const Register: React.FC = () => {
   const [userData, setUserData] = useState<CreateUserRequest>({

@@ -1,5 +1,5 @@
 {
-  "name": "aplica-backend",
+  "name": "social-network-app-backend",
   "version": "1.0.0",
   "description": "Backend API with Fastify and TypeScript",
   "main": "dist/index.js",
@@ -23,7 +23,7 @@
     "@types/bcryptjs": "^3.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
-    "aplica-shared": "*",
+    "social-network-app-shared": "*",
     "bcryptjs": "^3.0.2",
     "fastify": "^4.21.0",
     "jsonwebtoken": "^9.0.2",

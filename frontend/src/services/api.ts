@@ -9,7 +9,7 @@ import type {
   Post,
   User,
   ApiResponse,
-} from 'aplica-shared/types/social'
+} from 'social-network-app-shared/types/social'
 
 const API_BASE_URL = 'http://localhost:3001/api'
 

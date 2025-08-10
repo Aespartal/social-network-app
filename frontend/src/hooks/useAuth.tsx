@@ -9,7 +9,7 @@ import type {
   User,
   LoginRequest,
   CreateUserRequest,
-} from 'aplica-shared/types/social'
+} from 'social-network-app-shared/types/social'
 import { authAPI } from '@/services/api'
 
 interface AuthContextType {

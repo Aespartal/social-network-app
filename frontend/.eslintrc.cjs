@@ -12,7 +12,7 @@ module.exports = {
     'plugin:react/jsx-runtime',
     'prettier',
   ],
-  plugins: ['react-refresh', '@typescript-eslint', 'prettier'],
+  plugins: ['react-refresh', '@typescript-eslint'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 'latest',
@@ -27,9 +27,6 @@ module.exports = {
     },
   },
   rules: {
-    // Prettier
-    'prettier/prettier': 'error',
-
     // React
     'react-refresh/only-export-components': [
       'warn',

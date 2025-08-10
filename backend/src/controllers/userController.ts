@@ -2,7 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { PrismaClient } from '../generated/prisma'
-import { CreateUserRequest, LoginRequest } from 'aplica-shared'
+import { CreateUserRequest, LoginRequest } from 'social-network-app-shared'
 
 const prisma = new PrismaClient()
 

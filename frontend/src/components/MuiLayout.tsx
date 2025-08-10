@@ -91,7 +91,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div>
       <Toolbar>
         <Typography variant='h6' noWrap component='div'>
-          Aplica Social
+          SocialNetworkApp
         </Typography>
       </Toolbar>
       <Divider />
@@ -132,7 +132,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </IconButton>
 
           <Typography variant='h6' noWrap component='div' sx={{ flexGrow: 1 }}>
-            Aplica Social
+            SocialNetworkApp
           </Typography>
 
           <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color='inherit'>

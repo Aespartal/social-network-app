@@ -1,5 +1,5 @@
 {
-  "name": "aplica-shared",
+  "name": "social-network-app-shared",
   "version": "1.0.0",
   "description": "Shared types and utilities",
   "main": "dist/index.js",

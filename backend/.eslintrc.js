@@ -8,16 +8,13 @@ module.exports = {
     'eslint:recommended',
     'prettier',
   ],
-  plugins: ['@typescript-eslint', 'prettier'],
+  plugins: ['@typescript-eslint'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
   },
   rules: {
-    // Prettier
-    'prettier/prettier': 'error',
-    
     // TypeScript básico
     '@typescript-eslint/no-unused-vars': ['error', { 
       argsIgnorePattern: '^_', 

@@ -1,4 +1,4 @@
-# Aplica - Full Stack Application
+# SocialNetworkApp - Full Stack Application
 
 Una aplicación full-stack moderna construida con React + TypeScript (frontend) y Fastify + TypeScript (backend).
 
@@ -25,7 +25,7 @@ Una aplicación full-stack moderna construida con React + TypeScript (frontend) 
 ## 📦 Estructura del Proyecto
 
 ```
-Aplica/
+SocialNetworkApp/
 ├── frontend/           # Aplicación React
 │   ├── src/
 │   │   ├── components/ # Componentes reutilizables
@@ -56,7 +56,7 @@ Aplica/
 1. **Clonar el repositorio**
    ```bash
    git clone <repository-url>
-   cd Aplica
+   cd SocialNetworkApp
    ```
 
 2. **Instalar dependencias**
@@ -182,7 +182,7 @@ npm start
 
 1. Fork el proyecto
 2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+3. Commit tus cambios (`git commit -m 'feat(frontend): add some AmazingFeature'`)
 4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
 

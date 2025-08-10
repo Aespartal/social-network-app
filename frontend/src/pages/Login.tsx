@@ -11,7 +11,7 @@ import {
 } from '@mui/material'
 import { useAuth } from '@/hooks/useAuth'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import type { LoginRequest } from 'aplica-shared/types/social'
+import type { LoginRequest } from 'social-network-app-shared/types/social'
 
 const Login: React.FC = () => {
   const [credentials, setCredentials] = useState<LoginRequest>({

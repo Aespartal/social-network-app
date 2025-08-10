@@ -5,7 +5,7 @@ import {
   // UpdatePostRequest, // Comentado porque no se usa aún
   FeedRequest,
   // Post, // Comentado porque no se usa aún
-} from 'aplica-shared'
+} from 'social-network-app-shared'
 
 const prisma = new PrismaClient()
 
@@ -17,7 +17,6 @@ interface AuthenticatedRequest extends FastifyRequest {
   }
 }
 
-// Create a new post
 export const createPost = async (
   request: FastifyRequest<{ Body: CreatePostRequest }> & AuthenticatedRequest,
   reply: FastifyReply
@@ -39,7 +38,6 @@ export const createPost = async (
       })
     }
 
-    // Create the post
     const post = await prisma.post.create({
       data: {
         content: content.trim(),
@@ -66,17 +64,14 @@ export const createPost = async (
       },
     })
 
-    // Handle tags if provided
     if (tags && tags.length > 0) {
       const tagOperations = tags.map(async tagName => {
-        // Create tag if it doesn't exist
         const tag = await prisma.tag.upsert({
           where: { name: tagName.toLowerCase() },
           update: {},
           create: { name: tagName.toLowerCase() },
         })
 
-        // Create post-tag relationship
         return prisma.postTag.create({
           data: {
             postId: post.id,
@@ -88,7 +83,6 @@ export const createPost = async (
       await Promise.all(tagOperations)
     }
 
-    // Fetch the complete post with tags
     const completePost = await prisma.post.findUnique({
       where: { id: post.id },
       include: {
@@ -130,7 +124,6 @@ export const createPost = async (
   }
 }
 
-// Get feed posts
 export const getFeed = async (
   request: FastifyRequest<{ Querystring: FeedRequest }> & AuthenticatedRequest,
   reply: FastifyReply
@@ -144,12 +137,12 @@ export const getFeed = async (
     }
 
     const { cursor, limit = 10 } = request.query
-    const pageSize = Math.min(Number(limit), 50) // Maximum 50 posts per request
+    const pageSize = Math.min(Number(limit), 50)
 
     const posts = await prisma.post.findMany({
-      take: pageSize + 1, // Take one extra to check if there are more
+      take: pageSize + 1,
       cursor: cursor ? { id: cursor } : undefined,
-      skip: cursor ? 1 : 0, // Skip the cursor
+      skip: cursor ? 1 : 0,
       orderBy: {
         createdAt: 'desc',
       },
@@ -194,20 +187,18 @@ export const getFeed = async (
       },
     })
 
-    // Check if there are more posts
     const hasMore = posts.length > pageSize
     const postsToReturn = hasMore ? posts.slice(0, -1) : posts
     const nextCursor = hasMore
       ? postsToReturn[postsToReturn.length - 1]?.id
       : undefined
 
-    // Format posts for response
     const formattedPosts = postsToReturn.map(post => ({
       ...post,
       isLiked: post.likes.length > 0,
       isBookmarked: post.bookmarks.length > 0,
-      likes: [], // Don't return full likes array for performance
-      bookmarks: [], // Don't return full bookmarks array for performance
+      likes: [],
+      bookmarks: [],
     }))
 
     reply.send({
@@ -228,7 +219,6 @@ export const getFeed = async (
   }
 }
 
-// Get a single post
 export const getPost = async (
   request: FastifyRequest<{ Params: { id: string } }> & AuthenticatedRequest,
   reply: FastifyReply
@@ -306,13 +296,12 @@ export const getPost = async (
       })
     }
 
-    // Format post for response
     const formattedPost = {
       ...post,
       isLiked: request.user ? post.likes.length > 0 : false,
       isBookmarked: request.user ? post.bookmarks.length > 0 : false,
-      likes: [], // Don't return full likes array for performance
-      bookmarks: [], // Don't return full bookmarks array for performance
+      likes: [],
+      bookmarks: [],
     }
 
     reply.send({
@@ -329,7 +318,6 @@ export const getPost = async (
   }
 }
 
-// Like/unlike a post
 export const toggleLike = async (
   request: FastifyRequest<{ Params: { id: string } }> & AuthenticatedRequest,
   reply: FastifyReply
@@ -344,7 +332,6 @@ export const toggleLike = async (
 
     const { id: postId } = request.params
 
-    // Check if post exists
     const post = await prisma.post.findUnique({
       where: { id: postId },
     })
@@ -356,7 +343,6 @@ export const toggleLike = async (
       })
     }
 
-    // Check if user already liked this post
     const existingLike = await prisma.like.findUnique({
       where: {
         userId_postId: {
@@ -369,13 +355,11 @@ export const toggleLike = async (
     let isLiked: boolean
 
     if (existingLike) {
-      // Unlike the post
       await prisma.like.delete({
         where: { id: existingLike.id },
       })
       isLiked = false
     } else {
-      // Like the post
       await prisma.like.create({
         data: {
           userId: request.user.id,
@@ -385,7 +369,6 @@ export const toggleLike = async (
       isLiked = true
     }
 
-    // Get updated like count
     const likeCount = await prisma.like.count({
       where: { postId },
     })
@@ -407,7 +390,6 @@ export const toggleLike = async (
   }
 }
 
-// Bookmark/unbookmark a post
 export const toggleBookmark = async (
   request: FastifyRequest<{ Params: { id: string } }> & AuthenticatedRequest,
   reply: FastifyReply
@@ -422,7 +404,6 @@ export const toggleBookmark = async (
 
     const { id: postId } = request.params
 
-    // Check if post exists
     const post = await prisma.post.findUnique({
       where: { id: postId },
     })
@@ -434,7 +415,6 @@ export const toggleBookmark = async (
       })
     }
 
-    // Check if user already bookmarked this post
     const existingBookmark = await prisma.bookmark.findUnique({
       where: {
         userId_postId: {
@@ -447,13 +427,11 @@ export const toggleBookmark = async (
     let isBookmarked: boolean
 
     if (existingBookmark) {
-      // Remove bookmark
       await prisma.bookmark.delete({
         where: { id: existingBookmark.id },
       })
       isBookmarked = false
     } else {
-      // Add bookmark
       await prisma.bookmark.create({
         data: {
           userId: request.user.id,
