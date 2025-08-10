@@ -188,8 +188,8 @@ npm start
 
 ## 📝 Próximos Pasos
 
-- [ ] Agregar base de datos (PostgreSQL/MongoDB)
-- [ ] Implementar autenticación JWT
+- [✅] Agregar base de datos (PostgreSQL)
+- [✅] Implementar autenticación JWT
 - [ ] Agregar tests unitarios y de integración
 - [ ] Configurar CI/CD
 - [ ] Agregar documentación de API con Swagger
