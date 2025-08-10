@@ -1,0 +1,28 @@
+#!/bin/sh
+# Validar formato de commit message
+# Formato: tipo(alcance): descripción
+# Ejemplo: feat(auth): add login functionality
+
+commit_regex='^(feat|fix|docs|style|refactor|test|chore)(\(.+\))?: .{1,50}'
+
+if ! grep -qE "$commit_regex" "$1"; then
+    echo "❌ Formato de commit inválido!"
+    echo ""
+    echo "El mensaje debe seguir el formato: tipo(alcance): descripción"
+    echo ""
+    echo "Tipos válidos:"
+    echo "  feat:     Nueva funcionalidad"
+    echo "  fix:      Corrección de errores"
+    echo "  docs:     Cambios en documentación"
+    echo "  style:    Cambios de formato (espacios, comas, etc.)"
+    echo "  refactor: Refactorización de código"
+    echo "  test:     Añadir o modificar tests"
+    echo "  chore:    Tareas de mantenimiento"
+    echo ""
+    echo "Ejemplos:"
+    echo "  feat(auth): add login functionality"
+    echo "  fix(api): resolve user validation error"
+    echo "  docs: update README installation steps"
+    echo ""
+    exit 1
+fi

@@ -22,10 +22,19 @@
     "test:backend": "cd backend && npm test",
     "lint": "npm run lint:frontend && npm run lint:backend",
     "lint:frontend": "cd frontend && npm run lint",
-    "lint:backend": "cd backend && npm run lint"
+    "lint:backend": "cd backend && npm run lint",
+    "format": "npm run format:frontend && npm run format:backend",
+    "format:frontend": "cd frontend && npm run format",
+    "format:backend": "cd backend && npm run format",
+    "typecheck": "npm run typecheck:frontend && npm run typecheck:backend",
+    "typecheck:frontend": "cd frontend && npm run typecheck",
+    "typecheck:backend": "cd backend && npm run typecheck",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.5"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -33,5 +42,15 @@
   },
   "dependencies": {
     "@fastify/rate-limit": "^10.3.0"
+  },
+  "lint-staged": {
+    "frontend/src/**/*.{ts,tsx}": [
+      "cd frontend && npm run lint:fix",
+      "cd frontend && npm run format"
+    ],
+    "backend/src/**/*.{ts}": [
+      "cd backend && npm run lint:fix",
+      "cd backend && npm run format"
+    ]
   }
 }
