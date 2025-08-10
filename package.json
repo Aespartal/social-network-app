@@ -48,7 +48,7 @@
       "npm run lint:fix --prefix frontend",
       "npm run format --prefix frontend"
     ],
-    "backend/src/**/*.{ts}": [
+    "backend/src/**/*.ts": [
       "npm run lint:fix --prefix backend",
       "npm run format --prefix backend"
     ]

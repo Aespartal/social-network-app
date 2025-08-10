@@ -5,6 +5,8 @@ import rateLimit from '@fastify/rate-limit'
 import { config } from '@/config/env'
 import { userRoutes } from '@/routes/userRoutes'
 import { postRoutes } from '@/routes/postRoutes'
+import { healthRoutes } from '@/routes/healthRoutes'
+import swaggerPlugin from '@/plugins/swagger'
 
 const server = fastify({
   logger: {
@@ -13,12 +15,24 @@ const server = fastify({
 })
 
 async function registerPlugins() {
+  // Swagger debe registrarse antes que otras rutas
+  await server.register(swaggerPlugin)
+
   await server.register(cors, {
     origin: config.ALLOWED_ORIGINS,
     credentials: true,
   })
 
-  await server.register(helmet)
+  await server.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
+    },
+  })
 
   await server.register(rateLimit, {
     max: 100,
@@ -35,16 +49,36 @@ async function registerPlugins() {
 }
 
 async function registerRoutes() {
-  // Health check
-  server.get('/health', async (_request, _reply) => {
-    return { status: 'ok', timestamp: new Date().toISOString() }
-  })
+  // Health check routes
+  server.register(healthRoutes)
 
   // API routes
   server.register(async function (fastify) {
-    fastify.get('/api/test', async (_request, _reply) => {
-      return { message: 'API funcionando correctamente' }
-    })
+    fastify.get(
+      '/api/test',
+      {
+        schema: {
+          tags: ['health'],
+          summary: 'Test de API',
+          description: 'Endpoint de prueba para verificar que la API funciona',
+          response: {
+            200: {
+              type: 'object',
+              properties: {
+                message: { type: 'string' },
+                timestamp: { type: 'string', format: 'date-time' },
+              },
+            },
+          },
+        },
+      },
+      async (_request, _reply) => {
+        return {
+          message: 'API funcionando correctamente',
+          timestamp: new Date().toISOString(),
+        }
+      }
+    )
   })
 
   server.register(userRoutes, { prefix: '/api' })
@@ -63,6 +97,9 @@ async function start() {
 
     console.log(
       `🚀 Servidor ejecutándose en http://${config.HOST}:${config.PORT}`
+    )
+    console.log(
+      `📚 Documentación Swagger disponible en http://${config.HOST}:${config.PORT}/docs`
     )
   } catch (err) {
     server.log.error(err)

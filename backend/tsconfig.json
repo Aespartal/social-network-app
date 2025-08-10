@@ -28,7 +28,9 @@
       "@/middleware/*": ["./src/middleware/*"],
       "@/types/*": ["./src/types/*"],
       "@/utils/*": ["./src/utils/*"],
-      "@/config/*": ["./src/config/*"]
+      "@/config/*": ["./src/config/*"],
+      "@/schemas/*": ["./src/schemas/*"],
+      "@/plugins/*": ["./src/plugins/*"]
     }
   },
   "include": ["src/**/*"],

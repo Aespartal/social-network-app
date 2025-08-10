@@ -14,7 +14,7 @@ Husky es una herramienta que permite ejecutar scripts automáticamente en cierto
 - **Qué hace**: Ejecuta `lint-staged` antes de cada commit
 - **Archivos afectados**: 
   - `frontend/src/**/*.{ts,tsx}` - Archivos TypeScript/React del frontend
-  - `backend/src/**/*.{ts}` - Archivos TypeScript del backend
+  - `backend/src/**/*.ts` - Archivos TypeScript del backend
 - **Acciones**:
   - Ejecuta ESLint con auto-fix en archivos modificados
   - Ejecuta Prettier para formatear código
@@ -78,7 +78,7 @@ La configuración está en `package.json`:
       "cd frontend && npm run lint:fix",
       "cd frontend && npm run format"
     ],
-    "backend/src/**/*.{ts}": [
+    "backend/src/**/*.ts": [
       "cd backend && npm run lint:fix",
       "cd backend && npm run format"
     ]
