@@ -7,7 +7,6 @@ import {
   // Post, // Comentado porque no se usa aún
 } from 'social-network-app-shared'
 
-// Test comment for Husky validation
 const prisma = new PrismaClient()
 
 interface AuthenticatedRequest extends FastifyRequest {

@@ -1,6 +1,42 @@
-# SocialNetworkApp - Full Stack Application
+# 🌐 Social Network App
 
-Una aplicación full-stack moderna construida con React + TypeScript (frontend) y Fastify + TypeScript (backend).
+Una aplicación de red social full-stack moderna construida con React + TypeScript (frontend) y Fastify + TypeScript (backend).
+
+## 📚 Documentación Completa
+
+📖 **[Ver Documentación Completa](./docs/README.md)** - Guías detalladas, arquitectura, API y más.
+
+### 🚀 Enlaces Rápidos
+
+- **[Instalación y Configuración](./docs/setup/installation.md)** - Cómo empezar
+- **[Estructura del Proyecto](./docs/setup/project-structure.md)** - Organización del código
+- **[Scripts Disponibles](./docs/setup/scripts.md)** - Comandos npm
+- **[Documentación de API](./docs/api/endpoints.md)** - Endpoints y ejemplos
+- **[Git Hooks (Husky)](./docs/development/git-hooks.md)** - Automatización de calidad
+
+## ⚡ Inicio Rápido
+
+```bash
+# 1. Clonar repositorio
+git clone <repository-url>
+cd social-network-app
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Configurar variables de entorno
+cd backend && cp .env.example .env
+
+# 4. Configurar base de datos
+npx prisma generate
+npx prisma migrate dev
+
+# 5. Ejecutar en desarrollo
+npm run dev
+```
+
+🌐 **Frontend**: http://localhost:5173  
+🔌 **Backend**: http://localhost:3000
 
 ## 🚀 Tecnologías
 
@@ -176,6 +212,32 @@ npm run build
 cd backend
 npm run build
 npm start
+```
+
+## 🛠️ Herramientas de Desarrollo
+
+### Git Hooks (Husky)
+- **Pre-commit**: Linting y formateo automático
+- **Pre-push**: Tests y verificación de tipos
+- **Commit-msg**: Validación de formato de mensajes
+
+### Scripts de Calidad
+```bash
+npm run lint          # Linting completo
+npm run format        # Formateo de código
+npm run typecheck     # Verificación de tipos
+npm run test          # Tests completos
+```
+
+### Formato de Commits
+```bash
+feat(scope): descripción     # Nueva funcionalidad
+fix(scope): descripción      # Corrección de errores
+docs: descripción           # Cambios en documentación
+style: descripción          # Formateo de código
+refactor: descripción       # Refactorización
+test: descripción           # Tests
+chore: descripción          # Mantenimiento
 ```
 
 ## 🤝 Contribución
