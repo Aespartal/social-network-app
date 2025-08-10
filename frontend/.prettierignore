@@ -1,0 +1,12 @@
+dist/
+node_modules/
+*.log
+.env
+.env.*
+coverage/
+build/
+public/
+*.md
+package-lock.json
+yarn.lock
+.vite/

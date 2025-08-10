@@ -1,0 +1,84 @@
+import fastify from 'fastify'
+import cors from '@fastify/cors'
+import helmet from '@fastify/helmet'
+import rateLimit from '@fastify/rate-limit'
+import { config } from '@/config/env'
+import { userRoutes } from '@/routes/userRoutes'
+import { postRoutes } from '@/routes/postRoutes'
+
+const server = fastify({
+  logger: {
+    level: config.LOG_LEVEL,
+  },
+})
+
+async function registerPlugins() {
+  await server.register(cors, {
+    origin: config.ALLOWED_ORIGINS,
+    credentials: true,
+  })
+
+  await server.register(helmet)
+
+  await server.register(rateLimit, {
+    max: 100,
+    timeWindow: '1 minute',
+    errorResponseBuilder: (request, context) => ({
+      success: false,
+      error: `Demasiadas peticiones. Límite: ${context.max} por minuto`,
+      retryAfter: Math.round(context.ttl / 1000),
+    }),
+    onExceeding: (request, key) => {
+      console.warn(`General rate limit exceeded: ${key}`)
+    },
+  })
+}
+
+async function registerRoutes() {
+  // Health check
+  server.get('/health', async (_request, _reply) => {
+    return { status: 'ok', timestamp: new Date().toISOString() }
+  })
+
+  // API routes
+  server.register(async function (fastify) {
+    fastify.get('/api/test', async (_request, _reply) => {
+      return { message: 'API funcionando correctamente' }
+    })
+  })
+
+  server.register(userRoutes, { prefix: '/api' })
+  server.register(postRoutes, { prefix: '/api' })
+}
+
+async function start() {
+  try {
+    await registerPlugins()
+    await registerRoutes()
+
+    await server.listen({
+      port: config.PORT,
+      host: config.HOST,
+    })
+
+    console.log(
+      `🚀 Servidor ejecutándose en http://${config.HOST}:${config.PORT}`
+    )
+  } catch (err) {
+    server.log.error(err)
+    process.exit(1)
+  }
+}
+
+process.on('SIGINT', async () => {
+  try {
+    await server.close()
+    console.log('👋 Servidor cerrado correctamente')
+    process.exit(0)
+  } catch (err) {
+    console.error('Error al cerrar el servidor:', err)
+    process.exit(1)
+  }
+})
+
+start()

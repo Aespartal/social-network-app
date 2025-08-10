@@ -1,0 +1,156 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  name      String
+  avatar    String?
+  bio       String?
+  verified  Boolean  @default(false)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Password and authentication
+  password String
+
+  // Posts authored by this user
+  posts Post[]
+
+  // Likes given by this user
+  likes Like[]
+
+  // Comments made by this user
+  comments Comment[]
+
+  // Bookmarks made by this user
+  bookmarks Bookmark[]
+
+  // Users that this user follows
+  following Follow[] @relation("UserFollowing")
+
+  // Users that follow this user
+  followers Follow[] @relation("UserFollowers")
+
+  @@map("users")
+}
+
+// Post model
+model Post {
+  id        String   @id @default(cuid())
+  content   String
+  image     String?
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes     Like[]
+  comments  Comment[]
+  bookmarks Bookmark[]
+  tags      PostTag[]
+
+  @@map("posts")
+}
+
+// Like model
+model Like {
+  id     String @id @default(cuid())
+  userId String
+  postId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@map("likes")
+}
+
+// Comment model
+model Comment {
+  id      String @id @default(cuid())
+  content String
+  userId  String
+  postId  String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("comments")
+}
+
+// Bookmark model
+model Bookmark {
+  id     String @id @default(cuid())
+  userId String
+  postId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@map("bookmarks")
+}
+
+// Follow model (user following relationships)
+model Follow {
+  id          String @id @default(cuid())
+  followerId  String
+  followingId String
+
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+// Tag model
+model Tag {
+  id    String @id @default(cuid())
+  name  String @unique
+  posts PostTag[]
+
+  createdAt DateTime @default(now())
+
+  @@map("tags")
+}
+
+// PostTag model (many-to-many relationship between Post and Tag)
+model PostTag {
+  id     String @id @default(cuid())
+  postId String
+  tagId  String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tagId])
+  @@map("post_tags")
+}
