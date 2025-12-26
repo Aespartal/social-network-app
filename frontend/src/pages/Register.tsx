@@ -50,7 +50,7 @@ const Register: React.FC = () => {
       await register(userData)
       navigate('/') // Redirect to home after successful registration
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al registrarse')
+      setError(err.response?.data?.error || 'Error al registrarse')
     } finally {
       setIsLoading(false)
     }

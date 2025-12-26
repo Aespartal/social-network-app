@@ -66,7 +66,7 @@ export const register = async (
       { expiresIn: '7d' }
     )
 
-    reply.send({
+    reply.status(201).send({
       success: true,
       data: {
         user,
@@ -198,7 +198,13 @@ export const getProfile = async (
 
     reply.send({
       success: true,
-      data: user,
+      data: {
+        user: {
+          ...user,
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt.toISOString(),
+        },
+      },
       message: 'Perfil obtenido exitosamente',
     })
   } catch (error) {

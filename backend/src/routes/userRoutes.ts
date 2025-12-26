@@ -19,7 +19,7 @@ import { ErrorSchema } from '../schemas/index'
 export async function userRoutes(fastify: FastifyInstance) {
   await fastify.register(async function (fastify) {
     await fastify.register(rateLimit, {
-      max: 5,
+      max: 10,
       timeWindow: '15 minutes',
       keyGenerator: request => {
         const email = (request.body as any)?.email || 'unknown'

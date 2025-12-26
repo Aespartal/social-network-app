@@ -38,6 +38,10 @@ export const PostSchema = Type.Object({
     minimum: 0,
     description: 'Número total de comentarios',
   }),
+  bookmarksCount: Type.Number({
+    minimum: 0,
+    description: 'Número total de veces que se ha guardado el post',
+  }),
   isLiked: Type.Optional(
     Type.Boolean({
       description:

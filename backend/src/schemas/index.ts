@@ -6,7 +6,12 @@ export const ErrorSchema = Type.Object({
   code: Type.Optional(
     Type.String({ description: 'Código de error específico' })
   ),
-  statusCode: Type.Number({ description: 'Código de estado HTTP' }),
+  statusCode: Type.Optional(
+    Type.Number({ description: 'Código de estado HTTP' })
+  ),
+  retryAfter: Type.Optional(
+    Type.Number({ description: 'Segundos hasta poder reintentar (rate limit)' })
+  ),
 })
 
 export const SuccessSchema = Type.Object({

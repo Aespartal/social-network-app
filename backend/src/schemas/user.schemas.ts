@@ -1,7 +1,7 @@
 import { Type, Static } from '@sinclair/typebox'
 
 export const UserSchema = Type.Object({
-  id: Type.String({ format: 'uuid', description: 'ID único del usuario' }),
+  id: Type.String({ description: 'ID único del usuario' }),
   username: Type.String({
     minLength: 3,
     maxLength: 30,
@@ -18,28 +18,17 @@ export const UserSchema = Type.Object({
     maxLength: 100,
     description: 'Nombre completo del usuario',
   }),
-  bio: Type.Optional(
-    Type.String({
-      maxLength: 500,
-      description: 'Biografía del usuario (opcional)',
-    })
-  ),
-  avatarUrl: Type.Optional(
-    Type.String({
-      format: 'uri',
-      description: 'URL del avatar del usuario (opcional)',
-    })
-  ),
-  isVerified: Type.Boolean({
+  bio: Type.Union([Type.String({ maxLength: 500 }), Type.Null()], {
+    description: 'Biografía del usuario (opcional)',
+  }),
+  avatar: Type.Union([Type.String(), Type.Null()], {
+    description: 'URL del avatar del usuario (opcional)',
+  }),
+  verified: Type.Boolean({
     description: 'Indica si el usuario está verificado',
   }),
-  followersCount: Type.Number({
-    minimum: 0,
-    description: 'Número de seguidores',
-  }),
-  followingCount: Type.Number({
-    minimum: 0,
-    description: 'Número de usuarios seguidos',
+  active: Type.Boolean({
+    description: 'Indica si la cuenta está activa',
   }),
   createdAt: Type.String({
     format: 'date-time',
@@ -49,6 +38,13 @@ export const UserSchema = Type.Object({
     format: 'date-time',
     description: 'Fecha de última actualización',
   }),
+  _count: Type.Optional(
+    Type.Object({
+      posts: Type.Number({ description: 'Número de posts' }),
+      followers: Type.Number({ description: 'Número de seguidores' }),
+      following: Type.Number({ description: 'Número de usuarios seguidos' }),
+    })
+  ),
 })
 
 export const UserPrivateSchema = Type.Intersect([
@@ -144,8 +140,8 @@ export const AuthResponseSchema = Type.Object({
   data: Type.Object({
     user: UserSchema,
     token: Type.String({ description: 'JWT token de autenticación' }),
-    expiresIn: Type.String({ description: 'Tiempo de expiración del token' }),
   }),
+  message: Type.String({ description: 'Mensaje de éxito' }),
 })
 
 export const UserParamsSchema = Type.Object({

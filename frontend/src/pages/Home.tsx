@@ -59,6 +59,7 @@ const Home: React.FC = () => {
       const response = await postsAPI.getFeed({
         cursor: undefined,
         limit: 10,
+        page: _page,
       })
 
       if (reset) {
@@ -181,6 +182,15 @@ const Home: React.FC = () => {
         {loading && posts.length === 0 ? (
           <Box display='flex' justifyContent='center' py={4}>
             <CircularProgress />
+          </Box>
+        ) : posts.length === 0 ? (
+          <Box display='flex' flexDirection='column' alignItems='center' py={4}>
+            <Typography variant='h6' color='text.secondary'>
+              No hay publicaciones para mostrar.
+            </Typography>
+            <Typography variant='body2' color='text.secondary'>
+              Puedes crear una nueva publicación o volver más tarde.
+            </Typography>
           </Box>
         ) : (
           <Stack spacing={2}>

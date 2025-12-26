@@ -122,6 +122,7 @@ export interface FeedResponse {
 export interface FeedRequest {
   cursor?: string
   limit?: number
+  page?: number
 }
 
 export interface ApiResponse<T = any> {

@@ -136,8 +136,10 @@ export const getFeed = async (
       })
     }
 
-    const { cursor, limit = 10 } = request.query
+    const { cursor, limit = 10, page = 1 } = request.query
     const pageSize = Math.min(Number(limit), 50)
+
+    const totalPosts = await prisma.post.count()
 
     const posts = await prisma.post.findMany({
       take: pageSize + 1,
@@ -189,24 +191,38 @@ export const getFeed = async (
 
     const hasMore = posts.length > pageSize
     const postsToReturn = hasMore ? posts.slice(0, -1) : posts
-    const nextCursor = hasMore
-      ? postsToReturn[postsToReturn.length - 1]?.id
-      : undefined
+    const totalPages = Math.ceil(totalPosts / pageSize)
 
     const formattedPosts = postsToReturn.map(post => ({
-      ...post,
-      isLiked: post.likes.length > 0,
-      isBookmarked: post.bookmarks.length > 0,
-      likes: [],
-      bookmarks: [],
+      id: post.id,
+      content: post.content,
+      imageUrl: post.image || undefined, 
+      authorId: post.authorId,
+      author: post.author ? {
+        ...post.author,
+        isVerified: post.author.verified,
+      } : undefined,
+      likesCount: post._count.likes,
+      commentsCount: post._count.comments,
+      bookmarksCount: post._count.bookmarks,
+      isLiked: request.user ? post.likes.length > 0 : false,
+      isBookmarked: request.user ? post.bookmarks.length > 0 : false,
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
     }))
 
     reply.send({
       success: true,
       data: {
         posts: formattedPosts,
-        hasMore,
-        nextCursor,
+        pagination: {
+          page: Number(page),
+          limit: pageSize,
+          total: totalPosts,
+          totalPages,
+          hasNext: hasMore,
+          hasPrev: Number(page) > 1,
+        },
       },
       message: 'Feed obtenido exitosamente',
     })
