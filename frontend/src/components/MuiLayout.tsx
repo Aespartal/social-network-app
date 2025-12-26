@@ -1,267 +1,204 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
-  AppBar,
-  Toolbar,
-  Typography,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemButton,
-  Box,
-  useMediaQuery,
-  useTheme as useMuiTheme,
-  Divider,
-  Avatar,
-  Menu,
-  MenuItem,
-  Button,
-  Stack,
-} from '@mui/material'
+  AppBar, Toolbar, Typography, IconButton, Drawer, List, ListItem,
+  ListItemIcon, ListItemText, ListItemButton, Box, useMediaQuery,
+  useTheme as useMuiTheme, Divider, Avatar, Menu, MenuItem, Button,
+  Stack, Tooltip, alpha
+} from '@mui/material';
 import {
-  Menu as MenuIcon,
-  Home as HomeIcon,
-  Info as InfoIcon,
-  Brightness4,
-  Brightness7,
-  Logout,
-  Login as LoginIcon,
-  PersonAdd as RegisterIcon,
-} from '@mui/icons-material'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { useTheme } from '@/theme/ThemeProvider'
-import { useAuth } from '@/hooks/useAuth'
+  Menu as MenuIcon, Home as HomeIcon, Info as InfoIcon,
+  Brightness4, Brightness7, Logout, Login as LoginIcon,
+  PersonAdd as RegisterIcon, ChevronLeft as ChevronLeftIcon
+} from '@mui/icons-material';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTheme } from '@/theme/ThemeProvider';
+import { useAuth } from '@/hooks/useAuth';
 
 interface LayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
-const drawerWidth = 240
+const DRAWER_WIDTH = 260;
+const COLLAPSED_DRAWER_WIDTH = 70;
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const muiTheme = useMuiTheme()
-  const { isDark, toggleTheme } = useTheme()
-  const { user, isAuthenticated, logout } = useAuth()
-  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'))
+  const navigate = useNavigate();
+  const location = useLocation();
+  const muiTheme = useMuiTheme();
+  const { isDark, toggleTheme } = useTheme();
+  const { user, isAuthenticated, logout } = useAuth();
+  
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false); // Para escritorio
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const menuItems = [
+    { text: 'Feed', icon: <HomeIcon />, path: '/', private: true },
+    { text: 'Acerca de', icon: <InfoIcon />, path: '/about', private: false },
+  ];
 
-  const authenticatedMenuItems = [
-    { text: 'Feed', icon: <HomeIcon />, path: '/' },
-    { text: 'Acerca de', icon: <InfoIcon />, path: '/about' },
-  ]
+  const filteredMenuItems = menuItems.filter(item => !item.private || isAuthenticated);
 
-  const publicMenuItems = [
-    { text: 'Acerca de', icon: <InfoIcon />, path: '/about' },
-  ]
-
-  const menuItems = isAuthenticated ? authenticatedMenuItems : publicMenuItems
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen)
-  }
-
-  const handleMenuClick = (path: string) => {
-    navigate(path)
-    if (isMobile) {
-      setMobileOpen(false)
-    }
-  }
-
-  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
-
-  const handleProfileMenuClose = () => {
-    setAnchorEl(null)
-  }
+  const currentDrawerWidth = isMobile ? DRAWER_WIDTH : (isCollapsed ? COLLAPSED_DRAWER_WIDTH : DRAWER_WIDTH);
 
   const handleLogout = () => {
-    logout()
-    handleProfileMenuClose()
-    navigate('/')
-  }
+    logout();
+    setAnchorEl(null);
+    navigate('/login');
+  };
 
-  const drawer = (
-    <div>
-      <Toolbar>
-        <Typography variant='h6' noWrap component='div'>
-          SocialNetworkApp
-        </Typography>
+  const drawerContent = (
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Toolbar sx={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between' }}>
+        {!isCollapsed && (
+          <Typography variant="h6" fontWeight="800" color="primary">
+            SOCIAL
+          </Typography>
+        )}
+        {!isMobile && (
+          <IconButton onClick={() => setIsCollapsed(!isCollapsed)}>
+            {isCollapsed ? <MenuIcon /> : <ChevronLeftIcon />}
+          </IconButton>
+        )}
       </Toolbar>
+      
       <Divider />
-      <List>
-        {menuItems.map(item => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => handleMenuClick(item.path)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+
+      {isAuthenticated && !isCollapsed && (
+        <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Avatar src={user?.avatar || ''}>{user?.name?.charAt(0)}</Avatar>
+          <Box overflow="hidden">
+            <Typography variant="subtitle2" noWrap>{user?.name}</Typography>
+            <Typography variant="caption" color="text.secondary" noWrap>@{user?.username}</Typography>
+          </Box>
+        </Box>
+      )}
+
+      <List sx={{ px: 1 }}>
+        {filteredMenuItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <ListItem key={item.text} disablePadding sx={{ display: 'block', mb: 0.5 }}>
+              <Tooltip title={isCollapsed ? item.text : ""} placement="right">
+                <ListItemButton
+                  onClick={() => {
+                    navigate(item.path);
+                    if (isMobile) setMobileOpen(false);
+                  }}
+                  sx={{
+                    justifyContent: isCollapsed ? 'center' : 'initial',
+                    borderRadius: 2,
+                    backgroundColor: isActive ? alpha(muiTheme.palette.primary.main, 0.1) : 'transparent',
+                    color: isActive ? 'primary.main' : 'text.primary',
+                    '&:hover': { backgroundColor: alpha(muiTheme.palette.primary.main, 0.05) }
+                  }}
+                >
+                  <ListItemIcon sx={{ 
+                    minWidth: 0, mr: isCollapsed ? 0 : 2, justifyContent: 'center',
+                    color: isActive ? 'primary.main' : 'inherit'
+                  }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  {!isCollapsed && <ListItemText primary={item.text} primaryTypographyProps={{ fontWeight: isActive ? 600 : 400 }} />}
+                </ListItemButton>
+              </Tooltip>
+            </ListItem>
+          );
+        })}
       </List>
-    </div>
-  )
+      
+      <Box sx={{ mt: 'auto', p: 2 }}>
+         {!isCollapsed && <Typography variant="caption" color="text.disabled">v1.0.0 © 2025</Typography>}
+      </Box>
+    </Box>
+  );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar
-        position='fixed'
+        position="fixed"
+        elevation={0}
         sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
+          zIndex: muiTheme.zIndex.drawer + 1,
+          width: { sm: `calc(100% - ${currentDrawerWidth}px)` },
+          transition: muiTheme.transitions.create(['width', 'margin'], {
+            easing: muiTheme.transitions.easing.sharp,
+            duration: muiTheme.transitions.duration.enteringScreen,
+          }),
+          backdropFilter: 'blur(8px)',
+          backgroundColor: alpha(muiTheme.palette.background.paper, 0.8),
+          color: 'text.primary',
+          borderBottom: '1px solid',
+          borderColor: 'divider'
         }}
       >
         <Toolbar>
           <IconButton
-            color='inherit'
-            aria-label='abrir menú'
-            edge='start'
-            onClick={handleDrawerToggle}
+            color="inherit"
+            edge="start"
+            onClick={() => setMobileOpen(true)}
             sx={{ mr: 2, display: { sm: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
 
-          <Typography variant='h6' noWrap component='div' sx={{ flexGrow: 1 }}>
-            SocialNetworkApp
-          </Typography>
+          <Box sx={{ flexGrow: 1 }} />
 
-          <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color='inherit'>
-            {isDark ? <Brightness7 /> : <Brightness4 />}
-          </IconButton>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <IconButton onClick={toggleTheme} color="inherit">
+              {isDark ? <Brightness7 /> : <Brightness4 />}
+            </IconButton>
 
-          {isAuthenticated ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-              <IconButton
-                size='large'
-                edge='end'
-                aria-label='cuenta del usuario actual'
-                aria-controls='menu-appbar'
-                aria-haspopup='true'
-                onClick={handleProfileMenuOpen}
-                color='inherit'
-              >
-                <Avatar
-                  src={user?.avatar || undefined}
-                  sx={{ width: 32, height: 32 }}
+            {isAuthenticated ? (
+              <>
+                <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
+                  <Avatar src={user?.avatar || ''} sx={{ width: 35, height: 35 }} />
+                </IconButton>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={() => setAnchorEl(null)}
+                  transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                  anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                 >
-                  {user?.name?.charAt(0).toUpperCase()}
-                </Avatar>
-              </IconButton>
-              <Menu
-                id='menu-appbar'
-                anchorEl={anchorEl}
-                anchorOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-                keepMounted
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-                open={Boolean(anchorEl)}
-                onClose={handleProfileMenuClose}
-              >
-                <MenuItem disabled>
-                  <Typography variant='body2' color='text.secondary'>
-                    {user?.name}
-                  </Typography>
-                </MenuItem>
-                <Divider />
-                <MenuItem onClick={handleLogout}>
-                  <ListItemIcon>
-                    <Logout fontSize='small' />
-                  </ListItemIcon>
-                  Cerrar sesión
-                </MenuItem>
-              </Menu>
-            </Box>
-          ) : (
-            <Stack direction='row' spacing={1} sx={{ ml: 2 }}>
-              <Button
-                color='inherit'
-                startIcon={<LoginIcon />}
-                onClick={() => navigate('/login')}
-              >
-                Iniciar Sesión
-              </Button>
-              <Button
-                color='inherit'
-                variant='outlined'
-                startIcon={<RegisterIcon />}
-                onClick={() => navigate('/register')}
-                sx={{
-                  borderColor: 'inherit',
-                  '&:hover': {
-                    borderColor: 'inherit',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  },
-                }}
-              >
-                Registrarse
-              </Button>
-            </Stack>
-          )}
+                  <MenuItem onClick={handleLogout}>
+                    <ListItemIcon><Logout fontSize="small" /></ListItemIcon>
+                    Cerrar sesión
+                  </MenuItem>
+                </Menu>
+              </>
+            ) : (
+              <Stack direction="row" spacing={1}>
+                <Button size="small" onClick={() => navigate('/login')}>Login</Button>
+                <Button size="small" variant="contained" onClick={() => navigate('/register')}>Unirse</Button>
+              </Stack>
+            )}
+          </Stack>
         </Toolbar>
       </AppBar>
 
-      <Box
-        component='nav'
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label='navegación principal'
-      >
+      <Box component="nav" sx={{ width: { sm: currentDrawerWidth }, flexShrink: { sm: 0 }, transition: 'width 0.3s' }}>
         <Drawer
-          variant='temporary'
+          variant="temporary"
           open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-            },
-          }}
+          onClose={() => setMobileOpen(false)}
+          sx={{ display: { xs: 'block', sm: 'none' }, '& .MuiDrawer-paper': { width: DRAWER_WIDTH } }}
         >
-          {drawer}
+          {drawerContent}
         </Drawer>
         <Drawer
-          variant='permanent'
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-            },
-          }}
-          open
+          variant="permanent"
+          sx={{ display: { xs: 'none', sm: 'block' }, '& .MuiDrawer-paper': { width: currentDrawerWidth, transition: 'width 0.3s', overflowX: 'hidden' } }}
         >
-          {drawer}
+          {drawerContent}
         </Drawer>
       </Box>
 
-      <Box
-        component='main'
-        sx={{
-          flexGrow: 1,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-        }}
-      >
+      <Box component="main" sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${currentDrawerWidth}px)` } }}>
         <Toolbar />
         {children}
       </Box>
     </Box>
-  )
-}
+  );
+};

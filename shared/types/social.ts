@@ -31,22 +31,25 @@ export interface LoginResponse {
 }
 
 export interface Post {
-  id: string
-  content: string
-  image?: string | null
-  authorId: string
-  createdAt: string
-  updatedAt: string
-  author: User
-  likes: Like[]
-  comments: Comment[]
-  bookmarks: Bookmark[]
-  tags: PostTag[]
+  id: string;
+  content: string;
+  imageUrl?: string | null; 
+  authorId: string;
+  createdAt: string;
+  updatedAt: string;
+  author: User;
+  likesCount: number;
+  commentsCount: number;
+  bookmarksCount: number;
+  isLiked?: boolean;
+  isBookmarked?: boolean;
+  tags?: PostTag[];
+  comments?: Comment[];
   _count?: {
-    likes: number
-    comments: number
-    bookmarks: number
-  }
+    likes: number;
+    comments: number;
+    bookmarks: number;
+  };
 }
 
 export interface CreatePostRequest {

@@ -6,7 +6,6 @@ import Register from '@/pages/Register'
 import { Layout } from '@/components/MuiLayout'
 import { ThemeProvider } from '@/theme/ThemeProvider'
 import { AuthProvider } from '@/hooks/useAuth'
-import './styles/App.css'
 
 function App() {
   return (

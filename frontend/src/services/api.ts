@@ -71,8 +71,12 @@ export const authAPI = {
   },
 
   async getProfile(): Promise<User> {
-    const response = await apiService.get<ApiResponse<User>>('/profile')
-    return response.data.data!
+    const response = await apiService.get<ApiResponse<{ user: User }>>('/profile')
+    const user = response.data.data?.user
+    if (!user) {
+      throw new Error('Profile not found')
+    }
+    return user
   },
 
   async getUserByUsername(username: string): Promise<User> {

@@ -28,56 +28,64 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const saveAuthData = (token: string, userData: User) => {
+    localStorage.setItem('auth_token', token);
+    localStorage.setItem('user_data', JSON.stringify(userData));
+    setUser(userData);
+  };
+
+  const clearAuthData = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+    setUser(null);
+  };
 
   // Check if user is authenticated on mount
   useEffect(() => {
     const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem('auth_token')
-        const savedUser = localStorage.getItem('user_data')
+      const token = localStorage.getItem('auth_token');
+      const savedUser = localStorage.getItem('user_data');
 
-        if (token && savedUser) {
-          setUser(JSON.parse(savedUser))
-          // Optionally verify token with backend
-          try {
-            const profile = await authAPI.getProfile()
-            setUser(profile)
-            localStorage.setItem('user_data', JSON.stringify(profile))
-          } catch (_error) {
-            // Token is invalid, clear storage
-            localStorage.removeItem('auth_token')
-            localStorage.removeItem('user_data')
-            setUser(null)
-          }
-        }
-      } catch (_error) {
-        console.error('Auth check failed:', _error)
-      } finally {
-        setLoading(false)
+      if (!token || !savedUser) {
+        setLoading(false);
+        return;
       }
-    }
 
-    checkAuth()
-  }, [])
+      try {
+        setUser(JSON.parse(savedUser));
+        
+        const userData = await authAPI.getProfile();
+        setUser(userData);
+        localStorage.setItem('user_data', JSON.stringify(userData));
+      } catch (error) {
+        clearAuthData();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'auth_token' && !e.newValue) {
+        setUser(null);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const login = async (credentials: LoginRequest) => {
     try {
-      setLoading(true)
-      const response = await authAPI.login(credentials)
-
-      // Save auth data
-      localStorage.setItem('auth_token', response.token)
-      localStorage.setItem('user_data', JSON.stringify(response.user))
-      setUser(response.user)
+      const { token, user: userData } = await authAPI.login(credentials);
+      saveAuthData(token, userData);
     } catch (error) {
-      console.error('Login failed:', error)
-      throw error
-    } finally {
-      setLoading(false)
+      throw error;
     }
-  }
+  };
 
   const register = async (userData: CreateUserRequest) => {
     try {
@@ -97,10 +105,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }
 
   const logout = () => {
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('user_data')
-    setUser(null)
-  }
+    clearAuthData();
+  };
 
   const value: AuthContextType = {
     user,
