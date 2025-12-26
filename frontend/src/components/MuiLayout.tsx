@@ -7,8 +7,7 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon, Home as HomeIcon, Info as InfoIcon,
-  Brightness4, Brightness7, Logout, Login as LoginIcon,
-  PersonAdd as RegisterIcon, ChevronLeft as ChevronLeftIcon
+  Brightness4, Brightness7, Logout, ChevronLeft as ChevronLeftIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '@/theme/ThemeProvider';
