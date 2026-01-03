@@ -1,4 +1,4 @@
-import { IconButton, Typography, Box, SxProps, Theme  } from '@mui/material'
+import { IconButton, Typography, Box, SxProps, Theme } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 
 interface PostHeaderProps {

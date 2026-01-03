@@ -1,5 +1,5 @@
-import { Box, Paper } from '@mui/material';
-import Skeleton from '@mui/material/Skeleton';
+import { Box, Paper } from '@mui/material'
+import Skeleton from '@mui/material/Skeleton'
 
 export const SuggestedUsersSkeleton = () => (
   <Paper variant='outlined' sx={{ p: 2, borderRadius: 4 }}>

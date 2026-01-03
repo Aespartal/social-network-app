@@ -2,8 +2,10 @@ import React from 'react'
 import { Button as MuiButton, CircularProgress } from '@mui/material'
 import { styled } from '@mui/material/styles'
 
-export interface ButtonProps
-  extends Omit<React.ComponentProps<typeof MuiButton>, 'variant' | 'size'> {
+export interface ButtonProps extends Omit<
+  React.ComponentProps<typeof MuiButton>,
+  'variant' | 'size'
+> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive'
   size?: 'sm' | 'md' | 'lg'
   loading?: boolean

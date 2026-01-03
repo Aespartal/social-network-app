@@ -1,4 +1,4 @@
-import { Paper, Box, Skeleton, Divider } from "@mui/material";
+import { Paper, Box, Skeleton, Divider } from '@mui/material'
 
 export const VisitorListSkeleton = () => (
   <Paper variant='outlined' sx={{ borderRadius: 4, overflow: 'hidden' }}>

@@ -1,5 +1,5 @@
-import { alpha, styled } from '@mui/material/styles';
-import { PostCard } from '@/components/social/post/PostCard';
+import { alpha, styled } from '@mui/material/styles'
+import { PostCard } from '@/components/social/post/PostCard'
 
 export const StyledPostCard = styled(PostCard)(({ theme }) => ({
   borderBottom: `1px solid ${theme.palette.divider}`,
@@ -11,9 +11,10 @@ export const StyledPostCard = styled(PostCard)(({ theme }) => ({
   padding: theme.spacing(1),
 
   '&:hover': {
-    backgroundColor: theme.palette.mode === 'light' 
-      ? alpha(theme.palette.action.hover, 0.04) 
-      : alpha(theme.palette.common.white, 0.02),
+    backgroundColor:
+      theme.palette.mode === 'light'
+        ? alpha(theme.palette.action.hover, 0.04)
+        : alpha(theme.palette.common.white, 0.02),
   },
 
   // 3. Tipografía Profesional
@@ -42,4 +43,4 @@ export const StyledPostCard = styled(PostCard)(({ theme }) => ({
     outline: `2px solid ${theme.palette.primary.main}`,
     outlineOffset: '-2px',
   },
-}));
+}))

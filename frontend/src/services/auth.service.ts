@@ -61,5 +61,4 @@ export const authService = {
   async logout(refreshToken: string): Promise<void> {
     await axiosInstance.post('/auth/logout', { refreshToken })
   },
-
 }

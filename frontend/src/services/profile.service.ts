@@ -1,8 +1,7 @@
+import { ApiResponse } from 'social-network-app-shared/types/api.type'
 
-import { ApiResponse } from 'social-network-app-shared/types/api.type';
-
-import axiosInstance from './axiosInstance';
-import { User } from 'social-network-app-shared/types/auth.type';
+import axiosInstance from './axiosInstance'
+import { User } from 'social-network-app-shared/types/auth.type'
 
 /**
  * Servicio encargado de las operaciones relacionadas con los perfiles de usuario.
@@ -12,15 +11,16 @@ export const profileService = {
    * Registra una visita de forma silenciosa.
    */
   async recordVisit(visitedId: string): Promise<void> {
-    await axiosInstance.post<ApiResponse<void>>(`/profile/visit/${visitedId}`);
+    await axiosInstance.post<ApiResponse<void>>(`/profile/visit/${visitedId}`)
   },
 
   /**
    * Obtiene la lista de usuarios que han visitado mi perfil.
    */
   async getProfileVisits(): Promise<User[]> {
-    const { data } = await axiosInstance.get<ApiResponse<User[]>>('/profile/my-visits');
-    return data.data ?? [];
+    const { data } =
+      await axiosInstance.get<ApiResponse<User[]>>('/profile/my-visits')
+    return data.data ?? []
   },
 
   /**
@@ -42,14 +42,19 @@ export const profileService = {
   },
 
   async getByUsername(username: string): Promise<User> {
-    const { data } = await axiosInstance.get<ApiResponse<User>>(`/profile/${username}`);
-    return data.data !;
+    const { data } = await axiosInstance.get<ApiResponse<User>>(
+      `/profile/${username}`
+    )
+    return data.data!
   },
 
   async getSuggestions(limit?: number): Promise<User[]> {
-    const { data } = await axiosInstance.get<ApiResponse<User[]>>('/profile/suggestions', {
-      params: { limit }
-    });
-    return data.data ?? [];
+    const { data } = await axiosInstance.get<ApiResponse<User[]>>(
+      '/profile/suggestions',
+      {
+        params: { limit },
+      }
+    )
+    return data.data ?? []
   },
-};
+}

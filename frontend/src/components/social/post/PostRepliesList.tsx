@@ -17,7 +17,7 @@ export const PostRepliesList = ({
 }: PostRepliesListProps) => {
   if (!replies || replies.length === 0) {
     return (
-      <Typography color="text.secondary" sx={{ p: 4, textAlign: 'center' }}>
+      <Typography color='text.secondary' sx={{ p: 4, textAlign: 'center' }}>
         Aún no hay respuestas. ¡Sé el primero!
       </Typography>
     )
@@ -25,7 +25,7 @@ export const PostRepliesList = ({
 
   return (
     <Stack spacing={0}>
-      {replies.map((reply) => (
+      {replies.map(reply => (
         <StyledPostCard
           key={reply.id}
           post={reply}

@@ -33,10 +33,11 @@ const Login: React.FC = () => {
   const [searchParams] = useSearchParams()
 
   const [error, setError] = useState<string>('')
-  
-  const sessionMessage = searchParams.get('expired') === 'true'
-    ? 'Tu sesión ha expirado por seguridad. Por favor, inicia sesión de nuevo.'
-    : null;
+
+  const sessionMessage =
+    searchParams.get('expired') === 'true'
+      ? 'Tu sesión ha expirado por seguridad. Por favor, inicia sesión de nuevo.'
+      : null
 
   const { values, handleChange, handleSubmit, isSubmitting } =
     useForm<LoginRequest>({

@@ -21,7 +21,7 @@ export interface PostCardProps {
   onLike: (postId: string) => Promise<void>
   onBookmark: (postId: string) => Promise<void>
   onReply: (post: Post) => void
-  className?: string;
+  className?: string
   sx?: object
 }
 
@@ -50,7 +50,7 @@ export const PostCard = ({
         variant='outlined'
         onClick={handleCardClick}
         className={className}
-        sx={{...sx}}
+        sx={{ ...sx }}
       >
         <CardContent sx={{ pb: 0 }}>
           {/* 1. INDICADOR DE RESPUESTA */}

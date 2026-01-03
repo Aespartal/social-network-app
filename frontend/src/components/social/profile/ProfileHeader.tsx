@@ -13,7 +13,6 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => (
     variant='outlined'
     sx={{ border: 0, overflow: 'hidden', position: 'relative' }}
   >
-    
     <Box sx={{ height: 180, bgcolor: 'primary.main', opacity: 0.8 }} />
     <Box sx={{ px: { xs: 2, sm: 4 }, pb: 2, position: 'relative' }}>
       <Avatar

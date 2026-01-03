@@ -1,8 +1,10 @@
 import React from 'react'
 import { TextField } from '@mui/material'
 
-export interface InputProps
-  extends Omit<React.ComponentProps<typeof TextField>, 'error'> {
+export interface InputProps extends Omit<
+  React.ComponentProps<typeof TextField>,
+  'error'
+> {
   label?: string
   error?: string
   helperText?: string

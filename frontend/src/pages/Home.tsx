@@ -27,7 +27,7 @@ export const Home: React.FC = () => {
   const { isAuthenticated, loading: authLoading } = useAuth()
   const [replyToPost, setReplyToPost] = useState<Post | null>(null)
 
-const {
+  const {
     posts,
     loading,
     loadingMore,
@@ -69,10 +69,10 @@ const {
       {/* COLUMNA PRINCIPAL (Feed) */}
       <Grid size={{ xs: 12, md: 8 }}>
         <Stack>
-          <CreatePostAction 
-            onSave={handleCreatePost} 
-            loading={isCreating} 
-            replyToPost={replyToPost} 
+          <CreatePostAction
+            onSave={handleCreatePost}
+            loading={isCreating}
+            replyToPost={replyToPost}
             onCloseReply={() => setReplyToPost(null)}
           />
 
@@ -92,7 +92,7 @@ const {
               loadingMore={loadingMore}
               onLoadMore={() => loadFeed(false)}
               onBookmark={handleToggleBookmark}
-              onReply={(post) => setReplyToPost(post)}
+              onReply={post => setReplyToPost(post)}
             />
           )}
         </Stack>

@@ -1,4 +1,4 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Typography } from '@mui/material'
 
 export const EmptyState = ({ message }: { message?: string }) => (
   <Box sx={{ p: 4, textAlign: 'center' }}>

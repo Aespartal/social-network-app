@@ -19,7 +19,7 @@ export const useInfiniteScroll = ({
       if (observer.current) observer.current.disconnect()
 
       observer.current = new IntersectionObserver(
-        (entries) => {
+        entries => {
           if (entries[0].isIntersecting && hasMore && !isLoading) {
             onIntersect()
           }

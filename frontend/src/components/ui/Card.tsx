@@ -15,13 +15,15 @@ export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode
 }
 
-export interface CardContentProps
-  extends React.ComponentProps<typeof MuiCardContent> {
+export interface CardContentProps extends React.ComponentProps<
+  typeof MuiCardContent
+> {
   children: React.ReactNode
 }
 
-export interface CardFooterProps
-  extends React.ComponentProps<typeof MuiCardActions> {
+export interface CardFooterProps extends React.ComponentProps<
+  typeof MuiCardActions
+> {
   children: React.ReactNode
 }
 

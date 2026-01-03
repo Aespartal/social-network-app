@@ -166,14 +166,14 @@ export const Profile = () => {
 
         {/* Sección Lateral */}
         <Grid size={{ xs: 12, md: 4 }}>
-            <Stack
-              spacing={3}
-              sx={{
-                position: 'sticky',
-                top: 24,
-                height: 'fit-content',
-              }}
-            >
+          <Stack
+            spacing={3}
+            sx={{
+              position: 'sticky',
+              top: 24,
+              height: 'fit-content',
+            }}
+          >
             {isOwnProfile ? <VisitorList /> : <SuggestedUsers />}
           </Stack>
         </Grid>

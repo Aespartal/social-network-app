@@ -52,7 +52,9 @@ export const postService = {
   },
 
   async getPostWithReplies(id: string): Promise<Post> {
-  const response = await axiosInstance.get<ApiResponse<{ post: Post }>>(`/posts/${id}`);
-  return response.data.data!.post; 
-}
+    const response = await axiosInstance.get<ApiResponse<{ post: Post }>>(
+      `/posts/${id}`
+    )
+    return response.data.data!.post
+  },
 }

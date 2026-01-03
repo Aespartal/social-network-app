@@ -1,4 +1,4 @@
-import { Container, Skeleton, Box } from "@mui/material";
+import { Container, Skeleton, Box } from '@mui/material'
 
 export const ProfileSkeleton = () => (
   <Container maxWidth='md' sx={{ py: 4 }}>

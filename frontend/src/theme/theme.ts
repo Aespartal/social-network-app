@@ -139,7 +139,7 @@ export const darkTheme = createTheme(
       MuiCard: {
         styleOverrides: {
           root: {
-            ...sharedComponents?.MuiCard?.styleOverrides?.root as object,
+            ...(sharedComponents?.MuiCard?.styleOverrides?.root as object),
             border: '1px solid #2f3336',
             boxShadow: 'none',
           },
