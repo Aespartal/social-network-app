@@ -1,17 +1,17 @@
 import { Type, Static } from '@sinclair/typebox'
 import { PaginationSchema, PaginationQuerySchema } from './index'
 
-export const PostAuthorSchema = Type.Object({
-  id: Type.String({ format: 'uuid' }),
+const PostAuthorSchema = Type.Object({
+  id: Type.String(),
   username: Type.String(),
   name: Type.String(),
-  avatarUrl: Type.Optional(Type.String({ format: 'uri' })),
-  isVerified: Type.Boolean(),
+  avatar: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  verified: Type.Boolean(),
 })
 
 export const PostSchema = Type.Object({
   id: Type.String({
-    format: 'uuid',
+    type: 'string',
     description: 'ID único del post',
   }),
   content: Type.String({
@@ -19,24 +19,35 @@ export const PostSchema = Type.Object({
     maxLength: 2000,
     description: 'Contenido del post (máximo 2000 caracteres)',
   }),
-  imageUrl: Type.Optional(
+  image: Type.Optional(
     Type.String({
-      format: 'uri',
+      type: 'string',
       description: 'URL de imagen adjunta (opcional)',
     })
   ),
   authorId: Type.String({
-    format: 'uuid',
+    type: 'string',
     description: 'ID del autor del post',
   }),
   author: Type.Optional(PostAuthorSchema),
+  parentId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  parent: Type.Optional(
+    Type.Union([
+      Type.Null(),
+      Type.Object({
+        id: Type.String(),
+        content: Type.String(),
+        author: Type.Pick(PostAuthorSchema, ['username', 'name', 'avatar']),
+      }),
+    ])
+  ),
   likesCount: Type.Number({
     minimum: 0,
     description: 'Número total de likes',
   }),
-  commentsCount: Type.Number({
+  repliesCount: Type.Number({
     minimum: 0,
-    description: 'Número total de comentarios',
+    description: 'Número total de respuestas',
   }),
   bookmarksCount: Type.Number({
     minimum: 0,
@@ -62,6 +73,7 @@ export const PostSchema = Type.Object({
     format: 'date-time',
     description: 'Fecha de última actualización',
   }),
+  replies: Type.Optional(Type.Array(Type.Any())),
 })
 
 export const CreatePostSchema = Type.Object({
@@ -70,11 +82,20 @@ export const CreatePostSchema = Type.Object({
     maxLength: 2000,
     description: 'Contenido del post (máximo 2000 caracteres)',
   }),
-  imageUrl: Type.Optional(
+  image: Type.Optional(
     Type.String({
       format: 'uri',
       description: 'URL de imagen opcional',
     })
+  ),
+  tags: Type.Optional(
+    Type.Array(
+      Type.String({
+        type: 'string',
+        description: 'ID de la etiqueta',
+      }),
+      { description: 'Lista de etiquetas asociadas al post' }
+    )
   ),
 })
 
@@ -86,7 +107,7 @@ export const UpdatePostSchema = Type.Object({
       description: 'Nuevo contenido del post',
     })
   ),
-  imageUrl: Type.Optional(
+  image: Type.Optional(
     Type.String({
       format: 'uri',
       description: 'Nueva URL de imagen',
@@ -96,7 +117,7 @@ export const UpdatePostSchema = Type.Object({
 
 export const PostParamsSchema = Type.Object({
   id: Type.String({
-    format: 'uuid',
+    type: 'string',
     description: 'ID del post',
   }),
 })
@@ -106,7 +127,7 @@ export const PostsFeedQuerySchema = Type.Intersect([
   Type.Object({
     authorId: Type.Optional(
       Type.String({
-        format: 'uuid',
+        type: 'string',
         description: 'Filtrar posts por autor específico',
       })
     ),
@@ -124,8 +145,8 @@ export const PostsResponseSchema = Type.Object({
     posts: Type.Array(PostSchema, {
       description: 'Lista de posts',
     }),
-    pagination: PaginationSchema,
   }),
+  meta: Type.Optional(PaginationSchema),
 })
 
 export const PostResponseSchema = Type.Object({
@@ -154,21 +175,21 @@ export const LikeBookmarkResponseSchema = Type.Object({
   }),
 })
 
-export const CommentSchema = Type.Object({
-  id: Type.String({ format: 'uuid' }),
+export const ReplySchema = Type.Object({
+  id: Type.String({ type: 'string' }),
   content: Type.String({ minLength: 1, maxLength: 1000 }),
-  authorId: Type.String({ format: 'uuid' }),
+  authorId: Type.String({ type: 'string' }),
   author: PostAuthorSchema,
-  postId: Type.String({ format: 'uuid' }),
+  postId: Type.String({ type: 'string' }),
   createdAt: Type.String({ format: 'date-time' }),
   updatedAt: Type.String({ format: 'date-time' }),
 })
 
-export const CreateCommentSchema = Type.Object({
+export const CreateReplySchema = Type.Object({
   content: Type.String({
     minLength: 1,
     maxLength: 1000,
-    description: 'Contenido del comentario (máximo 1000 caracteres)',
+    description: 'Contenido de la respuesta (máximo 1000 caracteres)',
   }),
 })
 
@@ -181,5 +202,5 @@ export type PostsFeedQuery = Static<typeof PostsFeedQuerySchema>
 export type PostsResponse = Static<typeof PostsResponseSchema>
 export type PostResponse = Static<typeof PostResponseSchema>
 export type LikeBookmarkResponse = Static<typeof LikeBookmarkResponseSchema>
-export type Comment = Static<typeof CommentSchema>
-export type CreateComment = Static<typeof CreateCommentSchema>
+export type Reply = Static<typeof ReplySchema>
+export type CreateReply = Static<typeof CreateReplySchema>

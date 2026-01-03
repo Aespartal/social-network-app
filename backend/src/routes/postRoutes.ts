@@ -5,8 +5,9 @@ import {
   getPost,
   toggleLike,
   toggleBookmark,
+  getUserPosts,
 } from '../controllers/postController'
-import { authenticateToken, optionalAuth } from '../middleware/auth'
+import { authenticateToken, optionalAuth } from '../middleware/auth.middleware'
 import {
   CreatePostSchema,
   PostParamsSchema,
@@ -18,17 +19,16 @@ import {
 import { ErrorSchema } from '../schemas/index'
 
 export async function postRoutes(fastify: FastifyInstance) {
-  fastify.register(async function (fastify) {
-    fastify.addHook('preHandler', optionalAuth)
+  // --- RUTAS PÚBLICAS O CON AUTH OPCIONAL ---
+  fastify.register(async function (publicContext) {
+    publicContext.addHook('preHandler', optionalAuth)
 
-    fastify.get(
+    publicContext.get(
       '/posts/:id',
       {
         schema: {
           tags: ['posts'],
           summary: 'Obtener post por ID',
-          description:
-            'Retorna un post específico por su ID. Si el usuario está autenticado, incluye información de interacciones.',
           params: PostParamsSchema,
           response: {
             200: PostResponseSchema,
@@ -37,21 +37,59 @@ export async function postRoutes(fastify: FastifyInstance) {
           },
         },
       },
-      getPost as any
+      getPost
+    )
+
+    publicContext.get(
+      '/posts/feed',
+      {
+        schema: {
+          tags: ['posts'],
+          summary: 'Obtener feed de posts',
+          querystring: PostsFeedQuerySchema,
+          response: {
+            200: PostsResponseSchema,
+            500: ErrorSchema,
+          },
+        },
+      },
+      getFeed
+    )
+
+    publicContext.get(
+      '/posts/user/:username',
+      {
+        schema: {
+          tags: ['posts'],
+          summary: 'Obtener posts de un usuario por username',
+          params: {
+            type: 'object',
+            required: ['username'],
+            properties: {
+              username: { type: 'string' },
+            },
+          },
+          response: {
+            200: PostsResponseSchema,
+            404: ErrorSchema,
+            500: ErrorSchema,
+          },
+        },
+      },
+      getUserPosts
     )
   })
 
-  fastify.register(async function (fastify) {
-    fastify.addHook('preHandler', authenticateToken)
+  // --- RUTAS PRIVADAS (Requieren Token) ---
+  fastify.register(async function (privateContext) {
+    privateContext.addHook('preHandler', authenticateToken)
 
-    fastify.post(
+    privateContext.post(
       '/posts',
       {
         schema: {
           tags: ['posts'],
           summary: 'Crear nuevo post',
-          description:
-            'Crea un nuevo post con contenido y opcionalmente una imagen',
           security: [{ bearerAuth: [] }],
           body: CreatePostSchema,
           response: {
@@ -62,37 +100,15 @@ export async function postRoutes(fastify: FastifyInstance) {
           },
         },
       },
-      createPost as any
+      createPost
     )
 
-    fastify.get(
-      '/feed',
-      {
-        schema: {
-          tags: ['posts'],
-          summary: 'Obtener feed de posts',
-          description:
-            'Retorna una lista paginada de posts. Puede filtrar por autor o solo seguidos.',
-          security: [{ bearerAuth: [] }],
-          querystring: PostsFeedQuerySchema,
-          response: {
-            200: PostsResponseSchema,
-            401: ErrorSchema,
-            500: ErrorSchema,
-          },
-        },
-      },
-      getFeed as any
-    )
-
-    fastify.post(
+    privateContext.post(
       '/posts/:id/like',
       {
         schema: {
           tags: ['social'],
-          summary: 'Dar/quitar like a un post',
-          description:
-            'Alterna el estado de like del usuario en un post específico',
+          summary: 'Dar/quitar like',
           security: [{ bearerAuth: [] }],
           params: PostParamsSchema,
           response: {
@@ -103,17 +119,15 @@ export async function postRoutes(fastify: FastifyInstance) {
           },
         },
       },
-      toggleLike as any
+      toggleLike
     )
 
-    fastify.post(
+    privateContext.post(
       '/posts/:id/bookmark',
       {
         schema: {
           tags: ['social'],
-          summary: 'Guardar/quitar bookmark de un post',
-          description:
-            'Alterna el estado de bookmark del usuario en un post específico',
+          summary: 'Guardar/quitar bookmark',
           security: [{ bearerAuth: [] }],
           params: PostParamsSchema,
           response: {
@@ -124,7 +138,7 @@ export async function postRoutes(fastify: FastifyInstance) {
           },
         },
       },
-      toggleBookmark as any
+      toggleBookmark
     )
   })
 }

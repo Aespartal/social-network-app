@@ -15,7 +15,7 @@ export interface UseFormReturn<T> {
     field: keyof T
   ) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
   handleBlur: (field: keyof T) => () => void
-  setFieldValue: (field: keyof T, value: any) => void
+  setFieldValue: <K extends keyof T>(field: K, value: T[K]) => void
   setFieldError: (field: keyof T, error: string) => void
   resetForm: () => void
   handleSubmit: (
@@ -23,7 +23,7 @@ export interface UseFormReturn<T> {
   ) => (e?: FormEvent) => Promise<void>
 }
 
-export function useForm<T extends Record<string, any>>({
+export function useForm<T extends object>({
   initialValues,
   validate,
 }: UseFormProps<T>): UseFormReturn<T> {
@@ -33,10 +33,7 @@ export function useForm<T extends Record<string, any>>({
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const validateForm = (formValues: T): Partial<Record<keyof T, string>> => {
-    if (validate) {
-      return validate(formValues)
-    }
-    return {}
+    return validate ? validate(formValues) : {}
   }
 
   const isValid = Object.keys(validateForm(values)).length === 0
@@ -44,7 +41,7 @@ export function useForm<T extends Record<string, any>>({
   const handleChange =
     (field: keyof T) =>
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const value = e.target.value
+      const { value } = e.target
       setValues(prev => ({ ...prev, [field]: value }))
 
       if (errors[field]) {
@@ -61,7 +58,7 @@ export function useForm<T extends Record<string, any>>({
     }
   }
 
-  const setFieldValue = (field: keyof T, value: any) => {
+  const setFieldValue = <K extends keyof T>(field: K, value: T[K]) => {
     setValues(prev => ({ ...prev, [field]: value }))
   }
 
@@ -80,25 +77,24 @@ export function useForm<T extends Record<string, any>>({
     (onSubmit: (values: T) => void | Promise<void>) =>
     async (e?: FormEvent) => {
       e?.preventDefault()
-
       setIsSubmitting(true)
 
       const formErrors = validateForm(values)
       setErrors(formErrors)
 
-      const allTouched = Object.keys(values).reduce(
+      const allTouched = (Object.keys(values) as Array<keyof T>).reduce(
         (acc, key) => {
-          acc[key as keyof T] = true
+          acc[key] = true
           return acc
         },
-        {} as Partial<Record<keyof T, boolean>>
+        {} as Record<keyof T, boolean>
       )
       setTouched(allTouched)
 
       if (Object.keys(formErrors).length === 0) {
         try {
           await onSubmit(values)
-        } catch (error) {
+        } catch (error: unknown) {
           console.error('Form submission error:', error)
         }
       }

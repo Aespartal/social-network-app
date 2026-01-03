@@ -190,12 +190,12 @@ LOG_LEVEL=info
 ALLOWED_ORIGINS=http://localhost:3000
 DATABASE_URL=your_database_url
 JWT_SECRET=your_super_secret_jwt_key
-JWT_EXPIRES_IN=24h
+JWT_ACCESS_EXPIRES_IN=24h
 ```
 
 **Frontend (.env)**
 ```env
-VITE_API_URL=http://localhost:3001
+VITE_API_BASE_URL=http://localhost:3001
 ```
 
 ## 🚀 Despliegue

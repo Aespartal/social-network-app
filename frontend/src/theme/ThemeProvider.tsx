@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from 'react'
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles'
 import { CssBaseline } from '@mui/material'
 import { theme, darkTheme } from './theme'
@@ -15,12 +21,30 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [isDark, setIsDark] = useState(false)
+  const [isDark, setIsDark] = useState(() => {
+    const savedTheme = localStorage.getItem('theme-preference')
+    if (savedTheme) {
+      return savedTheme === 'dark'
+    }
+    return globalThis.matchMedia('(prefers-color-scheme: dark)').matches
+  })
 
-  const toggleTheme = () => {
-    setIsDark(!isDark)
-  }
+  useEffect(() => {
+    localStorage.setItem('theme-preference', isDark ? 'dark' : 'light')
+  }, [isDark])
 
+  useEffect(() => {
+    const mediaQuery = globalThis.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (!localStorage.getItem('theme-preference')) {
+        setIsDark(e.matches)
+      }
+    }
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  const toggleTheme = () => setIsDark(prev => !prev)
   const currentTheme = isDark ? darkTheme : theme
 
   return (

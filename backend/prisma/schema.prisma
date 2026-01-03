@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -14,143 +8,150 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model
+// --- USUARIOS ---
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  username  String   @unique
-  name      String
-  avatar    String?
-  bio       String?
-  verified  Boolean  @default(false)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String         @id @default(cuid())
+  email           String         @unique
+  username        String         @unique
+  name            String
+  googleId        String?        @unique
+  avatar          String?
+  bio             String?
+  verified        Boolean        @default(false)
+  active          Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  password        String?
 
-  // Password and authentication
-  password String
-
-  // Posts authored by this user
-  posts Post[]
-
-  // Likes given by this user
-  likes Like[]
-
-  // Comments made by this user
-  comments Comment[]
-
-  // Bookmarks made by this user
-  bookmarks Bookmark[]
-
-  // Users that this user follows
-  following Follow[] @relation("UserFollowing")
-
-  // Users that follow this user
-  followers Follow[] @relation("UserFollowers")
+  // Relaciones
+  posts           Post[]         // Incluye posts originales y respuestas (comentarios)
+  likes           Like[]
+  bookmarks       Bookmark[]
+  following       Follow[]       @relation("UserFollowing")
+  followers       Follow[]       @relation("UserFollowers")
+  sessions        Session[]
+  visitsMade      ProfileVisit[] @relation("VisitorRelation")
+  visitsReceived  ProfileVisit[] @relation("VisitedRelation")
 
   @@map("users")
 }
 
-// Post model
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@map("sessions")
+}
+
+// --- CONTENIDO (ESTILO TWITTER) ---
 model Post {
   id        String   @id @default(cuid())
-  content   String
+  content   String   @db.Text
   image     String?
   authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  
+  // Relación recursiva para Hilos/Comentarios
+  parentId  String?
+  parent    Post?    @relation("Thread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Post[]   @relation("Thread")
 
-  // Relationships
-  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  // Relaciones
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   likes     Like[]
-  comments  Comment[]
   bookmarks Bookmark[]
   tags      PostTag[]
 
-  @@map("posts")
-}
-
-// Like model
-model Like {
-  id     String @id @default(cuid())
-  userId String
-  postId String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@unique([userId, postId])
-  @@map("likes")
-}
-
-// Comment model
-model Comment {
-  id      String @id @default(cuid())
-  content String
-  userId  String
-  postId  String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("comments")
+  @@index([parentId])
+  @@index([authorId])
+  @@map("posts")
 }
 
-// Bookmark model
-model Bookmark {
-  id     String @id @default(cuid())
-  userId String
-  postId String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-
+// --- INTERACCIONES ---
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
   createdAt DateTime @default(now())
 
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
   @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
+  @@map("likes")
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
   @@map("bookmarks")
 }
 
-// Follow model (user following relationships)
 model Follow {
-  id          String @id @default(cuid())
+  id          String   @id @default(cuid())
   followerId  String
   followingId String
+  createdAt   DateTime @default(now())
 
-  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
-  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
   @@map("follows")
 }
 
-// Tag model
+// --- TAXONOMÍA (HASHTAGS) ---
 model Tag {
-  id    String @id @default(cuid())
-  name  String @unique
-  posts PostTag[]
-
-  createdAt DateTime @default(now())
+  id        String    @id @default(cuid())
+  name      String    @unique
+  posts     PostTag[]
+  createdAt DateTime  @default(now())
 
   @@map("tags")
 }
 
-// PostTag model (many-to-many relationship between Post and Tag)
 model PostTag {
   id     String @id @default(cuid())
   postId String
   tagId  String
 
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([postId, tagId])
   @@map("post_tags")
+}
+
+// --- SOCIAL / MÉTRICAS ---
+model ProfileVisit {
+  id         String   @id @default(uuid())
+  visitorId  String
+  visitedId  String
+  createdAt  DateTime @default(now())
+
+  visitor    User     @relation("VisitorRelation", fields: [visitorId], references: [id], onDelete: Cascade)
+  visited    User     @relation("VisitedRelation", fields: [visitedId], references: [id], onDelete: Cascade)
+
+  @@index([visitedId])
+  @@index([visitorId])
+  @@map("profile_visits")
 }

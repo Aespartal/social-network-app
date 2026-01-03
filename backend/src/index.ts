@@ -7,6 +7,8 @@ import { userRoutes } from '@/routes/userRoutes'
 import { postRoutes } from '@/routes/postRoutes'
 import { healthRoutes } from '@/routes/healthRoutes'
 import swaggerPlugin from '@/plugins/swagger'
+import jwt from '@fastify/jwt'
+import { profileRoutes } from './routes/profileRoutes'
 
 const server = fastify({
   logger: {
@@ -15,8 +17,23 @@ const server = fastify({
 })
 
 async function registerPlugins() {
-  // Swagger debe registrarse antes que otras rutas
   await server.register(swaggerPlugin)
+
+  await server.register(jwt, {
+    secret: config.JWT_SECRET,
+  })
+
+  server.decorate('authenticate', async (request, reply) => {
+    try {
+      await request.jwtVerify()
+    } catch (err) {
+      request.log.error(err)
+      reply.status(401).send({
+        success: false,
+        error: 'Token inválido o expirado',
+      })
+    }
+  })
 
   await server.register(cors, {
     origin: config.ALLOWED_ORIGINS,
@@ -81,8 +98,9 @@ async function registerRoutes() {
     )
   })
 
-  server.register(userRoutes, { prefix: '/api' })
+  server.register(userRoutes, { prefix: '/api/auth' })
   server.register(postRoutes, { prefix: '/api' })
+  server.register(profileRoutes, { prefix: '/api' })
 }
 
 async function start() {

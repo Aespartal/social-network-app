@@ -1,111 +1,56 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
+import { FastifyInstance } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    swagger(): any
-  }
-}
+import swagger from '@fastify/swagger'
+import swaggerUi from '@fastify/swagger-ui'
+import { config } from '@/config/env'
 
 async function swaggerPlugin(fastify: FastifyInstance) {
-  await fastify.register(require('@fastify/swagger'), {
-    swagger: {
+  await fastify.register(swagger, {
+    openapi: {
       info: {
         title: 'Social Network API',
-        description:
-          'API REST para aplicación de red social con validación de schemas y documentación automática',
+        description: 'API REST profesional para red social con validación de esquemas',
         version: '1.0.0',
-        contact: {
-          name: 'Social Network Team',
-          email: 'dev@socialnetwork.com',
-          url: 'https://github.com/Aespartal/social-network-app.git',
-        },
-        license: {
-          name: 'MIT',
-          url: 'https://opensource.org/licenses/MIT',
-        },
       },
-      host: `localhost:${process.env.PORT || 3001}`,
-      schemes: ['http'],
-      consumes: ['application/json'],
-      produces: ['application/json'],
-      tags: [
+      servers: [
         {
-          name: 'health',
-          description: 'Health checks y estado del sistema',
-        },
-        {
-          name: 'auth',
-          description: 'Autenticación y autorización de usuarios',
-        },
-        {
-          name: 'users',
-          description: 'Gestión de perfiles de usuarios',
-        },
-        {
-          name: 'posts',
-          description: 'Gestión de posts y contenido',
-        },
-        {
-          name: 'social',
-          description: 'Interacciones sociales (likes, follows, etc.)',
+          url: `http://${config.HOST}:${config.PORT}`,
+          description: 'Servidor de Desarrollo',
         },
       ],
-      securityDefinitions: {
-        bearerAuth: {
-          type: 'apiKey',
-          name: 'Authorization',
-          in: 'header',
-          description:
-            'JWT token obtenido del endpoint de login. Formato: Bearer <token>',
-        },
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+            description: 'Introduce el token obtenido en /login'
+          }
+        }
       },
+      tags: [
+        { name: 'auth', description: 'Acceso y tokens' },
+        { name: 'users', description: 'Perfiles y búsqueda' },
+        { name: 'posts', description: 'Publicaciones y Feed' },
+        { name: 'social', description: 'Likes y Bookmarks' },
+        { name: 'health', description: 'Estado del sistema' },
+      ],
     },
   })
 
-  // Registrar Swagger UI para la interfaz web
-  await fastify.register(require('@fastify/swagger-ui'), {
+  // 2. Registro de la Interfaz UI
+  await fastify.register(swaggerUi, {
     routePrefix: '/docs',
     uiConfig: {
       docExpansion: 'list',
       deepLinking: true,
-      defaultModelsExpandDepth: 2,
-      defaultModelExpandDepth: 2,
-      showExtensions: true,
-      showCommonExtensions: true,
-      useUnsafeMarkdown: false,
-    },
-    uiHooks: {
-      onRequest: function (
-        request: FastifyRequest,
-        reply: FastifyReply,
-        next: () => void
-      ) {
-        // Aquí puedes agregar autenticación para los docs si es necesario
-        next()
-      },
     },
     staticCSP: true,
-    transformStaticCSP: (header: string) => header,
-    transformSpecification: (swaggerObject: any) => {
-      // Aquí puedes modificar la especificación antes de mostrarla
-      return swaggerObject
-    },
-    transformSpecificationClone: true,
   })
 
-  // Hook para agregar información adicional a la documentación
-  fastify.addHook('onReady', async function () {
-    await fastify.swagger()
-    fastify.log.info(
-      '📚 Swagger documentation available at http://localhost:' +
-        (process.env.PORT || 3001) +
-        '/docs'
-    )
-  })
+  fastify.log.info(`📚 Swagger UI: http://${config.HOST}:${config.PORT}/docs`)
 }
 
 export default fastifyPlugin(swaggerPlugin, {
   name: 'swagger-plugin',
-  dependencies: [],
 })

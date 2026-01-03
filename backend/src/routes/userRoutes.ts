@@ -3,147 +3,148 @@ import rateLimit from '@fastify/rate-limit'
 import {
   register,
   login,
-  getProfile,
-  getUserByUsername,
+  googleLogin,
+  refresh,
+  logout,
 } from '../controllers/userController'
-import { authenticateToken } from '../middleware/auth'
+import { authenticateToken } from '../middleware/auth.middleware'
 import {
   RegisterUserSchema,
   LoginUserSchema,
   AuthResponseSchema,
-  UserSchema,
-  UserParamsSchema,
 } from '../schemas/user.schemas'
 import { ErrorSchema } from '../schemas/index'
 
 export async function userRoutes(fastify: FastifyInstance) {
-  await fastify.register(async function (fastify) {
-    await fastify.register(rateLimit, {
+  // --- BLOQUE DE AUTENTICACIÓN (Con protección anti-bruta) ---
+
+  // Login: 10 intentos por cada 15 min por IP/Email
+  await fastify.register(async function (authContext) {
+    await authContext.register(rateLimit, {
       max: 10,
       timeWindow: '15 minutes',
-      keyGenerator: request => {
-        const email = (request.body as any)?.email || 'unknown'
-        return `login-${request.ip}-${email}`
+      keyGenerator: req => {
+        const body = (req.body as any) || {}
+
+        const identifier = body.email || body.token || 'anonymous'
+
+        return `login-${req.ip}-${identifier}`
       },
-      errorResponseBuilder: (request, context) => ({
+      errorResponseBuilder: (_, context) => ({
         success: false,
-        error: 'Demasiados intentos de login. Intenta más tarde',
+        error: 'Demasiados intentos de login. Intenta en 15 minutos.',
         retryAfter: Math.round(context.ttl / 1000),
       }),
-      onExceeding: (request, key) => {
-        console.warn(`Rate limit exceeded for login: ${key}`)
-      },
     })
 
-    fastify.post(
+    authContext.post(
       '/login',
       {
         schema: {
           tags: ['auth'],
           summary: 'Iniciar sesión',
-          description: 'Autentica un usuario con email y contraseña',
           body: LoginUserSchema,
           response: {
             200: AuthResponseSchema,
             401: ErrorSchema,
             429: ErrorSchema,
+          },
+        },
+      },
+      login
+    )
+
+    authContext.post(
+      '/login/google',
+      {
+        schema: {
+          tags: ['auth'],
+          summary: 'Login con Google',
+          body: {
+            type: 'object',
+            required: ['token'],
+            properties: {
+              token: { type: 'string' },
+            },
+          },
+          response: {
+            200: AuthResponseSchema,
+            400: ErrorSchema,
             500: ErrorSchema,
           },
         },
       },
-      login as any
+      googleLogin
     )
   })
 
-  await fastify.register(async function (fastify) {
-    await fastify.register(rateLimit, {
+  // Registro: Máximo 3 cuentas por hora por IP
+  await fastify.register(async function (regContext) {
+    await regContext.register(rateLimit, {
       max: 3,
       timeWindow: '1 hour',
-      keyGenerator: request => `register-${request.ip}`,
-      errorResponseBuilder: (request, context) => ({
+      keyGenerator: req => `register-${req.ip}`,
+      errorResponseBuilder: (_, context) => ({
         success: false,
-        error: 'Demasiados intentos de registro. Intenta más tarde',
+        error: 'Límite de registros alcanzado. Intenta más tarde.',
         retryAfter: Math.round(context.ttl / 1000),
       }),
-      onExceeding: (request, key) => {
-        console.warn(`Rate limit exceeded for register: ${key}`)
-      },
     })
 
-    fastify.post(
+    regContext.post(
       '/register',
       {
         schema: {
           tags: ['auth'],
           summary: 'Registrar nuevo usuario',
-          description: 'Crea una nueva cuenta de usuario',
           body: RegisterUserSchema,
           response: {
             201: AuthResponseSchema,
             400: ErrorSchema,
-            409: ErrorSchema,
             429: ErrorSchema,
-            500: ErrorSchema,
           },
         },
       },
-      register as any
+      register
     )
   })
 
-  fastify.get(
-    '/users/:username',
-    {
-      schema: {
-        tags: ['users'],
-        summary: 'Obtener perfil público de usuario',
-        description:
-          'Retorna la información pública de un usuario por su nombre de usuario',
-        params: UserParamsSchema,
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              success: { type: 'boolean', enum: [true] },
-              data: {
-                type: 'object',
-                properties: {
-                  user: UserSchema,
-                },
-              },
-            },
-          },
-          404: ErrorSchema,
-          500: ErrorSchema,
-        },
-      },
-    },
-    getUserByUsername as any
-  )
+  await fastify.register(async function (refreshContext) {
+    await refreshContext.register(rateLimit, {
+      max: 20,
+      timeWindow: '1 minute',
+    })
 
-  fastify.register(async function (fastify) {
-    fastify.addHook('preHandler', authenticateToken)
-
-    fastify.get(
-      '/profile',
+    refreshContext.post(
+      '/refresh',
       {
         schema: {
-          tags: ['users'],
-          summary: 'Obtener perfil del usuario autenticado',
+          tags: ['auth'],
+          summary: 'Renovar Access Token',
           description:
-            'Retorna la información completa del usuario autenticado',
-          security: [{ bearerAuth: [] }],
+            'Usa un Refresh Token válido para obtener un nuevo Access Token sin volver a loguearse.',
+          body: {
+            type: 'object',
+            required: ['refreshToken'],
+            properties: {
+              refreshToken: { type: 'string' },
+            },
+          },
           response: {
             200: {
               type: 'object',
               properties: {
-                success: { type: 'boolean', enum: [true] },
+                success: { type: 'boolean' },
                 data: {
                   type: 'object',
                   properties: {
-                    user: UserSchema,
+                    token: {
+                      type: 'string',
+                      description: 'Nuevo Access Token',
+                    },
                   },
                 },
+                message: { type: 'string' },
               },
             },
             401: ErrorSchema,
@@ -151,7 +152,45 @@ export async function userRoutes(fastify: FastifyInstance) {
           },
         },
       },
-      getProfile as any
+      refresh
+    )
+  })
+
+  // --- BLOQUE DE USUARIOS ---
+
+  // Perfil Privado (Mi Perfil)
+  fastify.register(async function (privateContext) {
+    privateContext.addHook('preHandler', authenticateToken)
+
+    privateContext.post(
+      '/logout',
+      {
+        schema: {
+          tags: ['auth'],
+          summary: 'Cerrar sesión',
+          description: 'Invalida la sesión actual del usuario',
+          security: [{ bearerAuth: [] }],
+          body: {
+            type: 'object',
+            required: ['refreshToken'],
+            properties: {
+              refreshToken: { type: 'string' },
+            },
+          },
+          response: {
+            200: {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                message: { type: 'string' },
+              },
+            },
+            401: ErrorSchema,
+            500: ErrorSchema,
+          },
+        },
+      },
+      logout
     )
   })
 }

@@ -70,7 +70,7 @@ cp .env.example .env
 cd frontend
 
 # Crear archivo .env.local si es necesario
-# VITE_API_URL=http://localhost:3000
+# VITE_API_BASE_URL=http://localhost:3000
 ```
 
 ### 4. Configurar Base de Datos

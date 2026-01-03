@@ -22,7 +22,7 @@ export const config = {
 
   // JWT (para futuro uso)
   JWT_SECRET: process.env.JWT_SECRET || 'your-super-secret-jwt-key',
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
+  JWT_ACCESS_EXPIRES_IN: process.env.JWT_ACCESS_EXPIRES_IN || '24h',
 } as const
 
 export type Config = typeof config

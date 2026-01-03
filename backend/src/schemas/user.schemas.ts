@@ -9,10 +9,12 @@ export const UserSchema = Type.Object({
     description:
       'Nombre de usuario único (solo letras, números y guiones bajos)',
   }),
-  email: Type.String({
-    format: 'email',
-    description: 'Email del usuario',
-  }),
+  email: Type.Optional(
+    Type.String({
+      format: 'email',
+      description: 'Email del usuario',
+    })
+  ),
   name: Type.String({
     minLength: 1,
     maxLength: 100,
@@ -34,15 +36,18 @@ export const UserSchema = Type.Object({
     format: 'date-time',
     description: 'Fecha de creación de la cuenta',
   }),
-  updatedAt: Type.String({
-    format: 'date-time',
-    description: 'Fecha de última actualización',
-  }),
+  updatedAt: Type.Optional(
+    Type.String({
+      format: 'date-time',
+      description: 'Fecha de última actualización',
+    })
+  ),
   _count: Type.Optional(
     Type.Object({
       posts: Type.Number({ description: 'Número de posts' }),
       followers: Type.Number({ description: 'Número de seguidores' }),
       following: Type.Number({ description: 'Número de usuarios seguidos' }),
+      visitsReceived: Type.Number({ description: 'Número de visitas recibidas' }),
     })
   ),
 })
@@ -115,9 +120,8 @@ export const UpdateUserSchema = Type.Object({
       description: 'Biografía',
     })
   ),
-  avatarUrl: Type.Optional(
+  avatar: Type.Optional(
     Type.String({
-      format: 'uri',
       description: 'URL del avatar',
     })
   ),
@@ -140,6 +144,7 @@ export const AuthResponseSchema = Type.Object({
   data: Type.Object({
     user: UserSchema,
     token: Type.String({ description: 'JWT token de autenticación' }),
+    refreshToken: Type.String({ description: 'Token de refresco' }),
   }),
   message: Type.String({ description: 'Mensaje de éxito' }),
 })

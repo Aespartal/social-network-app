@@ -96,7 +96,7 @@ export const CreatePostSchema = Type.Object({
     maxLength: 2000,
     description: 'Contenido del post (máximo 2000 caracteres)'
   }),
-  imageUrl: Type.Optional(Type.String({ 
+  image: Type.Optional(Type.String({ 
     format: 'uri',
     description: 'URL de imagen opcional'
   }))

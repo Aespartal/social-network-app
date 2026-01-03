@@ -11,59 +11,60 @@ import {
 } from '@mui/material'
 import { useAuth } from '@/hooks/useAuth'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import type { CreateUserRequest } from 'social-network-app-shared/types/social'
+import { CreateUserRequest } from 'social-network-app-shared/types/auth.type'
+import { useForm } from '@/hooks/useForm'
+
+interface ApiError {
+  response?: {
+    data?: { error?: string }
+  }
+}
+
+interface RegisterFormValues extends CreateUserRequest {
+  confirmPassword: string
+}
 
 const Register: React.FC = () => {
-  const [userData, setUserData] = useState<CreateUserRequest>({
-    email: '',
-    username: '',
-    name: '',
-    password: '',
-    bio: '',
-  })
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState<string>('')
-  const [isLoading, setIsLoading] = useState(false)
-
   const { register } = useAuth()
   const navigate = useNavigate()
+  const [error, setError] = useState<string>('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const { values, handleChange, handleSubmit, isSubmitting, errors, touched } =
+    useForm<RegisterFormValues>({
+      initialValues: {
+        email: '',
+        username: '',
+        name: '',
+        password: '',
+        confirmPassword: '',
+        bio: '',
+      },
+      validate: vals => {
+        const newErrors: Partial<Record<keyof RegisterFormValues, string>> = {}
+        if (vals.password !== vals.confirmPassword) {
+          newErrors.confirmPassword = 'Las contraseñas no coinciden'
+        }
+        if (vals.password.length > 0 && vals.password.length < 6) {
+          newErrors.password = 'Mínimo 6 caracteres'
+        }
+        return newErrors
+      },
+    })
+
+  const onFormSubmit = async (data: RegisterFormValues) => {
     setError('')
-
-    // Validate passwords match
-    if (userData.password !== confirmPassword) {
-      setError('Las contraseñas no coinciden')
-      return
-    }
-
-    // Validate password strength
-    if (userData.password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
-      return
-    }
-
-    setIsLoading(true)
-
     try {
-      await register(userData)
-      navigate('/') // Redirect to home after successful registration
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Error al registrarse')
-    } finally {
-      setIsLoading(false)
+      const userData = { ...data }
+
+      delete (userData as Partial<RegisterFormValues>).confirmPassword
+
+      await register(userData as CreateUserRequest)
+      navigate('/')
+    } catch (err: unknown) {
+      const apiError = err as ApiError
+      setError(apiError.response?.data?.error || 'Error al registrarse')
     }
   }
-
-  const handleChange =
-    (field: keyof CreateUserRequest) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setUserData(prev => ({
-        ...prev,
-        [field]: e.target.value,
-      }))
-    }
 
   return (
     <Container maxWidth='sm'>
@@ -75,37 +76,50 @@ const Register: React.FC = () => {
         minHeight='100vh'
         py={4}
       >
-        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-          <Typography variant='h4' component='h1' gutterBottom align='center'>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 4,
+            width: '100%',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 3,
+          }}
+        >
+          <Typography
+            variant='h4'
+            component='h1'
+            gutterBottom
+            align='center'
+            sx={{ fontWeight: 700 }}
+          >
             Crear Cuenta
           </Typography>
 
           {error && (
-            <Alert severity='error' sx={{ mb: 2 }}>
+            <Alert severity='error' sx={{ mb: 2, borderRadius: 2 }}>
               {error}
             </Alert>
           )}
 
-          <Box component='form' onSubmit={handleSubmit}>
+          <Box component='form' onSubmit={handleSubmit(onFormSubmit)}>
             <TextField
               fullWidth
               label='Nombre completo'
-              value={userData.name}
+              value={values.name}
               onChange={handleChange('name')}
               margin='normal'
               required
-              autoComplete='name'
               autoFocus
             />
 
             <TextField
               fullWidth
               label='Nombre de usuario'
-              value={userData.username}
+              value={values.username}
               onChange={handleChange('username')}
               margin='normal'
               required
-              autoComplete='username'
               helperText='Sin espacios ni caracteres especiales'
             />
 
@@ -113,45 +127,44 @@ const Register: React.FC = () => {
               fullWidth
               label='Email'
               type='email'
-              value={userData.email}
+              value={values.email}
               onChange={handleChange('email')}
               margin='normal'
               required
-              autoComplete='email'
             />
 
             <TextField
               fullWidth
               label='Biografía (opcional)'
-              value={userData.bio || ''}
+              value={values.bio || ''}
               onChange={handleChange('bio')}
               margin='normal'
               multiline
               rows={2}
-              helperText='Cuéntanos algo sobre ti'
             />
 
             <TextField
               fullWidth
               label='Contraseña'
               type='password'
-              value={userData.password}
+              value={values.password}
               onChange={handleChange('password')}
               margin='normal'
               required
-              autoComplete='new-password'
-              helperText='Mínimo 6 caracteres'
+              error={!!errors.password}
+              helperText={errors.password || 'Mínimo 6 caracteres'}
             />
 
             <TextField
               fullWidth
               label='Confirmar contraseña'
               type='password'
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
+              value={values.confirmPassword}
+              onChange={handleChange('confirmPassword')}
               margin='normal'
               required
-              autoComplete='new-password'
+              error={!!errors.confirmPassword && !!touched.confirmPassword}
+              helperText={touched.confirmPassword && errors.confirmPassword}
             />
 
             <Button
@@ -159,16 +172,23 @@ const Register: React.FC = () => {
               fullWidth
               variant='contained'
               size='large'
-              disabled={isLoading}
-              sx={{ mt: 3, mb: 2 }}
+              disabled={isSubmitting}
+              sx={{ mt: 3, mb: 2, py: 1.5 }}
             >
-              {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
+              {isSubmitting ? 'Creando cuenta...' : 'Crear Cuenta'}
             </Button>
 
             <Box textAlign='center'>
-              <Link component={RouterLink} to='/login' variant='body2'>
-                ¿Ya tienes cuenta? Inicia sesión aquí
-              </Link>
+              <Typography variant='body2' color='text.secondary'>
+                ¿Ya tienes cuenta?{' '}
+                <Link
+                  component={RouterLink}
+                  to='/login'
+                  sx={{ fontWeight: 600, textDecoration: 'none' }}
+                >
+                  Inicia sesión aquí
+                </Link>
+              </Typography>
             </Box>
           </Box>
         </Paper>

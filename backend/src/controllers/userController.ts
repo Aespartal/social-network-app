@@ -1,19 +1,12 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
-import { PrismaClient } from '../generated/prisma'
-import { CreateUserRequest, LoginRequest } from 'social-network-app-shared'
+import { prisma } from '@/lib/prisma'
+import type { CreateUserRequest, LoginRequest } from '@/shared/types/auth.type'
+import type { ApiResponse } from '@/shared/types/api.type'
 
-const prisma = new PrismaClient()
-
-interface AuthenticatedRequest extends FastifyRequest {
-  user?: {
-    id: string
-    email: string
-    username: string
-  }
-}
-
+/**
+ * Registro de Usuario
+ */
 export const register = async (
   request: FastifyRequest<{ Body: CreateUserRequest }>,
   reply: FastifyReply
@@ -28,10 +21,11 @@ export const register = async (
     })
 
     if (existingUser) {
-      return reply.status(400).send({
+      const response: ApiResponse = {
         success: false,
-        error: 'Usuario ya existe con ese email o nombre de usuario',
-      })
+        error: 'El email o nombre de usuario ya está en uso',
+      }
+      return reply.status(400).send(response)
     }
 
     const saltRounds = 12
@@ -46,6 +40,7 @@ export const register = async (
         avatar,
         bio,
       },
+      // Seleccionamos campos para no devolver el password
       select: {
         id: true,
         email: true,
@@ -60,29 +55,43 @@ export const register = async (
       },
     })
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, username: user.username },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '7d' }
-    )
+    const payload = { id: user.id, email: user.email, username: user.username }
 
-    reply.status(201).send({
-      success: true,
+    const token = request.server.jwt.sign(payload, {
+      expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
+    })
+
+    const refreshToken = request.server.jwt.sign(payload, {
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    })
+
+    await prisma.session.create({
       data: {
-        user,
-        token,
+        token: refreshToken,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
+    })
+
+    const response: ApiResponse = {
+      success: true,
+      data: { user, token, refreshToken },
       message: 'Usuario registrado exitosamente',
-    })
+    }
+    return reply.status(201).send(response)
   } catch (error) {
-    console.error('Register error:', error)
-    reply.status(500).send({
+    request.log.error(error)
+    const response: ApiResponse = {
       success: false,
-      error: 'Error interno del servidor',
-    })
+      error: 'Error interno al registrar usuario',
+    }
+    return reply.status(500).send(response)
   }
 }
 
+/**
+ * Login de Usuario
+ */
 export const login = async (
   request: FastifyRequest<{ Body: LoginRequest }>,
   reply: FastifyReply
@@ -92,177 +101,225 @@ export const login = async (
 
     const user = await prisma.user.findUnique({
       where: { email },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        name: true,
-        avatar: true,
-        bio: true,
-        verified: true,
-        active: true,
-        createdAt: true,
-        updatedAt: true,
-        password: true,
-      },
     })
 
-    if (!user) {
+    // Seguridad: Mensaje genérico para no dar pistas de qué falló
+    if (!user || !user.active) {
       return reply.status(401).send({
         success: false,
-        error: 'Credenciales inválidas',
-      })
+        error: 'Credenciales inválidas o cuenta desactivada',
+      } as ApiResponse)
     }
 
-    if (!user.active) {
-      return reply.status(401).send({
-        success: false,
-        error: 'Cuenta desactivada',
-      })
-    }
-
-    const isValidPassword = await bcrypt.compare(password, user.password)
+    const isValidPassword = await bcrypt.compare(password, user.password!)
     if (!isValidPassword) {
       return reply.status(401).send({
         success: false,
         error: 'Credenciales inválidas',
-      })
+      } as ApiResponse)
     }
 
-    const { password: _password, ...userWithoutPassword } = user
+    const payload = { id: user.id, email: user.email, username: user.username }
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, username: user.username },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '7d' }
-    )
-
-    reply.send({
-      success: true,
-      data: {
-        user: userWithoutPassword,
-        token,
-      },
-      message: 'Login exitoso',
+    const token = request.server.jwt.sign(payload, {
+      expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
     })
+
+    const refreshToken = request.server.jwt.sign(payload, {
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    })
+
+    const { password: _, ...userWithoutPassword } = user
+
+    return reply.send({
+      success: true,
+      data: { user: userWithoutPassword, token, refreshToken },
+      message: 'Inicio de sesión exitoso',
+    } as ApiResponse)
   } catch (error) {
-    console.error('Login error:', error)
-    reply.status(500).send({
+    request.log.error(error)
+    return reply.status(500).send({
       success: false,
-      error: 'Error interno del servidor',
+      error: 'Error interno en el servidor',
     })
   }
 }
 
-export const getProfile = async (
-  request: AuthenticatedRequest,
+export const googleLogin = async (
+  request: FastifyRequest<{ Body: { token: string } }>,
   reply: FastifyReply
-) => {
+): Promise<void> => {
   try {
-    if (!request.user) {
+    const { token } = request.body
+
+    if (!token) {
+      return reply.status(400).send({
+        success: false,
+        error: 'Token de Google requerido',
+      } as ApiResponse)
+    }
+
+    const googleResponse = await fetch(
+      `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`
+    )
+
+    if (!googleResponse.ok) {
       return reply.status(401).send({
         success: false,
-        error: 'No autorizado',
+        error: 'El token de Google no es válido o ha expirado',
       })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: request.user.id },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        name: true,
-        avatar: true,
-        bio: true,
-        verified: true,
-        active: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            posts: true,
-            followers: true,
-            following: true,
-          },
-        },
+    type GoogleUserPayload = {
+      sub: string
+      email: string
+      name?: string
+      picture?: string
+      [key: string]: any
+    }
+  
+    const payload = (await googleResponse.json()) as GoogleUserPayload
+
+    if (!payload || typeof payload !== 'object' || !payload.email) {
+      return reply.status(400).send({
+        success: false,
+        error: 'Google no devolvió la información de perfil necesaria.',
+      });
+    }
+
+    const { sub: googleId, email, name, picture } = payload
+
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [{ googleId }, { email }],
       },
     })
 
     if (!user) {
-      return reply.status(404).send({
-        success: false,
-        error: 'Usuario no encontrado',
+      const baseUsername = email.split('@')[0]
+      user = await prisma.user.create({
+        data: {
+          email,
+          googleId,
+          name: name || 'Google User',
+          username: `${baseUsername}_${Math.floor(Math.random() * 1000)}`,
+          avatar: picture,
+          password: '',
+          verified: true,
+        },
+      })
+    } else if (!user.googleId) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { googleId },
       })
     }
+    const jwtPayload = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+    }
 
-    reply.send({
-      success: true,
-      data: {
-        user: {
-          ...user,
-          createdAt: user.createdAt.toISOString(),
-          updatedAt: user.updatedAt.toISOString(),
-        },
-      },
-      message: 'Perfil obtenido exitosamente',
+    const accessToken = request.server.jwt.sign(jwtPayload, {
+      expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
     })
-  } catch (error) {
-    console.error('Get profile error:', error)
-    reply.status(500).send({
+
+    const refreshToken = request.server.jwt.sign(jwtPayload, {
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    })
+
+    await prisma.session.create({
+      data: {
+        token: refreshToken,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    })
+
+    const { password: _, ...userWithoutPassword } = user
+
+    return reply.status(200).send({
+      success: true,
+      message: 'Login con Google exitoso',
+      data: {
+        user: userWithoutPassword,
+        token: accessToken,
+        refreshToken,
+      },
+    } as ApiResponse)
+  } catch (error: any) {
+    request.log.error(error)
+    return reply.status(500).send({
       success: false,
-      error: 'Error interno del servidor',
+      error: error.message || 'Error en la autenticación con Google',
     })
   }
 }
 
-export const getUserByUsername = async (
-  request: FastifyRequest<{ Params: { username: string } }>,
+export const refresh = async (
+  request: FastifyRequest<{ Body: { refreshToken: string } }>,
   reply: FastifyReply
 ) => {
   try {
-    const { username } = request.params
+    const { refreshToken } = request.body
 
-    const user = await prisma.user.findUnique({
-      where: { username },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        name: true,
-        avatar: true,
-        bio: true,
-        verified: true,
-        active: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            posts: true,
-            followers: true,
-            following: true,
-          },
-        },
+    const session = await prisma.session.findUnique({
+      where: { token: refreshToken },
+      include: { user: true },
+    })
+
+    if (!session || session.expiresAt < new Date()) {
+      if (session) await prisma.session.delete({ where: { id: session.id } })
+
+      return reply.status(401).send({
+        success: false,
+        error: 'Sesión expirada. Por favor, inicia sesión de nuevo.',
+      } as ApiResponse)
+    }
+
+    const accessToken = request.server.jwt.sign(
+      {
+        id: session.user.id,
+        email: session.user.email,
+        username: session.user.username,
+      },
+      { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' }
+    )
+
+    return reply.send({
+      success: true,
+      data: { token: accessToken },
+      message: 'Token renovado',
+    } as ApiResponse)
+  } catch (error) {
+    request.log.error(error)
+    return reply.status(401).send({ success: false, error: 'Token inválido' })
+  }
+}
+
+export const logout = async (
+  request: FastifyRequest<{ Body: { refreshToken: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    const { refreshToken } = request.body
+
+    await prisma.session.deleteMany({
+      where: {
+        token: refreshToken,
+        userId: request.user!.id,
       },
     })
 
-    if (!user || !user.active) {
-      return reply.status(404).send({
-        success: false,
-        error: 'Usuario no encontrado',
-      })
-    }
-
-    reply.send({
+    return reply.send({
       success: true,
-      data: user,
-      message: 'Usuario obtenido exitosamente',
-    })
+      message: 'Sesión cerrada y token invalidado',
+    } as ApiResponse)
   } catch (error) {
-    console.error('Get user by username error:', error)
-    reply.status(500).send({
+    request.log.error(error)
+    return reply.status(500).send({
       success: false,
-      error: 'Error interno del servidor',
-    })
+      error: 'Error al procesar el cierre de sesión',
+    } as ApiResponse)
   }
 }

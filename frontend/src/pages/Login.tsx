@@ -8,50 +8,63 @@ import {
   Box,
   Alert,
   Link,
+  Divider,
 } from '@mui/material'
 import { useAuth } from '@/hooks/useAuth'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import type { LoginRequest } from 'social-network-app-shared/types/social'
+import {
+  Link as RouterLink,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom'
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton'
+import { useForm } from '@/hooks/useForm'
+import { LoginRequest } from 'social-network-app-shared/types/auth.type'
+
+interface ApiError {
+  response?: {
+    status?: number
+    data?: { message?: string }
+  }
+}
 
 const Login: React.FC = () => {
-  const [credentials, setCredentials] = useState<LoginRequest>({
-    email: '',
-    password: '',
-  })
-  const [error, setError] = useState<string>('')
-  const [isLoading, setIsLoading] = useState(false)
-
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const [error, setError] = useState<string>('')
+  
+  const sessionMessage = searchParams.get('expired') === 'true'
+    ? 'Tu sesión ha expirado por seguridad. Por favor, inicia sesión de nuevo.'
+    : null;
+
+  const { values, handleChange, handleSubmit, isSubmitting } =
+    useForm<LoginRequest>({
+      initialValues: {
+        email: '',
+        password: '',
+      },
+    })
+
+  const onFormSubmit = async (data: LoginRequest) => {
     setError('')
-    setIsLoading(true)
 
     try {
-      await login(credentials)
+      await login(data)
       navigate('/')
-    } catch (err: any) {
-      if (err.response?.status === 401) {
+    } catch (err: unknown) {
+      const apiError = err as ApiError
+      const status = apiError.response?.status
+
+      if (status === 401) {
         setError('Email o contraseña incorrectos')
-      } else if (err.response?.status === 429) {
+      } else if (status === 429) {
         setError('Demasiados intentos. Intenta más tarde')
       } else {
-        setError(err.response?.data?.message || 'Error al iniciar sesión')
+        setError(apiError.response?.data?.message || 'Error al iniciar sesión')
       }
-    } finally {
-      setIsLoading(false)
     }
   }
-
-  const handleChange =
-    (field: keyof LoginRequest) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      setCredentials(prev => ({
-        ...prev,
-        [field]: e.target.value,
-      }))
-    }
 
   return (
     <Container maxWidth='sm'>
@@ -63,23 +76,44 @@ const Login: React.FC = () => {
         minHeight='100vh'
         py={4}
       >
-        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-          <Typography variant='h4' component='h1' gutterBottom align='center'>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 4,
+            width: '100%',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 0,
+          }}
+        >
+          <Typography
+            variant='h4'
+            component='h1'
+            gutterBottom
+            align='center'
+            sx={{ fontWeight: 700 }}
+          >
             Iniciar Sesión
           </Typography>
 
+          {sessionMessage && (
+            <Alert severity='info' sx={{ mb: 2, borderRadius: 2 }}>
+              {sessionMessage}
+            </Alert>
+          )}
+
           {error && (
-            <Alert severity='error' sx={{ mb: 2 }}>
+            <Alert severity='error' sx={{ mb: 2, borderRadius: 2 }}>
               {error}
             </Alert>
           )}
 
-          <Box component='form' onSubmit={handleSubmit}>
+          <Box component='form' onSubmit={handleSubmit(onFormSubmit)}>
             <TextField
               fullWidth
               label='Email'
               type='email'
-              value={credentials.email}
+              value={values.email}
               onChange={handleChange('email')}
               margin='normal'
               required
@@ -91,7 +125,7 @@ const Login: React.FC = () => {
               fullWidth
               label='Contraseña'
               type='password'
-              value={credentials.password}
+              value={values.password}
               onChange={handleChange('password')}
               margin='normal'
               required
@@ -103,16 +137,33 @@ const Login: React.FC = () => {
               fullWidth
               variant='contained'
               size='large'
-              disabled={isLoading}
-              sx={{ mt: 3, mb: 2 }}
+              disabled={isSubmitting}
+              sx={{ mt: 3, mb: 2, py: 1.5 }}
             >
-              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              {isSubmitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </Button>
 
+            <Divider sx={{ my: 3 }}>
+              <Typography variant='body2' color='text.secondary'>
+                o
+              </Typography>
+            </Divider>
+
+            <Box display='flex' justifyContent='center' mb={3}>
+              <GoogleAuthButton onError={msg => setError(msg)} />
+            </Box>
+
             <Box textAlign='center'>
-              <Link component={RouterLink} to='/register' variant='body2'>
-                ¿No tienes cuenta? Regístrate aquí
-              </Link>
+              <Typography variant='body2' color='text.secondary'>
+                ¿No tienes cuenta?{' '}
+                <Link
+                  component={RouterLink}
+                  to='/register'
+                  sx={{ fontWeight: 600, textDecoration: 'none' }}
+                >
+                  Regístrate aquí
+                </Link>
+              </Typography>
             </Box>
           </Box>
         </Paper>

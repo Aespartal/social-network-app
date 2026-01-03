@@ -183,7 +183,7 @@ Authorization: Bearer <token>
       },
       "createdAt": "2025-08-10T10:30:00.000Z",
       "likesCount": 0,
-      "commentsCount": 0,
+      "repliesCount": 0,
       "isLiked": false,
       "isBookmarked": false
     }
@@ -227,7 +227,7 @@ Authorization: Bearer <token>
         },
         "createdAt": "2025-08-10T10:30:00.000Z",
         "likesCount": 5,
-        "commentsCount": 2,
+        "repliesCount": 2,
         "isLiked": true,
         "isBookmarked": false
       }
@@ -266,21 +266,9 @@ Obtiene un post específico.
       },
       "createdAt": "2025-08-10T10:30:00.000Z",
       "likesCount": 5,
-      "commentsCount": 2,
+      "repliesCount": 2,
       "isLiked": false,
       "isBookmarked": false,
-      "comments": [
-        {
-          "id": "clx789...",
-          "content": "¡Excelente post!",
-          "authorId": "clx321...",
-          "author": {
-            "username": "janedoe",
-            "name": "Jane Doe"
-          },
-          "createdAt": "2025-08-10T11:00:00.000Z"
-        }
-      ]
     }
   }
 }
@@ -390,6 +378,7 @@ interface User {
   name: string;
   createdAt: Date;
   updatedAt: Date;
+  googleId?: string | null;
 }
 ```
 
@@ -408,7 +397,7 @@ interface Post {
   createdAt: Date;
   updatedAt: Date;
   likesCount: number;
-  commentsCount: number;
+  repliesCount: number;
   isLiked: boolean;
   isBookmarked: boolean;
 }
@@ -447,7 +436,7 @@ const registerResponse = await fetch('/auth/register', {
 // 2. Guardar token
 const { data } = await registerResponse.json();
 const token = data.token;
-localStorage.setItem('authToken', token);
+localStorage.setItem('access_token', token);
 
 // 3. Usar token en requests subsecuentes
 const feedResponse = await fetch('/feed', {

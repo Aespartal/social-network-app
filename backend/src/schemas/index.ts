@@ -1,7 +1,7 @@
 import { Type, Static } from '@sinclair/typebox'
 
 export const ErrorSchema = Type.Object({
-  success: Type.Literal(false),
+  success: Type.Boolean({ default: false }), 
   error: Type.String({ description: 'Mensaje de error' }),
   code: Type.Optional(
     Type.String({ description: 'Código de error específico' })
@@ -9,8 +9,11 @@ export const ErrorSchema = Type.Object({
   statusCode: Type.Optional(
     Type.Number({ description: 'Código de estado HTTP' })
   ),
+  message: Type.Optional(
+    Type.String({ description: 'Mensaje informativo adicional' })
+  ),
   retryAfter: Type.Optional(
-    Type.Number({ description: 'Segundos hasta poder reintentar (rate limit)' })
+    Type.Number({ description: 'Segundos hasta poder reintentar' })
   ),
 })
 
@@ -21,16 +24,10 @@ export const SuccessSchema = Type.Object({
 })
 
 export const PaginationSchema = Type.Object({
-  page: Type.Number({ minimum: 1, description: 'Página actual' }),
-  limit: Type.Number({
-    minimum: 1,
-    maximum: 100,
-    description: 'Elementos por página',
-  }),
-  total: Type.Number({ minimum: 0, description: 'Total de elementos' }),
-  totalPages: Type.Number({ minimum: 0, description: 'Total de páginas' }),
-  hasNext: Type.Boolean({ description: 'Tiene página siguiente' }),
-  hasPrev: Type.Boolean({ description: 'Tiene página anterior' }),
+  hasNext: Type.Optional( Type.Boolean({ description: 'Tiene página siguiente' })),
+  nextCursor: Type.Optional(
+    Type.String({ description: 'Cursor para la siguiente página' })
+  ),
 })
 
 export const PaginationQuerySchema = Type.Object({
@@ -53,7 +50,7 @@ export const PaginationQuerySchema = Type.Object({
 
 export const UuidParamsSchema = Type.Object({
   id: Type.String({
-    format: 'uuid',
+    type: 'string',
     description: 'ID único en formato UUID',
   }),
 })

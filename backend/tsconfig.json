@@ -4,7 +4,6 @@
     "module": "commonjs",
     "lib": ["ES2020"],
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -18,7 +17,9 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-    "baseUrl": ".",
+    "rootDir": "..", 
+    "rootDirs": ["src", "../shared"],
+    "composite": true,
     "paths": {
       "@/*": ["./src/*"],
       "@/routes/*": ["./src/routes/*"],
@@ -30,9 +31,14 @@
       "@/utils/*": ["./src/utils/*"],
       "@/config/*": ["./src/config/*"],
       "@/schemas/*": ["./src/schemas/*"],
-      "@/plugins/*": ["./src/plugins/*"]
+      "@/plugins/*": ["./src/plugins/*"],
+      "@/shared/*": ["../shared/*"],
+      "@/lib/*": ["./src/lib/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/**/*.ts",
+    "../shared/**/*.ts" 
+  ],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }

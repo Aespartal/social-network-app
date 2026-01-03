@@ -1,6 +1,17 @@
-import { postsAPI } from '@/services/api'
+import { postService } from '@/services/post.service'
 import { useCallback, useState } from 'react'
-import { Post } from 'social-network-app-shared/types/social'
+import {
+  CreatePostRequest,
+  Post,
+} from 'social-network-app-shared/types/social.type'
+
+interface ApiError {
+  response?: {
+    data?: {
+      error?: string
+    }
+  }
+}
 
 export const useFeed = () => {
   const [posts, setPosts] = useState<Post[]>([])
@@ -12,7 +23,7 @@ export const useFeed = () => {
 
   const loadFeed = useCallback(
     async (isInitial = true) => {
-      let timeoutId: NodeJS.Timeout
+      let timeoutId: ReturnType<typeof setTimeout> | undefined
 
       try {
         if (isInitial) {
@@ -25,18 +36,19 @@ export const useFeed = () => {
           !isInitial && posts.length > 0
             ? posts[posts.length - 1].id
             : undefined
-        const response = await postsAPI.getFeed({ cursor, limit: 10 })
 
-        if (timeoutId!) clearTimeout(timeoutId)
+        const response = await postService.getFeed({ cursor, limit: 10 })
+
+        if (timeoutId) clearTimeout(timeoutId)
 
         setPosts(prev =>
           isInitial ? response.posts : [...prev, ...response.posts]
         )
         setHasMorePosts(response.posts.length === 10)
-      } catch (err) {
-        setError('Error al cargar')
+      } catch {
+        setError('Error al cargar el feed')
       } finally {
-        if (timeoutId!) clearTimeout(timeoutId)
+        if (timeoutId) clearTimeout(timeoutId)
         setLoading(false)
         setLoadingMore(false)
       }
@@ -58,23 +70,60 @@ export const useFeed = () => {
         return p
       })
     )
-
     try {
-      await postsAPI.toggleLike(postId)
-    } catch (err) {
+      await postService.toggleLike(postId)
+    } catch {
       loadFeed(true)
     }
   }
 
-  const handleCreatePost = async (content: string) => {
+  const handleToggleBookmark = async (postId: string) => {
+    setPosts(prev =>
+      prev.map(p => {
+        if (p.id === postId) {
+          return { ...p, isBookmarked: !p.isBookmarked }
+        }
+        return p
+      })
+    )
+    try {
+      await postService.toggleBookmark(postId)
+    } catch {
+      // Error silencioso o revertir localmente
+    }
+  }
+
+  const handleCreatePost = async (content: string, parentId?: string) => {
     try {
       setIsCreating(true)
       setError('')
-      const newPost = await postsAPI.createPost({ content })
-      setPosts(prev => [newPost, ...prev])
+
+      const postData: CreatePostRequest = {
+        content,
+        parentId,
+        image: undefined,
+        tags: [],
+      }
+
+      const newPost = await postService.createPost(postData)
+
+      if (parentId) {
+        setPosts(prev =>
+          prev.map(p => {
+            if (p.id === parentId) {
+              return { ...p, repliesCount: (p.repliesCount || 0) + 1 }
+            }
+            return p
+          })
+        )
+      } else {
+        setPosts(prev => [newPost, ...prev])
+      }
+
       return { success: true }
-    } catch (err: any) {
-      const msg = err.response?.data?.error || 'Error al publicar'
+    } catch (err: unknown) {
+      const axiosError = err as ApiError
+      const msg = axiosError.response?.data?.error || 'Error al publicar'
       setError(msg)
       return { success: false, error: msg }
     } finally {
@@ -91,6 +140,7 @@ export const useFeed = () => {
     hasMorePosts,
     loadFeed,
     handleToggleLike,
+    handleToggleBookmark,
     handleCreatePost,
   }
 }
