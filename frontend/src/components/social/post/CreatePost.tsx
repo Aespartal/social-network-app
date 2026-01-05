@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect, useMemo } from 'react'
 import {
   Dialog,
   DialogActions,
@@ -11,13 +12,18 @@ import {
   IconButton,
   useTheme,
   useMediaQuery,
+  CircularProgress,
 } from '@mui/material'
 import PhotoIcon from '@mui/icons-material/AddPhotoAlternate'
 import CloseIcon from '@mui/icons-material/Close'
 import { Button } from '../../ui'
 import { useAuth } from '@/hooks/useAuth'
 import { Post } from 'social-network-app-shared/types/social.type'
-import { useState, useRef, useEffect } from 'react'
+
+const MAX_CHARS = 280
+const MAX_FILE_SIZE_MB = 5
+const ACCEPTED_IMAGE_TYPES =
+  'image/png, image/jpeg, image/jpg, image/gif, image/webp'
 
 export interface CreatePostDialogProps {
   open: boolean
@@ -28,9 +34,6 @@ export interface CreatePostDialogProps {
   loading: boolean
   parentPost?: Post | null
 }
-
-const MAX_CHARS = 280
-const MAX_FILE_SIZE_MB = 5
 
 export const CreatePostDialog = ({
   open,
@@ -43,320 +46,254 @@ export const CreatePostDialog = ({
 }: CreatePostDialogProps) => {
   const { user } = useAuth()
   const theme = useTheme()
-  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Limpieza de memoria: Revocar la URL del objeto para evitar memory leaks
+  const charCount = content.length
+  const isOverLimit = charCount > MAX_CHARS
+  const isNearLimit = MAX_CHARS - charCount <= 20
+
   useEffect(() => {
     return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl)
-      }
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
     }
   }, [previewUrl])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    setError(null)
+    if (!file) return
 
-    if (file) {
-      // Validación de tamaño
-      if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-        setError(`La imagen excede los ${MAX_FILE_SIZE_MB}MB`)
-        return
-      }
-
-      // Validación de tipo básica
-      if (!file.type.startsWith('image/')) {
-        setError('El archivo debe ser una imagen')
-        return
-      }
-
-      setSelectedFile(file)
-      setPreviewUrl(URL.createObjectURL(file))
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      setError(`La imagen excede los ${MAX_FILE_SIZE_MB}MB`)
+      return
     }
+
+    setError(null)
+    setSelectedFile(file)
+    setPreviewUrl(URL.createObjectURL(file))
   }
 
-  const removeImage = () => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl)
-    }
+  const handleRemoveImage = () => {
     setSelectedFile(null)
     setPreviewUrl(null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const handleSave = async () => {
+  const handleInternalClose = () => {
     if (loading) return
-
-    const hasContent = content.trim().length > 0
-    const hasImage = !!selectedFile
-    const isOverLimit = content.length > MAX_CHARS
-
-    if (!hasContent && !hasImage) return
-    if (isOverLimit) return
-
-    try {
-      await onSave(content, selectedFile || undefined)
-    } catch {
-      setError('Error al publicar. Inténtalo de nuevo.')
-    }
-  }
-
-  const handleOnClose = () => {
-    if (loading) return
-    removeImage()
+    handleRemoveImage()
     setError(null)
     onClose()
   }
 
-  const remainingChars = MAX_CHARS - content.length
-  const isOverLimit = remainingChars < 0
-  const isNearLimit = remainingChars <= 20 && remainingChars >= 0
+  const handleSaveClick = async () => {
+    if (!content.trim() && !selectedFile) return
+    try {
+      await onSave(content, selectedFile || undefined)
+      handleInternalClose() // Limpiar tras éxito
+    } catch {
+      setError('No se pudo publicar. Inténtalo de nuevo.')
+    }
+  }
 
   return (
     <Dialog
       open={open}
-      onClose={handleOnClose}
+      onClose={handleInternalClose}
       fullWidth
-      maxWidth={parentPost ? 'sm' : 'md'}
-      fullScreen={fullScreen}
+      maxWidth='sm'
+      fullScreen={isMobile}
       PaperProps={{
-        sx: {
-          borderRadius: fullScreen ? 0 : 3,
-          p: 0,
-          bgcolor: 'background.paper',
-        },
+        sx: { borderRadius: isMobile ? 0 : 3, backgroundImage: 'none' },
       }}
     >
       <DialogTitle
         sx={{
-          m: 0,
-          p: 2,
           display: 'flex',
-          alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          alignItems: 'center',
+          py: 1.5,
         }}
       >
-        <Typography variant='h6' fontWeight='bold'>
+        <Typography variant='subtitle1' fontWeight={800}>
           {parentPost ? 'Responder' : 'Nueva publicación'}
         </Typography>
-        {!loading && (
-          <IconButton
-            onClick={handleOnClose}
-            size='small'
-            aria-label='Cerrar diálogo'
-          >
-            <CloseIcon />
-          </IconButton>
-        )}
+        <IconButton
+          onClick={handleInternalClose}
+          disabled={loading}
+          size='small'
+        >
+          <CloseIcon />
+        </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 2, px: 2 }}>
-        {parentPost && (
-          <Box
-            sx={{
-              mb: 2,
-              pl: 1,
-              borderLeft: 4,
-              borderColor: 'primary.main',
-              opacity: 0.8,
-            }}
-          >
-            <Typography
-              variant='caption'
-              color='text.secondary'
-              display='block'
-              sx={{ mb: 0.5 }}
-            >
-              Respondiendo a{' '}
-              <span style={{ color: theme.palette.primary.main }}>
-                @{parentPost.author.username}
-              </span>
-            </Typography>
-            <Typography variant='body2' color='text.primary' noWrap>
-              {parentPost.content}
-            </Typography>
-          </Box>
-        )}
+      <DialogContent
+        sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}
+      >
+        {/* Contexto de respuesta */}
+        {parentPost && <ParentPostContext post={parentPost} />}
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-          <Avatar
-            src={user?.avatar || ''}
-            sx={{ width: 48, height: 48 }}
-            alt={user?.name}
-          />
-          <Box flex={1}>
-            <Typography variant='subtitle1' fontWeight='bold'>
-              {user?.name || 'Usuario'}
-            </Typography>
-            <Typography variant='caption' color='text.secondary'>
-              {parentPost
-                ? 'Respuesta pública'
-                : 'Cualquier persona puede responder'}
-            </Typography>
-          </Box>
-        </Box>
-
-        <TextField
-          autoFocus
-          fullWidth
-          multiline
-          minRows={3}
-          variant='standard'
-          placeholder={
-            parentPost ? 'Postea tu respuesta' : '¿Qué está pasando?'
-          }
-          value={content}
-          onChange={e => {
-            setContent(e.target.value)
-            if (error) setError(null)
-          }}
-          disabled={loading}
-          inputProps={{ maxLength: MAX_CHARS + 50 }}
-          InputProps={{
-            disableUnderline: true,
-            sx: {
-              fontSize: '1.25rem',
-              lineHeight: 1.5,
-              color: 'text.primary',
-              '&::placeholder': {
-                color: 'text.disabled',
-                opacity: 0.7,
-              },
-            },
-          }}
-        />
-
-        {/* Preview de Imagen */}
-        {previewUrl && (
-          <Box
-            sx={{
-              position: 'relative',
-              mt: 2,
-              borderRadius: 2,
-              overflow: 'hidden',
-              border: '1px solid',
-              borderColor: 'divider',
-              maxWidth: '100%',
-            }}
-          >
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                zIndex: 1,
-              }}
-            >
-              <IconButton
-                onClick={removeImage}
-                disabled={loading}
-                sx={{
-                  bgcolor: 'rgba(0,0,0,0.6)',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' },
-                }}
-                size='small'
-                aria-label='Eliminar imagen'
-              >
-                <CloseIcon sx={{ fontSize: 20 }} />
-              </IconButton>
-            </Box>
-            <img
-              src={previewUrl}
-              alt='Vista previa'
-              style={{
-                width: '100%',
-                maxHeight: 400,
-                objectFit: 'contain',
-                display: 'block',
-                backgroundColor: '#000',
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Avatar src={user?.avatar || ''} sx={{ width: 48, height: 48 }} />
+          <Box sx={{ flex: 1 }}>
+            <TextField
+              fullWidth
+              multiline
+              placeholder={
+                parentPost ? 'Postea tu respuesta' : '¿Qué está pasando?'
+              }
+              variant='standard'
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              disabled={loading}
+              InputProps={{
+                disableUnderline: true,
+                sx: { fontSize: '1.2rem', lineHeight: 1.4, mt: 0.5 },
               }}
             />
-          </Box>
-        )}
 
-        {/* Mensajes de error o contador */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mt: 2,
-          }}
-        >
-          {error && (
-            <Typography variant='caption' color='error.main'>
-              {error}
-            </Typography>
-          )}
-          {!error && (
-            <Typography
-              variant='caption'
-              sx={{
-                fontWeight: isOverLimit ? 'bold' : 'normal',
-                color: isOverLimit
-                  ? 'error.main'
-                  : isNearLimit
-                    ? 'warning.main'
-                    : 'text.secondary',
-                transition: 'color 0.2s',
-              }}
-            >
-              {content.length} / {MAX_CHARS}
-            </Typography>
-          )}
+            {/* Previsualización de Imagen */}
+            {previewUrl && (
+              <ImagePreview
+                url={previewUrl}
+                onRemove={handleRemoveImage}
+                loading={loading}
+              />
+            )}
+          </Box>
         </Box>
       </DialogContent>
 
-      <Divider />
+      <Divider sx={{ mx: 2, opacity: 0.5 }} />
 
-      <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
+      <DialogActions sx={{ px: 3, py: 1.5, justifyContent: 'space-between' }}>
         <Box>
           <input
             type='file'
-            accept='image/png, image/jpeg, image/jpg, image/gif, image/webp'
+            accept={ACCEPTED_IMAGE_TYPES}
             hidden
             ref={fileInputRef}
             onChange={handleFileChange}
-            disabled={loading || !!selectedFile}
           />
           <IconButton
             color='primary'
             onClick={() => fileInputRef.current?.click()}
             disabled={loading || !!selectedFile}
-            aria-label='Añadir imagen'
           >
             <PhotoIcon />
           </IconButton>
         </Box>
 
-        <Button
-          onClick={handleSave}
-          variant='primary'
-          disabled={
-            loading || (!content.trim() && !selectedFile) || isOverLimit
-          }
-          sx={{
-            px: 4,
-            py: 1,
-            borderRadius: 5,
-            minWidth: 100,
-          }}
-        >
-          {loading ? 'Publicando...' : parentPost ? 'Responder' : 'Publicar'}
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {charCount > 0 && (
+            <Typography
+              variant='caption'
+              color={
+                isOverLimit
+                  ? 'error'
+                  : isNearLimit
+                    ? 'warning.main'
+                    : 'text.secondary'
+              }
+              sx={{ fontWeight: isNearLimit ? 700 : 400 }}
+            >
+              {MAX_CHARS - charCount}
+            </Typography>
+          )}
+
+          <Button
+            onClick={handleSaveClick}
+            disabled={
+              loading || (!content.trim() && !selectedFile) || isOverLimit
+            }
+            sx={{ borderRadius: 8, px: 3, fontWeight: 700 }}
+          >
+            {loading ? (
+              <CircularProgress size={20} color='inherit' />
+            ) : parentPost ? (
+              'Responder'
+            ) : (
+              'Publicar'
+            )}
+          </Button>
+        </Box>
       </DialogActions>
+
+      {error && (
+        <Typography color='error' variant='caption' sx={{ px: 3, pb: 1 }}>
+          {error}
+        </Typography>
+      )}
     </Dialog>
   )
 }
+
+const ParentPostContext = ({ post }: { post: Post }) => (
+  <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+    <Box
+      sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+    >
+      <Avatar src={post.author.avatar || ''} sx={{ width: 48, height: 48 }} />
+      <Box sx={{ width: 2, flex: 1, bgcolor: 'divider', my: 1 }} />
+    </Box>
+    <Box sx={{ pt: 0.5 }}>
+      <Typography variant='subtitle2' fontWeight={700}>
+        @{post.author.username}
+      </Typography>
+      <Typography variant='body2' color='text.secondary' sx={{ mt: 0.5 }}>
+        {post.content}
+      </Typography>
+    </Box>
+  </Box>
+)
+
+const ImagePreview = ({
+  url,
+  onRemove,
+  loading,
+}: {
+  url: string
+  onRemove: () => void
+  loading: boolean
+}) => (
+  <Box
+    sx={{
+      mt: 2,
+      position: 'relative',
+      borderRadius: 3,
+      overflow: 'hidden',
+      border: '1px solid',
+      borderColor: 'divider',
+    }}
+  >
+    <IconButton
+      onClick={onRemove}
+      disabled={loading}
+      sx={{
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        bgcolor: 'rgba(0,0,0,0.7)',
+        color: 'white',
+        '&:hover': { bgcolor: 'rgba(0,0,0,0.9)' },
+      }}
+      size='small'
+    >
+      <CloseIcon fontSize='small' />
+    </IconButton>
+    <img
+      src={url}
+      alt='Preview'
+      style={{
+        width: '100%',
+        maxHeight: 350,
+        objectFit: 'cover',
+        display: 'block',
+      }}
+    />
+  </Box>
+)

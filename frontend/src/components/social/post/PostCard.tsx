@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material'
 import { Card, CardContent } from '@/components/ui'
+import { formatTimeAgo } from '@/utils/date'
 
 export interface PostCardProps {
   post: Post
@@ -100,6 +101,17 @@ export const PostCard = ({
                 </Typography>
                 <Typography variant='caption' color='text.secondary'>
                   @{post.author?.username}
+                </Typography>
+                <Typography variant='caption' color='text.secondary'>
+                  ·
+                </Typography>
+                <Typography
+                  variant='caption'
+                  color='text.secondary'
+                  sx={{ whiteSpace: 'nowrap' }}
+                >
+                  {' '}
+                  {formatTimeAgo(post.createdAt)}
                 </Typography>
               </Stack>
 
