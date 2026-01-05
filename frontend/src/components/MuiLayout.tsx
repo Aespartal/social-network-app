@@ -230,81 +230,81 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   )
 
   return (
-    <Container maxWidth="lg">
-    <Box
-      sx={{
-        display: 'flex',
-        minHeight: '100vh',
-        bgcolor: 'background.default',
-      }}
-    >
-      {/* Botón flotante para móvil (reemplaza al AppBar ausente) */}
-      {isMobile && !mobileOpen && (
-        <IconButton
-          onClick={() => setMobileOpen(true)}
-          sx={{
-            position: 'fixed',
-            top: 10,
-            left: 10,
-            zIndex: 1100,
-            bgcolor: 'background.paper',
-            boxShadow: 2,
-          }}
-        >
-          <MenuIcon />
-        </IconButton>
-      )}
-
+    <Container maxWidth='lg'>
       <Box
-        component='nav'
         sx={{
-          width: { sm: currentDrawerWidth },
-          flexShrink: { sm: 0 },
-          transition: 'width 0.3s',
+          display: 'flex',
+          minHeight: '100vh',
+          bgcolor: 'background.default',
         }}
       >
-        <Drawer
-          variant='temporary'
-          open={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': {
-              width: DRAWER_WIDTH,
-              borderRight: '1px solid',
-              borderColor: 'divider',
-            },
-          }}
-        >
-          {drawerContent}
-        </Drawer>
-        <Drawer
-          variant='permanent'
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': {
-              width: currentDrawerWidth,
-              transition: 'width 0.3s',
-              overflowX: 'hidden',
-              borderRight: '1px solid',
-              borderColor: 'divider',
-              boxShadow: 'none',
-            },
-          }}
-        >
-          {drawerContent}
-        </Drawer>
-      </Box>
+        {/* Botón flotante para móvil (reemplaza al AppBar ausente) */}
+        {isMobile && !mobileOpen && (
+          <IconButton
+            onClick={() => setMobileOpen(true)}
+            sx={{
+              position: 'fixed',
+              top: 10,
+              left: 10,
+              zIndex: 1100,
+              bgcolor: 'background.paper',
+              boxShadow: 2,
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
+        )}
 
-      <Box
-        component='main'
-        sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, width: '100%' }}
-      >
-        {/* Espaciador para móvil si el contenido choca con el botón flotante */}
-        {isMobile && <Box sx={{ height: 50 }} />}
-        {children}
+        <Box
+          component='nav'
+          sx={{
+            width: { sm: currentDrawerWidth },
+            flexShrink: { sm: 0 },
+            transition: 'width 0.3s',
+          }}
+        >
+          <Drawer
+            variant='temporary'
+            open={mobileOpen}
+            onClose={() => setMobileOpen(false)}
+            sx={{
+              display: { xs: 'block', sm: 'none' },
+              '& .MuiDrawer-paper': {
+                width: DRAWER_WIDTH,
+                borderRight: '1px solid',
+                borderColor: 'divider',
+              },
+            }}
+          >
+            {drawerContent}
+          </Drawer>
+          <Drawer
+            variant='permanent'
+            sx={{
+              display: { xs: 'none', sm: 'block' },
+              '& .MuiDrawer-paper': {
+                width: currentDrawerWidth,
+                transition: 'width 0.3s',
+                overflowX: 'hidden',
+                borderRight: '1px solid',
+                borderColor: 'divider',
+                boxShadow: 'none',
+              },
+            }}
+          >
+            {drawerContent}
+          </Drawer>
+        </Box>
+
+        <Box
+          component='main'
+          sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, width: '100%' }}
+        >
+          {/* Espaciador para móvil si el contenido choca con el botón flotante */}
+          {isMobile && <Box sx={{ height: 50 }} />}
+          {children}
+        </Box>
       </Box>
-    </Box>
     </Container>
   )
 }
