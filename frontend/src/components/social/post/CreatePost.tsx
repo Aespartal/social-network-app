@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   Dialog,
   DialogActions,
@@ -19,11 +19,11 @@ import CloseIcon from '@mui/icons-material/Close'
 import { Button } from '../../ui'
 import { useAuth } from '@/hooks/useAuth'
 import { Post } from 'social-network-app-shared/types/social.type'
-
-const MAX_CHARS = 280
-const MAX_FILE_SIZE_MB = 5
-const ACCEPTED_IMAGE_TYPES =
-  'image/png, image/jpeg, image/jpg, image/gif, image/webp'
+import {
+  ACCEPTED_IMAGE_TYPES,
+  MAX_CHARS,
+  MAX_FILE_SIZE_MB,
+} from './constants/posts'
 
 export interface CreatePostDialogProps {
   open: boolean
