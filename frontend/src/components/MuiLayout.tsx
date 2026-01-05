@@ -16,6 +16,7 @@ import {
   Avatar,
   Tooltip,
   alpha,
+  Container,
 } from '@mui/material'
 import {
   Menu as MenuIcon,
@@ -229,6 +230,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   )
 
   return (
+    <Container maxWidth="lg">
     <Box
       sx={{
         display: 'flex',
@@ -303,5 +305,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {children}
       </Box>
     </Box>
+    </Container>
   )
 }

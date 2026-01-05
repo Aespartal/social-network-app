@@ -1,95 +1,46 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { prisma } from '@/lib/prisma'
-import type { CreatePostRequest, FeedRequest } from '@/shared/types/social.type'
+import type { FeedRequest } from '@/shared/types/social.type'
 import type { ApiResponse } from '@/shared/types/api.type'
+import { extractPostData } from '@/utils/multipart-helper'
 
 export const createPost = async (
-  request: FastifyRequest<{ Body: CreatePostRequest }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
   try {
-    const { content, image, tags, parentId } = request.body
-    const userId = request.user!.id
+    const { content, parentId, tagsRaw, imageUrl } = await extractPostData(
+      request.parts()
+    )
 
-    if (!content.trim() && !image) {
+    if (!content.trim() && !imageUrl) {
       return reply.status(400).send({
         success: false,
-        error: 'El post debe tener texto o una imagen',
-      } as ApiResponse)
-    }
-
-    const post = await prisma.$transaction(async tx => {
-      // 1. Procesar tags si existen
-      let tagsToConnect: { tagId: string }[] = []
-      if (tags && tags.length > 0) {
-        // Buscamos o creamos cada tag y guardamos su ID
-        const tagPromises = tags.map(name =>
-          tx.tag.upsert({
-            where: { name: name.toLowerCase().trim() },
-            update: {},
-            create: { name: name.toLowerCase().trim() },
-          })
-        )
-        const resolvedTags = await Promise.all(tagPromises)
-        // Formateamos para la tabla intermedia (PostTag)
-        tagsToConnect = resolvedTags.map(t => ({ tagId: t.id }))
-      }
-
-      // 2. Crear el Post
-      return await tx.post.create({
-        data: {
-          content: content.trim(),
-          image,
-          authorId: userId,
-          parentId: parentId || null,
-          tags:
-            tagsToConnect.length > 0
-              ? {
-                  create: tagsToConnect,
-                }
-              : undefined,
-        },
-        include: {
-          author: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-              avatar: true,
-              verified: true,
-            },
-          },
-          parent: {
-            include: {
-              author: {
-                select: { username: true, name: true },
-              },
-            },
-          },
-          tags: { include: { tag: true } },
-          _count: { select: { likes: true, replies: true, bookmarks: true } },
-        },
+        error: 'El post debe tener al menos texto o una imagen',
       })
-    })
-
-    const formattedPost = {
-      ...post,
-      likesCount: post._count.likes,
-      repliesCount: post._count.replies,
-      bookmarksCount: post._count.bookmarks,
-      _count: undefined,
     }
+
+    const tags = parseTags(tagsRaw)
+    const userId = request.user!.id
+    const post = await savePostToDb({
+      content,
+      imageUrl,
+      userId,
+      parentId,
+      tags,
+    })
 
     return reply.status(201).send({
       success: true,
-      data: { post: formattedPost },
+      data: { post: formatPostResponse(post) },
       message: parentId ? 'Respuesta publicada' : 'Post publicado con éxito',
-    } as ApiResponse)
+    })
   } catch (error) {
     request.log.error(error)
-    return reply
-      .status(500)
-      .send({ success: false, error: 'Error al crear el post' } as ApiResponse)
+    return reply.status(500).send({
+      success: false,
+      error: 'Error interno al procesar el post',
+    })
   }
 }
 
@@ -450,5 +401,77 @@ export const getUserPosts = async (
       success: false,
       error: 'Error al obtener los posts del usuario',
     } as ApiResponse)
+  }
+}
+
+function parseTags(tagsRaw: string): string[] {
+  if (!tagsRaw) return []
+  try {
+    const parsed = JSON.parse(tagsRaw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return tagsRaw
+      .split(',')
+      .map(t => t.trim())
+      .filter(Boolean)
+  }
+}
+
+async function savePostToDb(data: {
+  content: string
+  imageUrl?: string
+  userId: string
+  parentId: string | null
+  tags: string[]
+}) {
+  return await prisma.$transaction(async tx => {
+    const tagObjects = await Promise.all(
+      data.tags.map(name =>
+        tx.tag.upsert({
+          where: { name: name.toLowerCase().trim() },
+          update: {},
+          create: { name: name.toLowerCase().trim() },
+        })
+      )
+    )
+
+    return await tx.post.create({
+      data: {
+        content: data.content.trim(),
+        image: data.imageUrl,
+        authorId: data.userId,
+        parentId: data.parentId,
+        tags:
+          tagObjects.length > 0
+            ? { create: tagObjects.map(t => ({ tagId: t.id })) }
+            : undefined,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            avatar: true,
+            verified: true,
+          },
+        },
+        parent: {
+          include: { author: { select: { username: true, name: true } } },
+        },
+        tags: { include: { tag: true } },
+        _count: { select: { likes: true, replies: true, bookmarks: true } },
+      },
+    })
+  })
+}
+
+function formatPostResponse(post: any) {
+  const { _count, ...rest } = post
+  return {
+    ...rest,
+    likesCount: _count.likes,
+    repliesCount: _count.replies,
+    bookmarksCount: _count.bookmarks,
   }
 }

@@ -5,7 +5,11 @@ import { CreatePostDialog } from './CreatePost'
 import { Post } from 'social-network-app-shared/types/social.type'
 
 interface CreatePostActionProps {
-  onSave: (content: string, parentId?: string) => Promise<{ success: boolean }>
+  onSave: (
+    content: string,
+    parentId?: string,
+    imageFile?: File
+  ) => Promise<{ success: boolean }>
   loading: boolean
   replyToPost?: Post | null
   onCloseReply: () => void
@@ -22,8 +26,8 @@ export const CreatePostAction = ({
 
   const isDialogOpen = open || !!replyToPost
 
-  const handleSave = async (text: string) => {
-    const result = await onSave(text, replyToPost?.id)
+  const handleSave = async (text: string, imageFile?: File) => {
+    const result = await onSave(text, replyToPost?.id, imageFile)
     if (result.success) {
       handleClose()
     }

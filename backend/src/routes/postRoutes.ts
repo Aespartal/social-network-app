@@ -91,7 +91,7 @@ export async function postRoutes(fastify: FastifyInstance) {
           tags: ['posts'],
           summary: 'Crear nuevo post',
           security: [{ bearerAuth: [] }],
-          body: CreatePostSchema,
+          // body: CreatePostSchema,
           response: {
             201: PostResponseSchema,
             400: ErrorSchema,

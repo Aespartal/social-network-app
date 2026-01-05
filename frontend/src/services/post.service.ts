@@ -16,12 +16,31 @@ export const postService = {
     return data.data!
   },
 
-  async createPost(postData: CreatePostRequest): Promise<Post> {
-    const { data } = await axiosInstance.post<ApiResponse<Post>>(
+  async createPost(
+    postData: CreatePostRequest & { imageFile?: File }
+  ): Promise<Post> {
+    const formData = new FormData()
+
+    formData.append('content', postData.content)
+
+    if (postData.parentId) {
+      formData.append('parentId', postData.parentId)
+    }
+
+    if (postData.tags) {
+      formData.append('tags', JSON.stringify(postData.tags))
+    }
+
+    if (postData.imageFile) {
+      formData.append('image', postData.imageFile)
+    }
+
+    const { data } = await axiosInstance.post<ApiResponse<{ post: Post }>>(
       '/posts',
-      postData
+      formData
     )
-    return data.data!
+
+    return data.data!.post
   },
 
   async toggleLike(

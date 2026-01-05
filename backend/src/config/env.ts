@@ -1,28 +1,41 @@
-import dotenv from 'dotenv'
-dotenv.config()
+import { z } from 'zod'
 
-export const config = {
+const envSchema = z.object({
   // Server
-  PORT: parseInt(process.env.PORT || '3001', 10),
-  HOST: process.env.HOST || '0.0.0.0',
+  PORT: z.coerce.number().default(3001),
+  HOST: z.string().default('0.0.0.0'),
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
 
-  // Environment
-  NODE_ENV: process.env.NODE_ENV || 'development',
+  // Security & Auth
+  JWT_SECRET: z
+    .string()
+    .min(32, 'El JWT_SECRET debe tener al menos 32 caracteres'),
+  ALLOWED_ORIGINS: z
+    .string()
+    .default('http://localhost:3000')
+    .transform(str => str.split(',')),
 
-  // Logging
-  LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+  // App Constants
+  PLUGIN_TIMEOUT: z.coerce.number().default(20_000),
+  MAX_FILE_SIZE: z.coerce.number().default(5_242_880),
+  RATE_LIMIT_MAX: z.coerce.number().default(100),
 
-  // CORS
-  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS?.split(',') || [
-    'http://localhost:3000',
-  ],
+  LOG_LEVEL: z
+    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
+    .default('info'),
+  CLOUDINARY_CLOUD_NAME: z.string(),
+  CLOUDINARY_API_KEY: z.string(),
+  CLOUDINARY_API_SECRET: z.string(),
+})
 
-  // Database (para futuro uso)
-  DATABASE_URL: process.env.DATABASE_URL || '',
+const parsed = envSchema.safeParse(process.env)
 
-  // JWT (para futuro uso)
-  JWT_SECRET: process.env.JWT_SECRET || 'your-super-secret-jwt-key',
-  JWT_ACCESS_EXPIRES_IN: process.env.JWT_ACCESS_EXPIRES_IN || '24h',
-} as const
+if (!parsed.success) {
+  console.error('❌ Error en las variables de entorno:', parsed.error.format())
+  process.exit(1)
+}
 
+export const config = parsed.data
 export type Config = typeof config

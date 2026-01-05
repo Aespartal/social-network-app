@@ -83,19 +83,12 @@ export const CreatePostSchema = Type.Object({
     description: 'Contenido del post (máximo 2000 caracteres)',
   }),
   image: Type.Optional(
-    Type.String({
-      format: 'uri',
-      description: 'URL de imagen opcional',
+    Type.Any({
+      description: 'Archivo de imagen (multipart/form-data)',
     })
   ),
   tags: Type.Optional(
-    Type.Array(
-      Type.String({
-        type: 'string',
-        description: 'ID de la etiqueta',
-      }),
-      { description: 'Lista de etiquetas asociadas al post' }
-    )
+    Type.Array(Type.String())
   ),
 })
 

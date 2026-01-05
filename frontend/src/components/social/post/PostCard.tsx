@@ -109,6 +109,44 @@ export const PostCard = ({
               >
                 {post.content}
               </Typography>
+
+              {/* RENDERIZADO DE IMAGEN SI EXISTE */}
+              {post.image && (
+                <Box
+                  sx={{
+                    mt: 2,
+                    overflow: 'hidden',
+                    position: 'relative',
+                    cursor: 'zoom-in',
+                    maxWidth: '500px',
+                    width: '100%',
+                    transition: 'filter 0.2s ease-in-out',
+                    '&:hover': {
+                      filter: 'brightness(0.9)',
+                    },
+                  }}
+                  onClick={e => {
+                    e.stopPropagation()
+                  }}
+                >
+                  <Box
+                    component='img'
+                    src={post.image}
+                    alt='Contenido del post'
+                    loading='lazy'
+                    sx={{
+                      width: '100%',
+                      height: 'auto',
+                      maxHeight: '512px',
+                      objectFit: 'cover',
+                      display: 'block',
+                      aspectRatio: post.image.includes('portrait')
+                        ? '4/5'
+                        : 'auto',
+                    }}
+                  />
+                </Box>
+              )}
             </Box>
           </Stack>
         </CardContent>

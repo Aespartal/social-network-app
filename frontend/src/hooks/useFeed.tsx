@@ -1,9 +1,6 @@
 import { postService } from '@/services/post.service'
 import { useCallback, useState } from 'react'
-import {
-  CreatePostRequest,
-  Post,
-} from 'social-network-app-shared/types/social.type'
+import { Post } from 'social-network-app-shared/types/social.type'
 
 interface ApiError {
   response?: {
@@ -93,19 +90,21 @@ export const useFeed = () => {
     }
   }
 
-  const handleCreatePost = async (content: string, parentId?: string) => {
+  const handleCreatePost = async (
+    content: string,
+    parentId?: string,
+    imageFile?: File
+  ) => {
     try {
       setIsCreating(true)
       setError('')
 
-      const postData: CreatePostRequest = {
+      const newPost = await postService.createPost({
         content,
         parentId,
-        image: undefined,
+        imageFile,
         tags: [],
-      }
-
-      const newPost = await postService.createPost(postData)
+      })
 
       if (parentId) {
         setPosts(prev =>

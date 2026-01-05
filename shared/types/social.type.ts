@@ -29,7 +29,7 @@ export interface Post {
 
 export interface CreatePostRequest {
   content: string;
-  image?: string;
+  imageFile?: File;
   tags?: string[];
   parentId?: string;
 }
