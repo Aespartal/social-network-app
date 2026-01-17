@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { API_CONFIG, API_ENDPOINTS, ROUTES } from '@/constants'
 
 let isRefreshing = false
 let refreshSubscribers: ((token: string) => void)[] = []
@@ -13,8 +14,8 @@ const onRefreshed = (token: string) => {
 }
 
 const axiosInstance = axios.create({
-  baseURL: `${import.meta.env.VITE_API_BASE_URL}/api`,
-  timeout: 10000,
+  baseURL: API_CONFIG.BASE_URL,
+  timeout: API_CONFIG.TIMEOUT,
 })
 
 axiosInstance.interceptors.request.use(config => {
@@ -33,6 +34,11 @@ axiosInstance.interceptors.response.use(
     const originalRequest = config
 
     if (response?.status === 401 && !originalRequest._retry) {
+      const accessToken = localStorage.getItem('access_token')
+      if (!accessToken) {
+        throw error
+      }
+
       if (isRefreshing) {
         return new Promise(resolve => {
           subscribeTokenRefresh(token => {
@@ -47,33 +53,66 @@ axiosInstance.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem('refresh_token')
+
+        if (!refreshToken) {
+          throw new Error('No refresh token available')
+        }
+
         const res = await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh`,
+          `${API_CONFIG.BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`,
           { refreshToken }
         )
 
-        const newToken = res.data.data?.token || res.data.data?.accessToken
+        const authData = res.data.data
+        const newAccessToken =
+          authData?.tokens?.accessToken || authData?.accessToken
+        const newRefreshToken =
+          authData?.tokens?.refreshToken || authData?.refreshToken
 
-        if (newToken) {
-          localStorage.setItem('access_token', newToken)
+        if (newAccessToken) {
+          localStorage.setItem('access_token', newAccessToken)
+
+          if (newRefreshToken) {
+            localStorage.setItem('refresh_token', newRefreshToken)
+          }
+
           isRefreshing = false
-          onRefreshed(newToken)
+          onRefreshed(newAccessToken)
 
           return axiosInstance(originalRequest)
+        } else {
+          throw new Error('No token received from refresh')
         }
       } catch (refreshError) {
         isRefreshing = false
         refreshSubscribers = []
 
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        localStorage.removeItem('user_data')
+        console.error('🔴 Token refresh failed:', refreshError)
 
-        globalThis.location.href = '/login?expired=true'
-        return Promise.reject(refreshError)
+        const isAuthError =
+          axios.isAxiosError(refreshError) &&
+          refreshError.response?.status === 401
+
+        const isNetworkError =
+          !axios.isAxiosError(refreshError) || !refreshError.response
+
+        if (isNetworkError) {
+          console.warn('Network error during refresh - keeping session alive')
+          throw refreshError
+        }
+
+        if (isAuthError) {
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+          localStorage.removeItem('user_data')
+
+          globalThis.location.href = `${ROUTES.LOGIN}?expired=true`
+        }
+
+        throw refreshError
       }
     }
-    return Promise.reject(error)
+    throw error
   }
 )
 

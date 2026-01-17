@@ -10,14 +10,13 @@ import {
   Link,
   Divider,
 } from '@mui/material'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth, useForm } from '@/hooks'
 import {
   Link as RouterLink,
   useNavigate,
   useSearchParams,
 } from 'react-router-dom'
 import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton'
-import { useForm } from '@/hooks/useForm'
 import { LoginRequest } from 'social-network-app-shared/types/auth.type'
 
 interface ApiError {

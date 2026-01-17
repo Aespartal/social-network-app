@@ -1,4 +1,5 @@
 import '@fastify/jwt'
+import { Role } from '@/enums/role.enum'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -13,6 +14,7 @@ declare module 'fastify' {
       id: string
       email: string
       username: string
+      role: Role
     },
     file: () => Promise<import('@fastify/multipart').MultipartFile | undefined>;
     parts: () => AsyncIterableIterator<import('@fastify/multipart').Multipart>;
@@ -25,11 +27,8 @@ declare module '@fastify/jwt' {
       id: string
       email: string
       username: string
+      role: Role
     }
-    user: {
-      id: string;
-      email: string;
-      username: string;
-    } | undefined;
+    user: FastifyJWT['payload']
   }
 }

@@ -35,7 +35,9 @@
       "@/schemas/*": ["./src/schemas/*"],
       "@/plugins/*": ["./src/plugins/*"],
       "@/shared/*": ["../shared/*"],
-      "@/lib/*": ["./src/lib/*"]
+      "@/lib/*": ["./src/lib/*"],
+      "@/modules/*": ["./src/modules/*"],
+      "@/generated/*": ["./src/generated/*"],
     }
   },
   "include": [

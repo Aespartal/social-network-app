@@ -41,31 +41,65 @@ El proyecto utiliza **npm workspaces** para gestionar múltiples paquetes:
 ```
 backend/
 ├── 📁 src/
-│   ├── 📁 config/           # Configuración (env, database, etc.)
-│   ├── 📁 controllers/      # Controladores de rutas
-│   ├── 📁 middleware/       # Middleware (auth, cors, etc.)
-│   ├── 📁 models/           # Modelos de datos (actualmente vacío)
-│   ├── 📁 routes/           # Definición de rutas
-│   ├── 📁 services/         # Lógica de negocio (actualmente vacío)
-│   ├── 📁 types/            # Tipos específicos del backend
-│   ├── 📁 utils/            # Utilidades del backend
-│   ├── 📁 generated/        # Código generado por Prisma
-│   └── 📄 index.ts          # Punto de entrada de la aplicación
+│   ├── 📁 modules/         # Módulos DDD
+│   │   ├── 📁 auth/       # Módulo de autenticación
+│   │   │   ├── 📁 domain/         # Entidades y lógica de dominio
+│   │   │   ├── 📁 application/    # Casos de uso (LoginUseCase, etc.)
+│   │   │   ├── 📁 infrastructure/ # Controllers, DTOs, Repositories
+│   │   │   └── 📄 index.ts        # Exportaciones públicas
+│   │   ├── 📁 posts/      # Módulo de posts
+│   │   │   ├── 📁 domain/         # Post entity, value objects
+│   │   │   ├── 📁 application/    # CreatePost, GetFeed, DeletePost
+│   │   │   ├── 📁 infrastructure/ # PostController, PrismaPostRepository
+│   │   │   └── 📄 ARCHITECTURE.md # Documentación del módulo
+│   │   └── 📁 users/      # Módulo de usuarios
+│   │       ├── 📁 domain/
+│   │       ├── 📁 application/
+│   │       └── 📁 infrastructure/
+│   ├── 📁 middleware/      # Middleware (auth, role)
+│   │   ├── 📄 auth.middleware.ts
+│   │   └── 📄 role.middleware.ts
+│   ├── 📁 config/          # Configuración (env, etc.)
+│   │   └── 📄 env.ts
+│   ├── 📁 lib/             # Librerías (prisma, cloudinary)
+│   │   ├── 📄 prisma.ts
+│   │   └── 📄 cloudinary.ts
+│   ├── 📁 schemas/         # Schemas de validación TypeBox
+│   │   ├── 📄 user.schemas.ts
+│   │   └── 📄 post.schemas.ts
+│   ├── 📁 plugins/         # Plugins Fastify
+│   │   └── 📄 swagger.ts
+│   ├── 📁 enums/           # Enumeraciones
+│   │   └── 📄 role.enum.ts
+│   ├── 📁 generated/       # Código generado (Prisma)
+│   │   └── 📁 prisma/
+│   ├── 📄 server.ts        # Configuración del servidor Fastify
+│   └── 📄 index.ts         # Punto de entrada
 ├── 📁 prisma/
-│   ├── 📄 schema.prisma     # Esquema de base de datos
-│   └── 📁 migrations/       # Migraciones de base de datos
-├── 📄 package.json          # Dependencias del backend
-├── 📄 tsconfig.json         # Configuración TypeScript
-└── 📄 .env                  # Variables de entorno
+│   ├── 📄 schema.prisma    # Esquema de base de datos
+│   └── 📁 migrations/      # Migraciones de base de datos
+├── 📁 tests/              # Tests de integración
+│   ├── 📄 setup.ts
+│   └── 📁 integration/
+│       ├── 📄 auth.routes.test.ts
+│       └── 📄 posts.routes.test.ts
+├── 📄 package.json         # Dependencias del backend
+├── 📄 tsconfig.json        # Configuración TypeScript
+├── 📄 vitest.config.ts     # Configuración de tests
+└── 📄 .env                 # Variables de entorno
 ```
 
 ### Tecnologías Backend
 
 - **Fastify**: Framework web rápido y eficiente
-- **Prisma**: ORM para gestión de base de datos
+- **Arquitectura DDD**: Domain-Driven Design con capas separadas
+- **Prisma**: ORM para gestión de base de datos (PostgreSQL)
 - **TypeScript**: Tipado estático
-- **JWT**: Autenticación con tokens
-- **bcryptjs**: Hashing de contraseñas
+- **JWT + Google OAuth**: Autenticación con tokens y login social
+- **bcrypt**: Hashing de contraseñas
+- **Cloudinary**: Upload y almacenamiento de imágenes
+- **Swagger**: Documentación automática de API
+- **Vitest**: Framework de testing
 
 ## 🎨 Frontend (`/frontend/`)
 
@@ -95,10 +129,12 @@ frontend/
 
 - **React 18**: Biblioteca de UI con hooks
 - **TypeScript**: Tipado estático
-- **Vite**: Build tool y dev server
-- **Material-UI**: Componentes UI
-- **React Router**: Navegación SPA
-- **Axios**: Cliente HTTP
+- **Vite**: Build tool y dev server ultra rápido
+- **Material-UI v6**: Sistema de componentes UI moderno
+- **React Router**: Navegación SPA con protección de rutas
+- **Axios**: Cliente HTTP para API
+- **Context API**: Manejo de estado global (Auth)
+- **Custom Hooks**: Lógica reutilizable (useFeed, usePostDetail, etc.)
 
 ## 🔄 Shared (`/shared/`)
 
@@ -115,9 +151,11 @@ shared/
 
 ### Propósito del Shared
 
-- **Tipos compartidos**: Interfaces y tipos usados en frontend y backend
-- **Validaciones**: Esquemas de validación compartidos
-- **Constantes**: Valores constantes utilizados por ambos lados
+- **Tipos compartidos**: Interfaces y tipos usados en frontend y backend (User, Post, etc.)
+- **API Types**: Tipos de request/response de la API
+- **Auth Types**: Tipos de autenticación (LoginRequest, RegisterRequest, etc.)
+- **Social Types**: Tipos de posts, likes, follows, etc.
+- **Enums**: Valores enumerados compartidos (actualmente en cada workspace)
 - **Utilidades**: Funciones auxiliares reutilizables
 
 ## 📚 Docs (`/docs/`)
@@ -185,8 +223,8 @@ Las dependencias comunes se instalan en la raíz:
 ### Dependencias Específicas
 
 Cada workspace maneja sus propias dependencias:
-- **Backend**: Fastify, Prisma, JWT, bcryptjs
-- **Frontend**: React, Material-UI, Vite, React Router
+- **Backend**: Fastify, Prisma, JWT (@fastify/jwt), bcrypt, Cloudinary, TypeBox, Swagger
+- **Frontend**: React, Material-UI, Vite, React Router, Axios
 - **Shared**: Mínimas, solo utilidades específicas
 
 ## 🎯 Convenciones de Nomenclatura

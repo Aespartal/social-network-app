@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import type { CreateUserRequest, LoginRequest } from '@/shared/types/auth.type'
 import type { ApiResponse } from '@/shared/types/api.type'
+import { Role } from '@/enums/role.enum'
 
 /**
  * Registro de Usuario
@@ -55,7 +56,7 @@ export const register = async (
       },
     })
 
-    const payload = { id: user.id, email: user.email, username: user.username }
+    const payload = { id: user.id, email: user.email, username: user.username, role: Role.USER }
 
     const token = request.server.jwt.sign(payload, {
       expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
@@ -103,7 +104,6 @@ export const login = async (
       where: { email },
     })
 
-    // Seguridad: Mensaje genérico para no dar pistas de qué falló
     if (!user || !user.active) {
       return reply.status(401).send({
         success: false,
@@ -119,7 +119,7 @@ export const login = async (
       } as ApiResponse)
     }
 
-    const payload = { id: user.id, email: user.email, username: user.username }
+    const payload = { id: user.id, email: user.email, username: user.username, role: user.role as Role }
 
     const token = request.server.jwt.sign(payload, {
       expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
@@ -218,6 +218,7 @@ export const googleLogin = async (
       id: user.id,
       email: user.email,
       username: user.username,
+      role: user.role as Role,
     }
 
     const accessToken = request.server.jwt.sign(jwtPayload, {
@@ -282,6 +283,7 @@ export const refresh = async (
         id: session.user.id,
         email: session.user.email,
         username: session.user.username,
+        role: session.user.role as Role,
       },
       { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' }
     )

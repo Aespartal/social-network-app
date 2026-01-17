@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import {
   Paper,
   Typography,
@@ -12,7 +12,7 @@ import {
   Divider,
 } from '@mui/material'
 import { Link } from 'react-router-dom'
-import { profileService } from '@/services/profile.service'
+import { profileService } from '@/services'
 import { User } from 'social-network-app-shared/types/auth.type'
 import { SuggestedUsersSkeleton } from '../skeleton/SuggestedUsersSkeleton'
 
@@ -20,9 +20,13 @@ export const SuggestedUsers: React.FC = () => {
   const [suggestions, setSuggestions] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [followingIds, setFollowingIds] = useState<string[]>([])
+  const hasFetchedRef = useRef(false)
 
   useEffect(() => {
     const fetchSuggestions = async () => {
+      if (hasFetchedRef.current) return
+      hasFetchedRef.current = true
+      
       try {
         const response = await profileService.getSuggestions(5)
         setSuggestions(response || [])

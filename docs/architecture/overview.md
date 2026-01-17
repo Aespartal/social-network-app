@@ -4,7 +4,7 @@ Esta documentación describe la arquitectura del sistema **Social Network App**,
 
 ## 🎯 Visión General
 
-**Social Network App** es una aplicación de red social que permite a los usuarios crear perfiles, publicar contenido e interactuar entre sí. Está construida con una arquitectura de tres capas:
+**Social Network App** es una aplicación de red social estilo Twitter que permite a los usuarios crear perfiles, publicar contenido, interactuar mediante likes y comentarios, y seguir a otros usuarios. Está construida con **Domain-Driven Design (DDD)** y una arquitectura modular de tres capas:
 
 ```mermaid
 graph TB
@@ -12,41 +12,61 @@ graph TB
         A[React Frontend]
         B[Material-UI Components]
         C[React Router]
+        D[AuthContext + RoleGuard]
     end
     
-    subgraph "Servidor"
-        D[Fastify API]
-        E[JWT Auth]
-        F[Middleware]
+    subgraph "Servidor - Arquitectura DDD"
+        E[Fastify API]
+        F[JWT Auth + Google OAuth]
+        G[Middleware Auth/Role]
+        H[Módulo Auth]
+        I[Módulo Posts]
+        J[Módulo Users]
+    end
+    
+    subgraph "Capas DDD (por módulo)"
+        K[Infrastructure Layer]
+        L[Application Layer - Use Cases]
+        M[Domain Layer - Entities]
     end
     
     subgraph "Datos"
-        G[Prisma ORM]
-        H[SQLite/PostgreSQL]
+        N[Prisma ORM]
+        O[PostgreSQL]
     end
     
-    A --> D
-    D --> G
-    G --> H
+    A --> E
+    E --> H
+    E --> I
+    E --> J
+    H --> K
+    I --> K
+    J --> K
+    K --> L
+    L --> M
+    K --> N
+    N --> O
     
     subgraph "Shared"
-        I[TypeScript Types]
-        J[Validation Schemas]
+        P[TypeScript Types]
+        Q[API Types]
     end
     
-    A --> I
-    D --> I
+    A --> P
+    E --> P
 ```
 
 ## 🏗️ Arquitectura de Alto Nivel
 
 ### Principios de Diseño
 
-1. **Separación de Responsabilidades**: Frontend, Backend y Base de Datos claramente separados
-2. **Tipado Fuerte**: TypeScript en toda la aplicación
-3. **Código Compartido**: Tipos y utilidades reutilizables
-4. **API First**: Backend diseñado como API RESTful
-5. **Componentes Reutilizables**: UI modular y escalable
+1. **Domain-Driven Design (DDD)**: Arquitectura en capas (Domain, Application, Infrastructure)
+2. **Separación de Responsabilidades**: Cada módulo es independiente y cohesivo
+3. **Tipado Fuerte**: TypeScript en toda la aplicación
+4. **Código Compartido**: Tipos y utilidades reutilizables en el workspace `shared`
+5. **API First**: Backend diseñado como API RESTful con documentación Swagger
+6. **Componentes Reutilizables**: UI modular con Material-UI
+7. **Sistema de Roles**: Control de acceso basado en roles (RBAC)
 
 ### Tecnologías Core
 
@@ -54,12 +74,14 @@ graph TB
 |------|------------|-----------|
 | **Frontend** | React 18 + TypeScript | Interfaz de usuario reactiva |
 | **Build Tool** | Vite | Desarrollo rápido y build optimizado |
-| **UI Framework** | Material-UI v5 | Componentes UI consistentes |
+| **UI Framework** | Material-UI v6 | Componentes UI consistentes y modernos |
 | **Backend** | Fastify + TypeScript | API REST de alta performance |
+| **Arquitectura** | DDD (Domain-Driven Design) | Organización modular y escalable |
 | **ORM** | Prisma | Gestión de base de datos type-safe |
-| **Database** | SQLite/PostgreSQL | Almacenamiento de datos |
-| **Auth** | JWT | Autenticación stateless |
-
+| **Database** | PostgreSQL | Almacenamiento de datos relacional |
+| **Auth** | JWT + Google OAuth | Autenticación stateless y social login |
+| **Storage** | Cloudinary | Upload y almacenamiento de imágenes |
+| **Docs** | Swagger | Documentación automática de API |
 ## 🔄 Flujo de Datos
 
 ### Arquitectura Request-Response
@@ -113,38 +135,74 @@ sequenceDiagram
 ```
 src/
 ├── components/          # Componentes reutilizables
-│   ├── ui/             # Componentes UI básicos
-│   └── social/         # Componentes específicos de red social
+│   ├── auth/           # Login, Register, ProtectedRoute
+│   ├── social/         # Feed, PostCard, CreatePost, Comments
+│   └── ui/             # Componentes UI base (Material-UI wrappers)
 ├── pages/              # Páginas/Vistas principales
+│   ├── Home.tsx        # Feed principal
+│   ├── Profile.tsx     # Perfil de usuario
+│   ├── PostDetail.tsx  # Detalle de post con comentarios
+│   ├── Login.tsx       # Login
+│   ├── Register.tsx    # Registro
+│   └── AdminDashboard.tsx # Panel de administración
+├── contexts/           # React Contexts
+│   └── AuthContext.tsx # Manejo de autenticación global
+├── guards/             # Protección de rutas
+│   └── RoleGuard.tsx   # Guard basado en roles
 ├── hooks/              # Custom hooks para lógica reutilizable
+│   ├── useAuth.tsx     # Hook de autenticación
+│   ├── useFeed.tsx     # Hook para el feed de posts
+│   ├── usePostDetail.tsx # Hook para detalles de post
+│   └── useInfiniteScroll.tsx # Scroll infinito
 ├── services/           # Comunicación con API
-├── styles/             # Temas, colores y utilidades CSS
-└── types/              # Tipos específicos del frontend
+├── theme/              # Temas de Material-UI
+├── enums/              # Enumeraciones (Role)
+└── utils/              # Utilidades del frontend
 ```
 
 **Patrones Utilizados:**
 - **Component Composition**: Componentes pequeños y reutilizables
 - **Custom Hooks**: Lógica de estado extraída y reutilizable
+- **Context API**: Manejo de estado global (Auth)
+- **Protected Routes**: Rutas protegidas por autenticación y roles
 - **Service Layer**: Abstracción de llamadas a API
-- **Atomic Design**: UI construida desde componentes atómicos
+- **Material-UI Theming**: Sistema de temas personalizado
 
 ### Backend (Fastify)
 
 ```
 src/
-├── controllers/        # Lógica de manejo de requests
-├── routes/            # Definición de endpoints
-├── middleware/        # Middleware de autenticación, cors, etc.
-├── services/          # Lógica de negocio
-├── models/            # Modelos de datos (Prisma)
-└── utils/             # Utilidades del servidor
+├── modules/            # Módulos DDD
+│   ├── auth/
+│   │   ├── domain/         # Entidades y lógica de negocio
+│   │   ├── application/    # Casos de uso (LoginUseCase, RegisterUseCase)
+│   │   └── infrastructure/ # Controladores, repositorios, DTOs, plugin
+│   ├── posts/
+│   │   ├── domain/         # Post entity, value objects
+│   │   ├── application/    # CreatePost, GetFeed, DeletePost use cases
+│   │   └── infrastructure/ # PostController, PrismaPostRepository
+│   └── users/
+│       ├── domain/
+│       ├── application/
+│       └── infrastructure/
+├── middleware/        # Middleware de autenticación y roles
+│   ├── auth.middleware.ts
+│   └── role.middleware.ts
+├── config/            # Configuración (env, etc.)
+├── lib/               # Librerías (prisma client, cloudinary)
+├── schemas/           # Schemas de validación TypeBox
+├── plugins/           # Plugins Fastify (swagger)
+└── generated/         # Código generado (Prisma client)
 ```
 
 **Patrones Utilizados:**
-- **MVC Pattern**: Separación entre rutas, controladores y modelos
-- **Middleware Pattern**: Funciones reutilizables para procesar requests
-- **Service Layer**: Lógica de negocio separada de controllers
-- **Repository Pattern**: Abstracción de acceso a datos
+- **Domain-Driven Design**: Arquitectura en capas (Domain, Application, Infrastructure)
+- **Use Cases**: Cada acción de negocio es un caso de uso independiente
+- **Repository Pattern**: Abstracción de acceso a datos con interfaces
+- **Entity Pattern**: Entidades de dominio con validaciones y lógica de negocio
+- **DTO Pattern**: Objetos de transferencia de datos para validación
+- **Plugin Pattern**: Módulos como plugins de Fastify
+- **Dependency Injection**: Inyección de dependencias en use cases
 
 ## 🔐 Seguridad
 
@@ -161,11 +219,14 @@ interface AuthFlow {
 ```
 
 **Características de Seguridad:**
-- **JWT Tokens**: Autenticación stateless
-- **Password Hashing**: bcryptjs para seguridad de contraseñas
+- **JWT Tokens**: Autenticación stateless con expiración configurable
+- **Google OAuth**: Login social con Google
+- **Password Hashing**: bcrypt para seguridad de contraseñas
+- **Sistema de Roles**: Control de acceso basado en roles (User, Moderator, Admin)
 - **CORS**: Configurado para requests cross-origin seguros
 - **Helmet**: Headers de seguridad automáticos
 - **Rate Limiting**: Protección contra ataques de fuerza bruta
+- **Soft Delete**: Eliminación lógica de posts con campo `deletedAt`
 
 ### Validación de Datos
 

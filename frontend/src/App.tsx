@@ -1,27 +1,27 @@
-import { Routes, Route } from 'react-router-dom'
-import Home from '@/pages/Home'
-import { About } from '@/pages/About'
-import Login from '@/pages/Login'
-import Register from '@/pages/Register'
+import { Suspense } from 'react'
+import { useRoutes } from 'react-router-dom'
+import { CircularProgress, Box } from '@mui/material'
 import { Layout } from '@/components/MuiLayout'
 import { ThemeProvider } from '@/theme/ThemeProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { Profile } from './pages/Profile'
-import { PostDetail } from './pages/PostDetail'
+import { routes } from '@/routes'
+
+const LoadingFallback = () => (
+  <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+    <CircularProgress />
+  </Box>
+)
 
 function App() {
+  const element = useRoutes(routes)
+
   return (
     <ThemeProvider>
       <AuthProvider>
         <Layout>
-          <Routes>
-            <Route path='/' element={<Home />} />
-            <Route path='/login' element={<Login />} />
-            <Route path='/register' element={<Register />} />
-            <Route path='/about' element={<About />} />
-            <Route path='/profile/:username' element={<Profile />} />
-            <Route path='/post/:id' element={<PostDetail />} />
-          </Routes>
+          <Suspense fallback={<LoadingFallback />}>
+            {element}
+          </Suspense>
         </Layout>
       </AuthProvider>
     </ThemeProvider>

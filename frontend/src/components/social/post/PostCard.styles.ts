@@ -34,8 +34,6 @@ export const StyledPostCard = styled(PostCard)(({ theme }) => ({
   // 5. Ajuste para Imágenes/Media dentro del Post
   '& img': {
     borderRadius: `calc(${theme.shape.borderRadius}px * 2)`,
-    marginTop: theme.spacing(1.5),
-    border: `1px solid ${theme.palette.divider}`,
   },
 
   // 6. Efecto de "Focus" para accesibilidad

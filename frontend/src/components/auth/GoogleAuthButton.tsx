@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useGoogleLogin } from '@react-oauth/google'
 import { Button, CircularProgress, Box } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/hooks'
 
 // Definimos una interfaz para el error de la API si usas Axios
 interface ApiError {

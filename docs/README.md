@@ -1,36 +1,37 @@
 # 📚 Documentación del Proyecto
 
-Bienvenido a la documentación de **Social Network App**, una aplicación full-stack desarrollada con React + TypeScript (frontend) y Fastify + TypeScript (backend).
+Bienvenido a la documentación de **Social Network App**, una aplicación full-stack estilo Twitter desarrollada con React + TypeScript (frontend) y Fastify + TypeScript con **Domain-Driven Design** (backend).
 
 ## 📋 Índice de Documentación
 
 ### 🚀 Primeros Pasos
 - [**Instalación y Configuración**](./setup/installation.md) - Cómo configurar el proyecto desde cero
-- [**Estructura del Proyecto**](./setup/project-structure.md) - Organización de archivos y carpetas
+- [**Estructura del Proyecto**](./setup/project-structure.md) - Organización de archivos y carpetas con DDD
 - [**Scripts Disponibles**](./setup/scripts.md) - Comandos npm y tareas comunes
 
 ### 🏗️ Arquitectura
-- [**Arquitectura General**](./architecture/overview.md) - Visión general del sistema
-- [**Backend (API)**](./architecture/backend.md) - Estructura y organización del backend
-- [**Frontend (React)**](./architecture/frontend.md) - Estructura y organización del frontend
-- [**Base de Datos**](./architecture/database.md) - Esquema y modelos de Prisma
+- [**Arquitectura General**](./architecture/overview.md) - Visión general del sistema con DDD
+- **Backend (API)** - Estructura modular (auth, posts, users)
+- **Frontend (React)** - Material-UI con Guards y Contexts
+- **Base de Datos** - PostgreSQL con Prisma
 
 ### 🔧 Desarrollo
-- [**Configuración de Desarrollo**](./development/dev-setup.md) - Entorno de desarrollo
+- **Configuración de Desarrollo** - Entorno de desarrollo
 - [**Git Hooks (Husky)**](./development/git-hooks.md) - Automatización de calidad de código
-- [**Testing**](./development/testing.md) - Estrategias y configuración de pruebas
-- [**Linting y Formateo**](./development/code-quality.md) - ESLint, Prettier y estándares
+- [**Fastify Schemas**](./development/fastify-schemas.md) - Validación con TypeBox
+- **Testing** - Vitest para tests unitarios e integración
 
 ### 📡 API
-- [**Documentación de API**](./api/endpoints.md) - Endpoints disponibles
-- [**Autenticación**](./api/authentication.md) - Sistema de auth con JWT
-- [**Modelos de Datos**](./api/data-models.md) - Estructuras de datos y tipos
+- [**Documentación de API**](./api/endpoints.md) - Endpoints disponibles (auth, posts, users)
+- **Autenticación** - Sistema de auth con JWT + Google OAuth
+- **Sistema de Roles** - Control de acceso basado en roles (RBAC)
+- **Swagger** - Documentación interactiva en `/documentation`
 
 ### 🎨 Frontend
-- [**Componentes UI**](./frontend/ui-components.md) - Sistema de componentes reutilizables
-- [**Theming**](./frontend/theming.md) - Sistema de temas y colores
-- [**Routing**](./frontend/routing.md) - Navegación y rutas
-- [**State Management**](./frontend/state-management.md) - Gestión de estado
+- **Componentes UI** - Material-UI v6 con componentes personalizados
+- **Theming** - Sistema de temas personalizado
+- **Routing** - React Router con Guards de roles
+- **State Management** - Context API (AuthContext)
 
 ### 🚀 Despliegue
 - [**Construcción**](./deployment/build.md) - Proceso de build y optimización

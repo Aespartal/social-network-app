@@ -5,6 +5,7 @@ import {
   getProfile,
   getUserByUsername,
   getSuggestedUsers,
+  updateProfile,
 } from '../controllers/profileController'
 import { authenticateToken } from '@/middleware/auth.middleware'
 import { UserParamsSchema, UserSchema } from '@/schemas/user.schemas'
@@ -25,10 +26,8 @@ export async function profileRoutes(fastify: FastifyInstance) {
               type: 'object',
               properties: {
                 success: { type: 'boolean' },
-                data: {
-                  type: 'object',
-                  properties: { user: UserSchema },
-                },
+                data: UserSchema,
+                message: { type: 'string' },
               },
             },
             401: ErrorSchema,
@@ -86,6 +85,43 @@ export async function profileRoutes(fastify: FastifyInstance) {
         },
       },
       getSuggestedUsers
+    )
+
+    // Actualizar perfil
+    privateContext.patch(
+      '/profile/:id',
+      {
+        schema: {
+          tags: ['users'],
+          summary: 'Actualizar perfil propio',
+          description:
+            'Actualiza username, name, bio y/o avatar del usuario autenticado',
+          security: [{ bearerAuth: [] }],
+          params: {
+            type: 'object',
+            required: ['id'],
+            properties: {
+              id: { type: 'string' },
+            },
+          },
+          consumes: ['multipart/form-data'],
+          response: {
+            200: {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                data: UserSchema,
+                message: { type: 'string' },
+              },
+            },
+            400: ErrorSchema,
+            403: ErrorSchema,
+            409: ErrorSchema,
+            500: ErrorSchema,
+          },
+        },
+      },
+      updateProfile
     )
   })
 

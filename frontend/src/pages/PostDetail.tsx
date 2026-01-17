@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Box,
-  Divider,
   Stack,
   CircularProgress,
   Typography,
@@ -10,11 +9,11 @@ import {
   Fade,
 } from '@mui/material'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
-import { PostCard } from '@/components/social/post/PostCard'
 import { CreatePostAction } from '@/components/social/post/CreatePostAction'
 import { PostHeader } from '@/components/social/post/PostHeader'
-import { usePostDetail } from '@/hooks/usePostDetail'
+import { usePostDetail } from '@/hooks'
 import { PostRepliesList } from '@/components/social/post/PostRepliesList'
+import { StyledPostCard } from '@/components/social/post/PostCard.styles'
 
 export const PostDetail = () => {
   const { id } = useParams<{ id: string }>()
@@ -81,14 +80,12 @@ export const PostDetail = () => {
         <Container maxWidth='lg' disableGutters>
           <Stack spacing={1}>
             {/* EL PROTAGONISTA */}
-            <PostCard
+            <StyledPostCard
               post={post}
               onLike={() => handleLike(post.id)}
               onBookmark={() => handleBookmark(post.id)}
               onReply={() => handleReply(post)}
               sx={{
-                border: 'none',
-                borderRadius: 0,
                 '& .MuiTypography-body1': {
                   fontSize: '1.25rem',
                   lineHeight: 1.4,
@@ -96,8 +93,6 @@ export const PostDetail = () => {
                 },
               }}
             />
-
-            <Divider />
 
             <PostRepliesList
               replies={post.replies || []}

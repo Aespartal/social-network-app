@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { List, Typography, Paper, Box, Divider } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { User } from 'social-network-app-shared/types/auth.type'
-import { profileService } from '@/services/profile.service'
+import { profileService } from '@/services'
 import { VisitorListSkeleton } from '../skeleton/VisitorListSkeleton'
 import { EmptyState } from '@/components/EmptyState'
 import { VisitorItem } from './VisitorItem'
@@ -11,9 +11,13 @@ export const VisitorList = () => {
   const [visitors, setVisitors] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+  const hasFetchedRef = useRef(false)
 
   useEffect(() => {
     const fetchVisits = async () => {
+      if (hasFetchedRef.current) return
+      hasFetchedRef.current = true
+      
       try {
         setLoading(true)
         const data = await profileService.getProfileVisits()

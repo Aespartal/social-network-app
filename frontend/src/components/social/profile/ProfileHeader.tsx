@@ -5,9 +5,10 @@ import { User } from 'social-network-app-shared/types/auth.type'
 interface ProfileHeaderProps {
   user: User | null
   isOwnProfile: boolean
+  onEditClick?: () => void
 }
 
-export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => (
+export const ProfileHeader = ({ user, isOwnProfile, onEditClick }: ProfileHeaderProps) => (
   <Paper
     elevation={0}
     variant='outlined'
@@ -33,6 +34,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => (
             variant='outlined'
             startIcon={<EditIcon />}
             sx={{ borderRadius: 20 }}
+            onClick={onEditClick}
           >
             Editar Perfil
           </Button>

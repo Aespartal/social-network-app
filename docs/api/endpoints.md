@@ -4,10 +4,12 @@ Esta documentación describe todos los endpoints disponibles en la API de **Soci
 
 ## 🌐 Información General
 
-- **Base URL**: `http://localhost:3000` (desarrollo)
+- **Base URL**: `http://localhost:3000/api` (desarrollo)
 - **Formato**: REST API con respuestas JSON
-- **Autenticación**: JWT Bearer tokens
+- **Autenticación**: JWT Bearer tokens + Google OAuth
 - **Rate Limiting**: Aplicado en endpoints sensibles
+- **Sistema de Roles**: User, Moderator, Admin
+- **Documentación Interactiva**: `http://localhost:3000/documentation` (Swagger)
 
 ## 🔐 Autenticación
 
@@ -24,7 +26,7 @@ Los tokens JWT se obtienen mediante login y deben incluirse en el header `Author
 
 ## 👤 Endpoints de Usuario
 
-### POST `/auth/register`
+### POST `/api/auth/register`
 
 Registra un nuevo usuario.
 
@@ -41,18 +43,14 @@ Registra un nuevo usuario.
 **Response (201):**
 ```json
 {
-  "success": true,
-  "data": {
-    "user": {
-      "id": "clx123...",
-      "username": "johndoe",
-      "email": "john@example.com",
-      "name": "John Doe",
-      "createdAt": "2025-08-10T10:00:00.000Z"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIs..."
-  }
+  "id": "clx123...",
+  "username": "johndoe",
+  "email": "john@example.com",
+  "name": "John Doe",
+  "role": "USER",
+  "token": "eyJhbGciOiJIUzI1NiIs..."
 }
+```
 ```
 
 **Errores:**
@@ -61,7 +59,7 @@ Registra un nuevo usuario.
 
 ---
 
-### POST `/auth/login`
+### POST `/api/auth/login`
 
 Inicia sesión de usuario.
 
@@ -76,17 +74,14 @@ Inicia sesión de usuario.
 **Response (200):**
 ```json
 {
-  "success": true,
-  "data": {
-    "user": {
-      "id": "clx123...",
-      "username": "johndoe",
-      "email": "john@example.com",
-      "name": "John Doe"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIs..."
-  }
+  "id": "clx123...",
+  "username": "johndoe",
+  "email": "john@example.com",
+  "name": "John Doe",
+  "role": "USER",
+  "token": "eyJhbGciOiJIUzI1NiIs..."
 }
+```
 ```
 
 **Errores:**
@@ -95,7 +90,37 @@ Inicia sesión de usuario.
 
 ---
 
-### GET `/auth/profile`
+### POST `/api/auth/google`
+
+Autenticación con Google OAuth.
+
+**Request:**
+```json
+{
+  "token": "google_id_token_here"
+}
+```
+
+**Response (200):**
+```json
+{
+  "id": "clx123...",
+  "username": "johndoe",
+  "email": "john@example.com",
+  "name": "John Doe",
+  "googleId": "google_user_id",
+  "role": "USER",
+  "token": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+**Errores:**
+- `401`: Token de Google inválido
+- `429`: Demasiados intentos de login
+
+---
+
+### GET `/api/auth/profile`
 
 Obtiene el perfil del usuario autenticado.
 
@@ -107,18 +132,17 @@ Authorization: Bearer <token>
 **Response (200):**
 ```json
 {
-  "success": true,
-  "data": {
-    "user": {
-      "id": "clx123...",
-      "username": "johndoe",
-      "email": "john@example.com",
-      "name": "John Doe",
-      "createdAt": "2025-08-10T10:00:00.000Z",
-      "updatedAt": "2025-08-10T10:00:00.000Z"
-    }
-  }
+  "id": "clx123...",
+  "username": "johndoe",
+  "email": "john@example.com",
+  "name": "John Doe",
+  "role": "USER",
+  "avatar": "https://cloudinary.com/...",
+  "bio": "Software developer",
+  "verified": false,
+  "createdAt": "2025-08-10T10:00:00.000Z"
 }
+```
 ```
 
 **Errores:**
@@ -126,23 +150,28 @@ Authorization: Bearer <token>
 
 ---
 
-### GET `/users/:username`
+### GET `/api/users/:username`
 
 Obtiene el perfil público de un usuario.
 
 **Response (200):**
 ```json
 {
-  "success": true,
-  "data": {
-    "user": {
-      "id": "clx123...",
-      "username": "johndoe",
-      "name": "John Doe",
-      "createdAt": "2025-08-10T10:00:00.000Z"
-    }
+  "id": "clx123...",
+  "username": "johndoe",
+  "name": "John Doe",
+  "avatar": "https://cloudinary.com/...",
+  "bio": "Software developer",
+  "verified": false,
+  "role": "USER",
+  "createdAt": "2025-08-10T10:00:00.000Z",
+  "_count": {
+    "posts": 42,
+    "followers": 150,
+    "following": 89
   }
 }
+```
 ```
 
 **Errores:**
@@ -150,7 +179,7 @@ Obtiene el perfil público de un usuario.
 
 ## 📝 Endpoints de Posts
 
-### POST `/posts`
+### POST `/api/posts`
 
 Crea un nuevo post.
 
@@ -159,36 +188,36 @@ Crea un nuevo post.
 Authorization: Bearer <token>
 ```
 
-**Request:**
+**Request (multipart/form-data):**
 ```json
 {
   "content": "Mi primer post en la red social!",
-  "title": "Título opcional"
+  "image": "<file>" // Opcional
 }
 ```
 
 **Response (201):**
 ```json
 {
-  "success": true,
-  "data": {
-    "post": {
-      "id": "clx456...",
-      "content": "Mi primer post en la red social!",
-      "title": "Título opcional",
-      "authorId": "clx123...",
-      "author": {
-        "username": "johndoe",
-        "name": "John Doe"
-      },
-      "createdAt": "2025-08-10T10:30:00.000Z",
-      "likesCount": 0,
-      "repliesCount": 0,
-      "isLiked": false,
-      "isBookmarked": false
-    }
-  }
+  "id": "clx456...",
+  "content": "Mi primer post en la red social!",
+  "image": "https://cloudinary.com/...",
+  "authorId": "clx123...",
+  "author": {
+    "id": "clx123...",
+    "username": "johndoe",
+    "name": "John Doe",
+    "avatar": "https://cloudinary.com/..."
+  },
+  "createdAt": "2025-08-10T10:30:00.000Z",
+  "_count": {
+    "likes": 0,
+    "replies": 0
+  },
+  "isLikedByMe": false,
+  "isBookmarkedByMe": false
 }
+```
 ```
 
 **Errores:**
@@ -197,7 +226,7 @@ Authorization: Bearer <token>
 
 ---
 
-### GET `/feed`
+### GET `/api/posts/feed`
 
 Obtiene el feed de posts del usuario autenticado.
 
@@ -213,65 +242,83 @@ Authorization: Bearer <token>
 **Response (200):**
 ```json
 {
-  "success": true,
-  "data": {
-    "posts": [
-      {
-        "id": "clx456...",
-        "content": "Mi primer post en la red social!",
-        "title": "Título opcional",
-        "authorId": "clx123...",
-        "author": {
-          "username": "johndoe",
-          "name": "John Doe"
-        },
-        "createdAt": "2025-08-10T10:30:00.000Z",
-        "likesCount": 5,
-        "repliesCount": 2,
-        "isLiked": true,
-        "isBookmarked": false
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 20,
-      "total": 45,
-      "totalPages": 3,
-      "hasNext": true,
-      "hasPrev": false
+  "posts": [
+    {
+      "id": "clx456...",
+      "content": "Mi primer post en la red social!",
+      "image": "https://cloudinary.com/...",
+      "authorId": "clx123...",
+      "author": {
+        "id": "clx123...",
+        "username": "johndoe",
+        "name": "John Doe",
+        "avatar": "https://cloudinary.com/..."
+      },
+      "createdAt": "2025-08-10T10:30:00.000Z",
+      "_count": {
+        "likes": 5,
+        "replies": 2
+      },
+      "isLikedByMe": true,
+      "isBookmarkedByMe": false
     }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 45,
+    "totalPages": 3
   }
 }
+```
 ```
 
 ---
 
-### GET `/posts/:id`
+### GET `/api/posts/:id`
 
-Obtiene un post específico.
+Obtiene un post específico con sus comentarios.
 
 **Response (200):**
 ```json
 {
-  "success": true,
-  "data": {
-    "post": {
-      "id": "clx456...",
-      "content": "Mi primer post en la red social!",
-      "title": "Título opcional",
-      "authorId": "clx123...",
+  "id": "clx456...",
+  "content": "Mi primer post en la red social!",
+  "image": "https://cloudinary.com/...",
+  "authorId": "clx123...",
+  "author": {
+    "id": "clx123...",
+    "username": "johndoe",
+    "name": "John Doe",
+    "avatar": "https://cloudinary.com/..."
+  },
+  "createdAt": "2025-08-10T10:30:00.000Z",
+  "_count": {
+    "likes": 5,
+    "replies": 2
+  },
+  "isLikedByMe": false,
+  "isBookmarkedByMe": false,
+  "replies": [
+    {
+      "id": "clx789...",
+      "content": "Gran post!",
+      "parentId": "clx456...",
       "author": {
-        "username": "johndoe",
-        "name": "John Doe"
+        "id": "clx999...",
+        "username": "janedoe",
+        "name": "Jane Doe",
+        "avatar": null
       },
-      "createdAt": "2025-08-10T10:30:00.000Z",
-      "likesCount": 5,
-      "repliesCount": 2,
-      "isLiked": false,
-      "isBookmarked": false,
+      "createdAt": "2025-08-10T11:00:00.000Z",
+      "_count": {
+        "likes": 1,
+        "replies": 0
+      }
     }
-  }
+  ]
 }
+```
 ```
 
 **Errores:**
@@ -279,7 +326,7 @@ Obtiene un post específico.
 
 ---
 
-### POST `/posts/:id/like`
+### POST `/api/posts/:id/like`
 
 Alterna el like en un post.
 
@@ -291,17 +338,15 @@ Authorization: Bearer <token>
 **Response (200):**
 ```json
 {
-  "success": true,
-  "data": {
-    "isLiked": true,
-    "likesCount": 6
-  }
+  "liked": true,
+  "likesCount": 6
 }
+```
 ```
 
 ---
 
-### POST `/posts/:id/bookmark`
+### POST `/api/posts/:id/bookmark`
 
 Alterna el bookmark en un post.
 
@@ -313,11 +358,70 @@ Authorization: Bearer <token>
 **Response (200):**
 ```json
 {
-  "success": true,
-  "data": {
-    "isBookmarked": true
+  "bookmarked": true
+}
+```
+
+---
+
+### DELETE `/api/posts/:id`
+
+Elimina un post (soft delete). Solo el autor o un admin puede eliminar.
+
+**Headers:**
+```http
+Authorization: Bearer <token>
+```
+
+**Response (200):**
+```json
+{
+  "message": "Post eliminado exitosamente"
+}
+```
+
+**Errores:**
+- `403`: No tienes permisos para eliminar este post
+- `404`: Post no encontrado
+
+---
+
+### POST `/api/posts/:id/reply`
+
+Crea una respuesta (comentario) a un post.
+
+**Headers:**
+```http
+Authorization: Bearer <token>
+```
+
+**Request:**
+```json
+{
+  "content": "Gran post! Estoy de acuerdo."
+}
+```
+
+**Response (201):**
+```json
+{
+  "id": "clx789...",
+  "content": "Gran post! Estoy de acuerdo.",
+  "parentId": "clx456...",
+  "authorId": "clx123...",
+  "author": {
+    "id": "clx123...",
+    "username": "johndoe",
+    "name": "John Doe",
+    "avatar": null
+  },
+  "createdAt": "2025-08-10T11:00:00.000Z",
+  "_count": {
+    "likes": 0,
+    "replies": 0
   }
 }
+```
 ```
 
 ## 🔧 Rate Limiting
@@ -376,9 +480,13 @@ interface User {
   username: string;
   email: string;
   name: string;
+  avatar?: string | null;
+  bio?: string | null;
+  role: 'USER' | 'MODERATOR' | 'ADMIN';
+  verified: boolean;
+  googleId?: string | null;
   createdAt: Date;
   updatedAt: Date;
-  googleId?: string | null;
 }
 ```
 
@@ -387,19 +495,26 @@ interface User {
 ```typescript
 interface Post {
   id: string;
-  title?: string;
   content: string;
+  image?: string | null;
   authorId: string;
+  parentId?: string | null; // Para hilos/comentarios
   author: {
+    id: string;
     username: string;
     name: string;
+    avatar?: string | null;
   };
   createdAt: Date;
   updatedAt: Date;
-  likesCount: number;
-  repliesCount: number;
-  isLiked: boolean;
-  isBookmarked: boolean;
+  deletedAt?: Date | null;
+  _count: {
+    likes: number;
+    replies: number;
+  };
+  isLikedByMe: boolean;
+  isBookmarkedByMe: boolean;
+  replies?: Post[]; // Solo en GET /posts/:id
 }
 ```
 

@@ -1,3 +1,9 @@
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -10,28 +16,30 @@ datasource db {
 
 // --- USUARIOS ---
 model User {
-  id              String         @id @default(cuid())
-  email           String         @unique
-  username        String         @unique
-  name            String
-  googleId        String?        @unique
-  avatar          String?
-  bio             String?
-  verified        Boolean        @default(false)
-  active          Boolean        @default(true)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  password        String?
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  name      String
+  googleId  String?  @unique
+  avatar    String?
+  bio       String?
+  verified  Boolean  @default(false)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  password  String?
 
   // Relaciones
-  posts           Post[]         // Incluye posts originales y respuestas (comentarios)
-  likes           Like[]
-  bookmarks       Bookmark[]
-  following       Follow[]       @relation("UserFollowing")
-  followers       Follow[]       @relation("UserFollowers")
-  sessions        Session[]
-  visitsMade      ProfileVisit[] @relation("VisitorRelation")
-  visitsReceived  ProfileVisit[] @relation("VisitedRelation")
+  posts          Post[] // Incluye posts originales y respuestas (comentarios)
+  likes          Like[]
+  bookmarks      Bookmark[]
+  following      Follow[]       @relation("UserFollowing")
+  followers      Follow[]       @relation("UserFollowers")
+  sessions       Session[]
+  visitsMade     ProfileVisit[] @relation("VisitorRelation")
+  visitsReceived ProfileVisit[] @relation("VisitedRelation")
+
+  role Role @default(USER)
 
   @@map("users")
 }
@@ -49,29 +57,40 @@ model Session {
   @@map("sessions")
 }
 
-// --- CONTENIDO (ESTILO TWITTER) ---
+// --- CONTENIDO ---
 model Post {
-  id        String   @id @default(cuid())
-  content   String   @db.Text
-  image     String?
-  authorId  String
-  
+  id             String  @id @default(cuid())
+  content        String  @db.Text
+  image          String?
+  authorId       String
+  likesCount     Int     @default(0)
+  repliesCount   Int     @default(0)
+  bookmarksCount Int     @default(0)
+
   // Relación recursiva para Hilos/Comentarios
-  parentId  String?
-  parent    Post?    @relation("Thread", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   Post[]   @relation("Thread")
+  parentId String?
+  parent   Post?   @relation("Thread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Post[]  @relation("Thread")
 
   // Relaciones
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   likes     Like[]
   bookmarks Bookmark[]
   tags      PostTag[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
+  // Índices existentes
   @@index([parentId])
   @@index([authorId])
+
+  // Nuevos índices compuestos para optimización
+  @@index([authorId, createdAt, deletedAt])
+  @@index([deletedAt, createdAt])
+  @@index([deletedAt, parentId, createdAt])
+  @@index([deletedAt, createdAt, likesCount])
   @@map("posts")
 }
 
@@ -82,12 +101,14 @@ model Like {
   postId    String
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
   @@index([userId])
   @@index([postId])
+  @@index([postId, userId])
+  @@index([userId, createdAt])
   @@map("likes")
 }
 
@@ -97,12 +118,14 @@ model Bookmark {
   postId    String
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
   @@index([userId])
   @@index([postId])
+  @@index([postId, userId])
+  @@index([userId, createdAt])
   @@map("bookmarks")
 }
 
@@ -112,8 +135,8 @@ model Follow {
   followingId String
   createdAt   DateTime @default(now())
 
-  follower    User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
   @@map("follows")
@@ -134,8 +157,8 @@ model PostTag {
   postId String
   tagId  String
 
-  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([postId, tagId])
   @@map("post_tags")
@@ -143,14 +166,15 @@ model PostTag {
 
 // --- SOCIAL / MÉTRICAS ---
 model ProfileVisit {
-  id         String   @id @default(uuid())
-  visitorId  String
-  visitedId  String
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  visitorId String
+  visitedId String
+  createdAt DateTime @default(now())
 
-  visitor    User     @relation("VisitorRelation", fields: [visitorId], references: [id], onDelete: Cascade)
-  visited    User     @relation("VisitedRelation", fields: [visitedId], references: [id], onDelete: Cascade)
+  visitor User @relation("VisitorRelation", fields: [visitorId], references: [id], onDelete: Cascade)
+  visited User @relation("VisitedRelation", fields: [visitedId], references: [id], onDelete: Cascade)
 
+  @@unique([visitorId, visitedId])
   @@index([visitedId])
   @@index([visitorId])
   @@map("profile_visits")

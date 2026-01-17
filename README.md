@@ -36,7 +36,8 @@ npm run dev
 ```
 
 🌐 **Frontend**: http://localhost:5173  
-🔌 **Backend**: http://localhost:3000
+🔌 **Backend**: http://localhost:3000  
+📚 **API Docs (Swagger)**: http://localhost:3000/documentation
 
 ## 🚀 Tecnologías
 
@@ -44,15 +45,21 @@ npm run dev
 - **React 18** con TypeScript
 - **Vite** para desarrollo rápido
 - **React Router** para navegación
-- **Tailwind CSS** para estilos
+- **Material-UI (MUI)** para componentes UI
 - **Axios** para llamadas a la API
+- **Contextos** para manejo de estado (Auth)
+- **Guards** para protección de rutas por roles
+- **Custom Hooks** (useFeed, usePostDetail, useInfiniteScroll)
 
 ### Backend
 - **Fastify** con TypeScript
-- **CORS** configurado
-- **Helmet** para seguridad
-- **Rate limiting**
-- Estructura modular y escalable
+- **Arquitectura DDD** (Domain-Driven Design)
+- **Prisma ORM** con PostgreSQL
+- **JWT + Google OAuth** para autenticación
+- **Sistema de roles** (User, Moderator, Admin)
+- **Cloudinary** para upload de imágenes
+- **CORS, Helmet, Rate limiting** para seguridad
+- Estructura modular (auth, posts, users)
 
 ### Shared
 - Tipos y utilidades compartidas entre frontend y backend
@@ -61,27 +68,35 @@ npm run dev
 ## 📦 Estructura del Proyecto
 
 ```
-SocialNetworkApp/
-├── frontend/           # Aplicación React
+social-network-app/
+├── frontend/           # Aplicación React + Material-UI
 │   ├── src/
 │   │   ├── components/ # Componentes reutilizables
-│   │   ├── pages/      # Páginas de la aplicación
+│   │   │   ├── auth/   # Componentes de autenticación
+│   │   │   ├── social/ # Posts, Feed, etc.
+│   │   │   └── ui/     # Componentes UI base
+│   │   ├── pages/      # Páginas (Home, Profile, Login, etc.)
+│   │   ├── contexts/   # React Contexts (AuthContext)
+│   │   ├── guards/     # Protección de rutas (RoleGuard)
 │   │   ├── hooks/      # Custom hooks
 │   │   ├── services/   # Servicios de API
-│   │   ├── types/      # Tipos TypeScript
-│   │   ├── utils/      # Utilidades
-│   │   └── styles/     # Estilos CSS
+│   │   ├── theme/      # Temas de Material-UI
+│   │   ├── enums/      # Enums (Role)
+│   │   └── utils/      # Utilidades
 │   └── public/         # Archivos estáticos
-├── backend/            # API Fastify
-│   └── src/
-│       ├── routes/     # Rutas de la API
-│       ├── controllers/# Controladores
-│       ├── services/   # Lógica de negocio
-│       ├── models/     # Modelos de datos
-│       ├── middleware/ # Middlewares
-│       ├── types/      # Tipos TypeScript
-│       ├── utils/      # Utilidades
-│       └── config/     # Configuración
+├── backend/            # API Fastify + DDD
+│   ├── src/
+│   │   ├── modules/    # Módulos DDD
+│   │   │   ├── auth/   # Autenticación (Domain, Application, Infrastructure)
+│   │   │   ├── posts/  # Posts (Domain, Application, Infrastructure)
+│   │   │   └── users/  # Usuarios (Domain, Application, Infrastructure)
+│   │   ├── middleware/ # Middlewares (auth, role)
+│   │   ├── config/     # Configuración (env, etc.)
+│   │   ├── lib/        # Librerías (prisma, cloudinary)
+│   │   └── schemas/    # Schemas de validación
+│   └── prisma/         # Base de datos
+│       ├── schema.prisma
+│       └── migrations/
 └── shared/             # Código compartido
     ├── types/          # Tipos compartidos
     └── utils/          # Utilidades compartidas
@@ -183,19 +198,26 @@ Crear archivos `.env` en los directorios correspondientes:
 
 **Backend (.env)**
 ```env
-PORT=3001
+PORT=3000
 HOST=0.0.0.0
 NODE_ENV=development
 LOG_LEVEL=info
-ALLOWED_ORIGINS=http://localhost:3000
-DATABASE_URL=your_database_url
+ALLOWED_ORIGINS=http://localhost:5173
+DATABASE_URL=postgresql://user:password@localhost:5432/social_network
 JWT_SECRET=your_super_secret_jwt_key
-JWT_ACCESS_EXPIRES_IN=24h
+JWT_EXPIRES_IN=7d
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+MAX_FILE_SIZE=5242880
+RATE_LIMIT_MAX=100
 ```
 
 **Frontend (.env)**
 ```env
-VITE_API_BASE_URL=http://localhost:3001
+VITE_API_BASE_URL=http://localhost:3000
 ```
 
 ## 🚀 Despliegue
@@ -250,13 +272,18 @@ chore: descripción          # Mantenimiento
 
 ## 📝 Próximos Pasos
 
-- [✅] Agregar base de datos (PostgreSQL)
-- [✅] Implementar autenticación JWT
-- [ ] Agregar tests unitarios y de integración
+- [✅] Base de datos PostgreSQL con Prisma
+- [✅] Autenticación JWT + Google OAuth
+- [✅] Sistema de roles (User, Moderator, Admin)
+- [✅] Documentación de API con Swagger
+- [✅] Arquitectura DDD (Domain-Driven Design)
+- [✅] Upload de imágenes con Cloudinary
+- [✅] Sistema de posts estilo Twitter (con hilos)
+- [✅] Likes, Bookmarks, Follows
+- [⏳] Tests unitarios y de integración
 - [ ] Configurar CI/CD
-- [ ] Agregar documentación de API con Swagger
-- [ ] Implementar logging estructurado
-- [ ] Agregar monitoreo y métricas
+- [ ] Notificaciones en tiempo real
+- [ ] Sistema de mensajería directa
 
 ## 📄 Licencia
 

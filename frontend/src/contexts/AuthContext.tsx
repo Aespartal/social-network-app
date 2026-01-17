@@ -1,10 +1,11 @@
-import { createContext, useState, useEffect, ReactNode } from 'react'
-import { authService } from '@/services/auth.service'
-import { profileService } from '@/services/profile.service'
+import { createContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react'
+import { authService, profileService } from '@/services'
+import { backupSession, restoreSession, clearSessionBackup } from '@/utils/sessionGuard'
 import type {
   User,
   LoginRequest,
   CreateUserRequest,
+  AuthResponse,
 } from 'social-network-app-shared/types/auth.type'
 
 interface AuthContextType {
@@ -23,26 +24,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const saveAuthData = (
-    token: string,
-    userData: User,
-    refreshToken?: string
-  ) => {
-    localStorage.setItem('access_token', token)
-    localStorage.setItem('user_data', JSON.stringify(userData))
-    if (refreshToken) localStorage.setItem('refresh_token', refreshToken)
-    setUser(userData)
-  }
+  const saveAuthData = useCallback((authData: AuthResponse) => {
+    const { tokens, user: userData } = authData
 
-  const clearAuthData = () => {
+    localStorage.setItem('access_token', tokens.accessToken)
+    localStorage.setItem('refresh_token', tokens.refreshToken)
+    localStorage.setItem('user_data', JSON.stringify(userData))
+
+    setUser(userData)
+    
+    backupSession()
+  }, [])
+
+  const clearAuthData = useCallback(() => {
+    clearSessionBackup()
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user_data')
     setUser(null)
-  }
+  }, [])
 
   useEffect(() => {
-    const checkAuth = async () => {
+      const wasRestored = restoreSession()
+      if (wasRestored) {
+        console.log('🔄 Session recovered from backup')
+      }
+
+      const checkAuth = async () => {
       const token = localStorage.getItem('access_token')
       const savedUser = localStorage.getItem('user_data')
 
@@ -52,12 +60,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       try {
-        setUser(JSON.parse(savedUser))
+        const parsedUser = JSON.parse(savedUser)
+        setUser(parsedUser)
+
+        backupSession()
         const userData = await profileService.getProfile()
         setUser(userData)
         localStorage.setItem('user_data', JSON.stringify(userData))
       } catch (error) {
-        console.error('Error al verificar la autenticación:', error)
+        console.error('❌ Error al verificar la autenticación:', error)
         clearAuthData()
       } finally {
         setLoading(false)
@@ -67,65 +78,85 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkAuth()
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'access_token' && !e.newValue) setUser(null)
+      if (e.key === 'access_token' && !e.newValue) {
+        setUser(null)
+      }
+      
+      if (e.key === 'user_data' && e.newValue) {
+        try {
+          const newUser = JSON.parse(e.newValue)
+          setUser(newUser)
+        } catch (error) {
+          console.error('Error parsing user from storage event:', error)
+        }
+      }
     }
 
     globalThis.addEventListener('storage', handleStorageChange)
     return () => globalThis.removeEventListener('storage', handleStorageChange)
-  }, [])
+  }, [clearAuthData])
 
-  // SOLUCIÓN AL ERROR no-useless-catch:
-  // Si solo vas a hacer "throw error", no necesitas el try/catch.
-  const login = async (credentials: LoginRequest) => {
-    const {
-      token,
-      user: userData,
-      refreshToken,
-    } = await authService.login(credentials)
-    saveAuthData(token, userData, refreshToken)
-  }
+  const login = useCallback(async (credentials: LoginRequest) => {
+    try {
+      setLoading(true)
+      const response = await authService.login(credentials)
+      saveAuthData(response)
+    } finally {
+      setLoading(false)
+    }
+  }, [saveAuthData])
 
-  const register = async (userData: CreateUserRequest) => {
+  const register = useCallback(async (userData: CreateUserRequest) => {
     try {
       setLoading(true)
       const response = await authService.register(userData)
-      saveAuthData(response.token, response.user, response.refreshToken)
+      saveAuthData(response)
     } catch (error) {
       console.error('Registration failed:', error)
       throw error
     } finally {
       setLoading(false)
     }
-  }
+  }, [saveAuthData])
 
-  const logout = async () => {
+  const loginWithGoogle = useCallback(async (idToken: string) => {
+    try {
+      setLoading(true)
+      const response = await authService.loginWithGoogle(idToken)
+      saveAuthData(response)
+    } finally {
+      setLoading(false)
+    }
+  }, [saveAuthData])
+
+  const logout = useCallback(async () => {
     try {
       const refreshToken = localStorage.getItem('refresh_token')
-      if (refreshToken) await authService.logout(refreshToken)
+      if (refreshToken) {
+        await authService.logout(refreshToken)
+      }
     } catch (error) {
-      console.error('Error al cerrar sesión:', error)
+      console.error('Error al cerrar sesión en el servidor:', error)
     } finally {
       clearAuthData()
     }
-  }
+  }, [clearAuthData])
 
-  const loginWithGoogle = async (idToken: string) => {
-    const response = await authService.loginWithGoogle(idToken)
-    saveAuthData(response.token, response.user, response.refreshToken)
-  }
+  const authContextValue = useMemo(
+    () => ({
+      user,
+      loading,
+      login,
+      register,
+      loginWithGoogle,
+      logout,
+      isAuthenticated: !!user,
+    }),
+    [user, loading, login, register, loginWithGoogle, logout]
+  )
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        register,
-        loginWithGoogle,
-        logout,
-        isAuthenticated: !!user,
-      }}
-    >
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   )

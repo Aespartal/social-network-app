@@ -1,4 +1,4 @@
-import { postService } from '@/services/post.service'
+import { postService } from '@/services'
 import { useCallback, useState } from 'react'
 import { Post } from 'social-network-app-shared/types/social.type'
 
@@ -16,10 +16,14 @@ export const useFeed = () => {
   const [loadingMore, setLoadingMore] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
   const [hasMorePosts, setHasMorePosts] = useState<boolean>(true)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState<boolean>(false)
 
   const loadFeed = useCallback(
     async (isInitial = true) => {
+      // Evitar peticiones concurrentes
+      if (loading || loadingMore) return
+      
       let timeoutId: ReturnType<typeof setTimeout> | undefined
 
       try {
@@ -29,19 +33,16 @@ export const useFeed = () => {
           setLoadingMore(true)
         }
 
-        const cursor =
-          !isInitial && posts.length > 0
-            ? posts[posts.length - 1].id
-            : undefined
+        const cursor = isInitial ? undefined : nextCursor || undefined
 
         const response = await postService.getFeed({ cursor, limit: 10 })
 
         if (timeoutId) clearTimeout(timeoutId)
 
-        setPosts(prev =>
-          isInitial ? response.posts : [...prev, ...response.posts]
-        )
-        setHasMorePosts(response.posts.length === 10)
+        const newPosts = response.posts || []
+        setPosts(prev => isInitial ? newPosts : [...prev, ...newPosts])
+        setNextCursor(response.meta?.nextCursor ?? null)
+        setHasMorePosts(response.meta?.hasMore ?? false)
       } catch {
         setError('Error al cargar el feed')
       } finally {
@@ -50,7 +51,7 @@ export const useFeed = () => {
         setLoadingMore(false)
       }
     },
-    [posts]
+    [nextCursor, loading, loadingMore]
   )
 
   const handleToggleLike = async (postId: string) => {

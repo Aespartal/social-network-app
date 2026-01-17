@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
   Box,
   Alert,
@@ -10,8 +10,7 @@ import {
 } from '@mui/material'
 
 // Hooks
-import { useAuth } from '@/hooks/useAuth'
-import { useFeed } from '@/hooks/useFeed'
+import { useAuth, useFeed } from '@/hooks'
 
 // Componentes Sociales
 import { FeedSkeleton } from '@/components/social/skeleton/FeedSkeleton'
@@ -40,12 +39,20 @@ export const Home: React.FC = () => {
     isCreating,
   } = useFeed()
 
-  // Carga inicial
+  // Carga inicial solo una vez al autenticarse
   useEffect(() => {
     if (isAuthenticated && posts.length === 0) {
       loadFeed(true)
     }
-  }, [isAuthenticated, loadFeed, posts.length])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated])
+
+  // Memoizar la función de carga para evitar recreaciones
+  const handleLoadMore = useCallback(() => {
+    if (!loadingMore) {
+      loadFeed(false)
+    }
+  }, [loadFeed, loadingMore])
 
   // 1. Pantalla de carga global de Auth
   if (authLoading) {
@@ -90,7 +97,7 @@ export const Home: React.FC = () => {
               onLike={handleToggleLike}
               hasMore={hasMorePosts}
               loadingMore={loadingMore}
-              onLoadMore={() => loadFeed(false)}
+              onLoadMore={handleLoadMore}
               onBookmark={handleToggleBookmark}
               onReply={post => setReplyToPost(post)}
             />

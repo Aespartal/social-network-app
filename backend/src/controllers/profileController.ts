@@ -1,8 +1,7 @@
-// profileController.ts
-
-import { prisma } from "@/lib/prisma";
-import { FastifyRequest, FastifyReply } from "fastify";
-import { ApiResponse } from "social-network-app-shared/types/api.type";
+import { prisma } from '@/lib/prisma'
+import { FastifyRequest, FastifyReply } from 'fastify'
+import { ApiResponse } from 'social-network-app-shared/types/api.type'
+import { parseUpdateProfileMultipart } from '@/utils/multipart-helper'
 
 /**
  * Obtener Perfil Propio (Ruta Protegida)
@@ -30,7 +29,7 @@ export const getProfile = async (
             posts: true,
             followers: true,
             following: true,
-            visitsReceived: true
+            visitsReceived: true,
           },
         },
       },
@@ -44,7 +43,7 @@ export const getProfile = async (
 
     return reply.send({
       success: true,
-      data: { user },
+      data: user,
       message: 'Perfil obtenido exitosamente',
     } as ApiResponse)
   } catch (error) {
@@ -57,23 +56,36 @@ export const getProfile = async (
 }
 
 export const recordVisit = async (req: FastifyRequest, reply: FastifyReply) => {
-  const { visitedId } = req.params as { visitedId: string };
-  const visitorId = req.user!.id;
+  const { visitedId } = req.params as { visitedId: string }
+  const visitorId = req.user!.id
 
-  if (visitorId === visitedId) return reply.send();
+  if (visitorId === visitedId) return reply.send()
 
-  await prisma.profileVisit.create({
-    data: {
+  // Usar upsert para evitar duplicados y actualizar la fecha de la visita
+  await prisma.profileVisit.upsert({
+    where: {
+      visitorId_visitedId: {
+        visitorId,
+        visitedId,
+      },
+    },
+    update: {
+      createdAt: new Date(), // Actualiza la fecha de la visita
+    },
+    create: {
       visitorId,
-      visitedId
-    }
-  });
+      visitedId,
+    },
+  })
 
-  return reply.status(204).send();
-};
+  return reply.status(204).send()
+}
 
-export const getProfileVisits = async (req: FastifyRequest, reply: FastifyReply) => {
-  const userId = req.user!.id;
+export const getProfileVisits = async (
+  req: FastifyRequest,
+  reply: FastifyReply
+) => {
+  const userId = req.user!.id
 
   const visits = await prisma.profileVisit.findMany({
     where: { visitedId: userId },
@@ -83,18 +95,17 @@ export const getProfileVisits = async (req: FastifyRequest, reply: FastifyReply)
           id: true,
           username: true,
           name: true,
-          avatar: true
-        }
-      }
+          avatar: true,
+        },
+      },
     },
     orderBy: { createdAt: 'desc' },
     distinct: ['visitorId'],
-    take: 10
-  });
+    take: 10,
+  })
 
-  return reply.send({ success: true, data: visits.map(v => v.visitor) });
-};
-
+  return reply.send({ success: true, data: visits.map(v => v.visitor) })
+}
 
 /**
  * Obtener Usuario por Username (Público)
@@ -122,11 +133,20 @@ export const getUserByUsername = async (
             posts: true,
             followers: true,
             following: true,
-            visitsReceived: true
+            visitsReceived: true,
           },
         },
       },
     })
+
+    // Debug: Verificar el conteo de visitas directamente
+    const visitsCount = await prisma.profileVisit.count({
+      where: { visitedId: user?.id },
+    })
+
+    console.log('Usuario:', username)
+    console.log('Visitas desde _count:', user?._count.visitsReceived)
+    console.log('Visitas desde count directo:', visitsCount)
 
     if (!user || !user.active) {
       return reply.status(404).send({
@@ -135,17 +155,10 @@ export const getUserByUsername = async (
       } as ApiResponse)
     }
 
-    const publicUser = {
-      ...user,
-      postsCount: user._count.posts,
-      followersCount: user._count.followers,
-      followingCount: user._count.following,
-      visitsReceived: user._count.visitsReceived,
-    }
-
+    // Mantener la estructura _count que espera el frontend
     return reply.send({
       success: true,
-      data: publicUser,
+      data: user,
       message: 'Usuario obtenido exitosamente',
     } as ApiResponse)
   } catch (error) {
@@ -159,23 +172,23 @@ export const getUserByUsername = async (
 
 export const getSuggestedUsers = async (
   request: FastifyRequest,
-  reply: FastifyReply 
+  reply: FastifyReply
 ) => {
   try {
-    const userId = request.user!.id;
-    const limit = Number((request.query as any)?.limit) || 5;
+    const userId = request.user!.id
+    const limit = Number((request.query as any)?.limit) || 5
 
     const suggestedUsers = await prisma.user.findMany({
       where: {
         active: true,
-        id: { 
+        id: {
           not: userId,
         },
         followers: {
           none: {
-            followerId: userId
-          }
-        }
+            followerId: userId,
+          },
+        },
       },
       select: {
         id: true,
@@ -187,26 +200,117 @@ export const getSuggestedUsers = async (
           select: { followers: true },
         },
       },
-      orderBy: [
-        { verified: 'desc' },
-        { followers: { _count: 'desc' } }
-      ],
+      orderBy: [{ verified: 'desc' }, { followers: { _count: 'desc' } }],
       take: 20,
-    });
+    })
 
     const shuffled = suggestedUsers
       .sort(() => 0.5 - Math.random())
-      .slice(0, limit);
+      .slice(0, limit)
 
     return reply.send({
       success: true,
       data: shuffled,
-    });
+    })
   } catch (error) {
-    request.log.error(error);
+    request.log.error(error)
     return reply.status(500).send({
       success: false,
       error: 'Error al obtener usuarios sugeridos',
-    });
+    })
+  }
+}
+
+/**
+ * Actualizar Perfil (Ruta Protegida)
+ */
+export const updateProfile = async (
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    const { id } = request.params
+    const userId = request.user!.id
+
+    // Verificar que el usuario solo pueda actualizar su propio perfil
+    if (id !== userId) {
+      return reply.status(403).send({
+        success: false,
+        error: 'No tienes permiso para actualizar este perfil',
+      } as ApiResponse)
+    }
+
+    // Parsear multipart data
+    if (!request.isMultipart()) {
+      return reply.status(400).send({
+        success: false,
+        error: 'El contenido debe ser multipart/form-data',
+      } as ApiResponse)
+    }
+
+    const { username, name, bio, avatarUrl } =
+      await parseUpdateProfileMultipart(request.parts())
+
+    // Verificar si el username ya está en uso (si se está cambiando)
+    if (username) {
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          username,
+          NOT: { id: userId },
+        },
+      })
+
+      if (existingUser) {
+        return reply.status(409).send({
+          success: false,
+          error: 'El nombre de usuario ya está en uso',
+        } as ApiResponse)
+      }
+    }
+
+    // Construir objeto de actualización solo con campos presentes
+    const updateData: any = {}
+    if (username !== undefined) updateData.username = username
+    if (name !== undefined) updateData.name = name
+    if (bio !== undefined) updateData.bio = bio
+    if (avatarUrl !== undefined) updateData.avatar = avatarUrl
+
+    // Actualizar usuario
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        avatar: true,
+        bio: true,
+        verified: true,
+        active: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            posts: true,
+            followers: true,
+            following: true,
+            visitsReceived: true,
+          },
+        },
+      },
+    })
+
+    return reply.send({
+      success: true,
+      data: updatedUser,
+      message: 'Perfil actualizado exitosamente',
+    } as ApiResponse)
+  } catch (error) {
+    request.log.error(error)
+    return reply.status(500).send({
+      success: false,
+      error: 'Error al actualizar el perfil',
+    } as ApiResponse)
   }
 }

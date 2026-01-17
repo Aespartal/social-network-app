@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { Post } from 'social-network-app-shared/types/social.type'
-import { postService } from '@/services/post.service'
-import { useFeed } from '@/hooks/useFeed'
+import { postService } from '@/services'
+import { useFeed } from '@/hooks'
 
 export const usePostDetail = (id: string | undefined) => {
   const [post, setPost] = useState<Post | null>(null)

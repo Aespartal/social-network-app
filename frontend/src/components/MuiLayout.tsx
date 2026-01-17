@@ -29,7 +29,7 @@ import {
 } from '@mui/icons-material'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTheme } from '@/theme/ThemeProvider'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/hooks'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -51,12 +51,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const menuItems = [
     { text: 'Feed', icon: <HomeIcon />, path: '/', private: true },
-    {
+    ...(user?.username ? [{
       text: 'Mi perfil',
-      icon: <Avatar src={user?.avatar || ''} sx={{ width: 24, height: 24 }} />, // Avatar en el icono
-      path: `/profile/${user?.username}`,
+      icon: <Avatar src={user.avatar || ''} sx={{ width: 24, height: 24 }} />,
+      path: `/profile/${user.username}`,
       private: true,
-    },
+    }] : []),
     { text: 'Acerca de', icon: <InfoIcon />, path: '/about', private: false },
   ]
 

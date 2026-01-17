@@ -9,10 +9,9 @@ import {
   Alert,
   Link,
 } from '@mui/material'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth, useForm } from '@/hooks'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { CreateUserRequest } from 'social-network-app-shared/types/auth.type'
-import { useForm } from '@/hooks/useForm'
 
 interface ApiError {
   response?: {
@@ -44,8 +43,14 @@ const Register: React.FC = () => {
         if (vals.password !== vals.confirmPassword) {
           newErrors.confirmPassword = 'Las contraseñas no coinciden'
         }
-        if (vals.password.length > 0 && vals.password.length < 6) {
-          newErrors.password = 'Mínimo 6 caracteres'
+        if (vals.password.length > 0 && vals.password.length < 8) {
+          newErrors.password = 'La contraseña debe tener al menos 8 caracteres'
+        }
+        if (vals.username.length > 0 && vals.username.length < 3) {
+          newErrors.username = 'El nombre de usuario debe tener al menos 3 caracteres'
+        }
+        if (vals.username.length > 0 && !/^[a-zA-Z0-9_]+$/.test(vals.username)) {
+          newErrors.username = 'Solo letras, números y guiones bajos'
         }
         return newErrors
       },
@@ -120,7 +125,12 @@ const Register: React.FC = () => {
               onChange={handleChange('username')}
               margin='normal'
               required
-              helperText='Sin espacios ni caracteres especiales'
+              error={!!errors.username && !!touched.username}
+              helperText={
+                touched.username && errors.username
+                  ? errors.username
+                  : 'Solo letras, números y guiones bajos (mínimo 3 caracteres)'
+              }
             />
 
             <TextField
@@ -151,8 +161,12 @@ const Register: React.FC = () => {
               onChange={handleChange('password')}
               margin='normal'
               required
-              error={!!errors.password}
-              helperText={errors.password || 'Mínimo 6 caracteres'}
+              error={!!errors.password && !!touched.password}
+              helperText={
+                touched.password && errors.password
+                  ? errors.password
+                  : 'Mínimo 8 caracteres'
+              }
             />
 
             <TextField

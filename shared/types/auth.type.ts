@@ -1,3 +1,5 @@
+import { Role } from "../../backend/src/enums/role.enum";
+
 export interface RegisterRequest {
   email: string;
   password: string;
@@ -16,6 +18,7 @@ export interface User {
   googleId?: string | null;
   createdAt: string;
   updatedAt: string;
+  role: Role;
   _count: {
     followers: number;
     following: number;
@@ -38,9 +41,13 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface LoginResponse {
-  message: string;
-  user: User;
-  token: string;
+export interface TokenResponse {
+  accessToken: string;
   refreshToken: string;
+  expiresIn: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  tokens: TokenResponse;
 }

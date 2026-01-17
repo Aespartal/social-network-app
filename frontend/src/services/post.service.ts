@@ -2,16 +2,25 @@ import axiosInstance from './axiosInstance'
 import type {
   Post,
   CreatePostRequest,
-  FeedRequest,
-  FeedResponse,
+  PostRequest,
+  PostResponse,
 } from '../../../shared/types/social.type'
 import type { ApiResponse } from '../../../shared/types/api.type'
+import { API_ENDPOINTS } from '@/constants'
 
 export const postService = {
-  async getFeed(params: FeedRequest = {}): Promise<FeedResponse> {
-    const { data } = await axiosInstance.get<ApiResponse<FeedResponse>>(
-      '/posts/feed',
-      { params }
+  async getFeed(params: PostRequest = {}): Promise<PostResponse> {
+    // Limpiar parámetros null/undefined para que Axios no los envíe
+    const cleanParams = Object.entries(params).reduce((acc, [key, value]) => {
+      if (value !== null && value !== undefined) {
+        acc[key] = value
+      }
+      return acc
+    }, {} as Record<string, any>)
+    
+    const { data } = await axiosInstance.get<ApiResponse<PostResponse>>(
+      API_ENDPOINTS.POSTS.FEED,
+      { params: cleanParams }
     )
     return data.data!
   },
@@ -36,7 +45,7 @@ export const postService = {
     }
 
     const { data } = await axiosInstance.post<ApiResponse<{ post: Post }>>(
-      '/posts',
+      API_ENDPOINTS.POSTS.CREATE,
       formData
     )
 
@@ -48,31 +57,39 @@ export const postService = {
   ): Promise<{ isLiked: boolean; likeCount: number }> {
     const { data } = await axiosInstance.post<
       ApiResponse<{ isLiked: boolean; likeCount: number }>
-    >(`/posts/${postId}/like`)
+    >(API_ENDPOINTS.POSTS.LIKE(postId))
     return data.data!
   },
 
   async getUserPosts(
     username: string,
-    page: number = 1,
-    limit: number = 10
-  ): Promise<Post[]> {
-    const { data } = await axiosInstance.get<ApiResponse<{ posts: Post[] }>>(
-      `/posts/user/${username}?page=${page}&limit=${limit}`
+    params?: { cursor?: string | null; since?: string; limit?: number }
+  ): Promise<PostResponse> {
+    // Limpiar parámetros null/undefined
+    const cleanParams = params ? Object.entries(params).reduce((acc, [key, value]) => {
+      if (value !== null && value !== undefined) {
+        acc[key] = value
+      }
+      return acc
+    }, {} as Record<string, any>) : {}
+    
+    const { data } = await axiosInstance.get<ApiResponse<PostResponse>>(
+      API_ENDPOINTS.POSTS.BY_USER(username),
+      { params: cleanParams }
     )
-    return data.data?.posts || []
+    return data.data!
   },
 
   async toggleBookmark(postId: string): Promise<{ isBookmarked: boolean }> {
     const { data } = await axiosInstance.post<
       ApiResponse<{ isBookmarked: boolean }>
-    >(`/posts/${postId}/bookmark`)
+    >(API_ENDPOINTS.POSTS.BOOKMARK(postId))
     return data.data!
   },
 
   async getPostWithReplies(id: string): Promise<Post> {
     const response = await axiosInstance.get<ApiResponse<{ post: Post }>>(
-      `/posts/${id}`
+      API_ENDPOINTS.POSTS.BY_ID(id)
     )
     return response.data.data!.post
   },
