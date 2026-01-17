@@ -1,11 +1,20 @@
 import bcrypt from 'bcryptjs'
 import type { PrismaClient } from '@/generated/prisma'
-import type { AuthRepository as AR } from '../../domain/repositories/auth.repository.interface'
+import type { AuthRepository } from '../../domain/repositories/auth.repository.interface'
+import type {
+  AuthUser,
+  CreateAuthUserInput,
+  UpdateAuthUserInput,
+} from '../../domain/entities/auth-user.entity'
+import type {
+  CreateSessionInput,
+  SessionEntity,
+} from '../../domain/entities/session.entity'
 
-export class PrismaAuthRepository implements AR {
+export class PrismaAuthRepository implements AuthRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async findByEmail(email: string): Promise<AR.AuthUser | null> {
+  async findByEmail(email: string): Promise<AuthUser | null> {
     const user = await this.prisma.user.findUnique({
       where: { email },
     })
@@ -15,7 +24,7 @@ export class PrismaAuthRepository implements AR {
     return this.mapToAuthUser(user)
   }
 
-  async findByGoogleId(googleId: string): Promise<AR.AuthUser | null> {
+  async findByGoogleId(googleId: string): Promise<AuthUser | null> {
     const user = await this.prisma.user.findUnique({
       where: { googleId },
     })
@@ -25,7 +34,7 @@ export class PrismaAuthRepository implements AR {
     return this.mapToAuthUser(user)
   }
 
-  async findByUsername(username: string): Promise<AR.AuthUser | null> {
+  async findByUsername(username: string): Promise<AuthUser | null> {
     const user = await this.prisma.user.findUnique({
       where: { username },
     })
@@ -35,7 +44,7 @@ export class PrismaAuthRepository implements AR {
     return this.mapToAuthUser(user)
   }
 
-  async findById(id: string): Promise<AR.AuthUser | null> {
+  async findById(id: string): Promise<AuthUser | null> {
     const user = await this.prisma.user.findUnique({
       where: { id },
     })
@@ -61,7 +70,7 @@ export class PrismaAuthRepository implements AR {
     return user !== null
   }
 
-  async createUser(input: AR.CreateAuthUserInput): Promise<AR.AuthUser> {
+  async createUser(input: CreateAuthUserInput): Promise<AuthUser> {
     const { email, username, name, passwordHash, avatar, bio, role } = input
 
     const user = await this.prisma.user.create({
@@ -81,11 +90,11 @@ export class PrismaAuthRepository implements AR {
 
   async updateUser(
     id: string,
-    data: Partial<{ googleId: string }>
-  ): Promise<AR.AuthUser> {
+    updates: Partial<UpdateAuthUserInput>
+  ): Promise<AuthUser> {
     const user = await this.prisma.user.update({
       where: { id },
-      data,
+      data: updates as any,
     })
 
     return this.mapToAuthUser(user)
@@ -95,7 +104,7 @@ export class PrismaAuthRepository implements AR {
     return await bcrypt.compare(password, hash)
   }
 
-  async createSession(input: AR.CreateSessionInput): Promise<AR.SessionEntity> {
+  async createSession(input: CreateSessionInput): Promise<SessionEntity> {
     const { token, userId, expiresAt } = input
 
     const session = await this.prisma.session.create({
@@ -115,7 +124,7 @@ export class PrismaAuthRepository implements AR {
     }
   }
 
-  async findSession(token: string): Promise<AR.SessionEntity | null> {
+  async findSession(token: string): Promise<SessionEntity | null> {
     const session = await this.prisma.session.findUnique({
       where: { token },
       include: { user: true },
@@ -123,7 +132,7 @@ export class PrismaAuthRepository implements AR {
 
     if (!session) return null
 
-    const result: AR.SessionEntity = {
+    const result: SessionEntity = {
       id: session.id,
       token: session.token,
       userId: session.userId,
@@ -154,7 +163,7 @@ export class PrismaAuthRepository implements AR {
     return new Date() > expiresAt
   }
 
-  private mapToAuthUser(user: any): AR.AuthUser {
+  private mapToAuthUser(user: any): AuthUser {
     return {
       id: user.id,
       email: user.email,
