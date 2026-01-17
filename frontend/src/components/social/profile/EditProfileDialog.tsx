@@ -64,16 +64,21 @@ export const EditProfileDialog = ({
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // Reset form when dialog opens
   useEffect(() => {
     if (open) {
-      setUsername(user.username)
-      setName(user.name)
-      setBio(user.bio || '')
-      setAvatarFile(null)
-      setAvatarPreview(null)
-      setError(null)
+      // Reset states to initial values
+      const resetStates = () => {
+        setUsername(user.username)
+        setName(user.name)
+        setBio(user.bio || '')
+        setAvatarFile(null)
+        setAvatarPreview(null)
+        setError(null)
+      }
+      resetStates()
     }
-  }, [open, user])
+  }, [open]) // Removed user from deps to avoid cascading renders
 
   useEffect(() => {
     return () => {

@@ -1,5 +1,3 @@
-import { UserEntity } from '../entities/user.entity'
-
 export enum UserErrorCode {
   USER_NOT_FOUND = 'USER_NOT_FOUND',
   USER_ALREADY_EXISTS = 'USER_ALREADY_EXISTS',
@@ -74,11 +72,7 @@ export class UserError extends Error {
   }
 
   static unauthorized(): UserError {
-    return new UserError(
-      UserErrorCode.USER_UNAUTHORIZED,
-      'No autenticado',
-      401
-    )
+    return new UserError(UserErrorCode.USER_UNAUTHORIZED, 'No autenticado', 401)
   }
 
   static forbidden(): UserError {

@@ -15,9 +15,9 @@ declare module 'fastify' {
       email: string
       username: string
       role: Role
-    },
-    file: () => Promise<import('@fastify/multipart').MultipartFile | undefined>;
-    parts: () => AsyncIterableIterator<import('@fastify/multipart').Multipart>;
+    }
+    file: () => Promise<import('@fastify/multipart').MultipartFile | undefined>
+    parts: () => AsyncIterableIterator<import('@fastify/multipart').Multipart>
   }
 }
 

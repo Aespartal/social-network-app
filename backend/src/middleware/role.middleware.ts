@@ -8,14 +8,14 @@ export const authorize = (allowedRoles: Role[]) => {
     if (!user) {
       return reply.status(401).send({
         success: false,
-        error: 'No autenticado'
+        error: 'No autenticado',
       })
     }
 
     if (!allowedRoles.includes(user.role)) {
       return reply.status(403).send({
         success: false,
-        error: `No tienes permisos suficientes (Se requiere: ${allowedRoles.join(', ')})`
+        error: `No tienes permisos suficientes (Se requiere: ${allowedRoles.join(', ')})`,
       })
     }
   }

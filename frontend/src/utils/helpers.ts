@@ -69,7 +69,7 @@ export function stringToColor(str: string): string {
     const code = str.codePointAt(i) ?? 0
     hash = code + ((hash << 5) - hash)
   }
-  
+
   const hue = hash % 360
   return `hsl(${hue}, 65%, 50%)`
 }
@@ -85,7 +85,7 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
   delay: number
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout>
-  
+
   return (...args: Parameters<T>) => {
     clearTimeout(timeoutId)
     timeoutId = setTimeout(() => func(...args), delay)
@@ -103,7 +103,7 @@ export function throttle<T extends (...args: unknown[]) => unknown>(
   limit: number
 ): (...args: Parameters<T>) => void {
   let inThrottle: boolean
-  
+
   return (...args: Parameters<T>) => {
     if (!inThrottle) {
       func(...args)

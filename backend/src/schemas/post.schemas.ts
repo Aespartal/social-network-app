@@ -87,9 +87,7 @@ export const CreatePostSchema = Type.Object({
       description: 'Archivo de imagen (multipart/form-data)',
     })
   ),
-  tags: Type.Optional(
-    Type.Array(Type.String())
-  ),
+  tags: Type.Optional(Type.Array(Type.String())),
 })
 
 export const UpdatePostSchema = Type.Object({

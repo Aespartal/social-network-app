@@ -53,7 +53,6 @@ export function useApi<T = unknown, P extends unknown[] = []>(
     execute,
     reset,
     setData: (data: T | null) => setState(prev => ({ ...prev, data })),
-    setError: (error: string | null) =>
-      setState(prev => ({ ...prev, error })),
+    setError: (error: string | null) => setState(prev => ({ ...prev, error })),
   }
 }

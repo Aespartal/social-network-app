@@ -1,9 +1,10 @@
-
 import cloudinary from '@/lib/cloudinary'
 import { UploadApiResponse } from 'cloudinary'
 import { Readable } from 'node:stream'
 
-export const uploadToCloudinary = (fileStream: Readable): Promise<UploadApiResponse> => {
+export const uploadToCloudinary = (
+  fileStream: Readable
+): Promise<UploadApiResponse> => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {

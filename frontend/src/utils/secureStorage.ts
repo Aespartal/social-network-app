@@ -1,6 +1,6 @@
 /**
  * Secure Storage - Wrapper para almacenamiento encriptado
- * 
+ *
  * Encripta datos sensibles antes de guardarlos en localStorage
  * usando Web Crypto API (AES-GCM)
  */
@@ -10,7 +10,7 @@ const ENCRYPTION_KEY_NAME = '__app_key__'
 // Generar o recuperar clave de encriptación
 async function getEncryptionKey(): Promise<CryptoKey> {
   const storedKey = sessionStorage.getItem(ENCRYPTION_KEY_NAME)
-  
+
   if (storedKey) {
     const keyData = JSON.parse(storedKey)
     return crypto.subtle.importKey(

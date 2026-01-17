@@ -11,13 +11,16 @@ import { API_ENDPOINTS } from '@/constants'
 export const postService = {
   async getFeed(params: PostRequest = {}): Promise<PostResponse> {
     // Limpiar parámetros null/undefined para que Axios no los envíe
-    const cleanParams = Object.entries(params).reduce((acc, [key, value]) => {
-      if (value !== null && value !== undefined) {
-        acc[key] = value
-      }
-      return acc
-    }, {} as Record<string, any>)
-    
+    const cleanParams = Object.entries(params).reduce(
+      (acc, [key, value]) => {
+        if (value !== null && value !== undefined) {
+          acc[key] = value
+        }
+        return acc
+      },
+      {} as Record<string, string | number>
+    )
+
     const { data } = await axiosInstance.get<ApiResponse<PostResponse>>(
       API_ENDPOINTS.POSTS.FEED,
       { params: cleanParams }
@@ -66,13 +69,18 @@ export const postService = {
     params?: { cursor?: string | null; since?: string; limit?: number }
   ): Promise<PostResponse> {
     // Limpiar parámetros null/undefined
-    const cleanParams = params ? Object.entries(params).reduce((acc, [key, value]) => {
-      if (value !== null && value !== undefined) {
-        acc[key] = value
-      }
-      return acc
-    }, {} as Record<string, any>) : {}
-    
+    const cleanParams = params
+      ? Object.entries(params).reduce(
+          (acc, [key, value]) => {
+            if (value !== null && value !== undefined) {
+              acc[key] = value
+            }
+            return acc
+          },
+          {} as Record<string, string | number>
+        )
+      : {}
+
     const { data } = await axiosInstance.get<ApiResponse<PostResponse>>(
       API_ENDPOINTS.POSTS.BY_USER(username),
       { params: cleanParams }

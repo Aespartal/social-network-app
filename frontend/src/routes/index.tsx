@@ -8,10 +8,18 @@ import Login from '@/pages/Login'
 import Register from '@/pages/Register'
 
 // Lazy loading para páginas secundarias
-const About = lazy(() => import('@/pages/About').then(m => ({ default: m.About })))
-const Profile = lazy(() => import('@/pages/Profile').then(m => ({ default: m.Profile })))
-const PostDetail = lazy(() => import('@/pages/PostDetail').then(m => ({ default: m.PostDetail })))
-const AdminDashboard = lazy(() => import('@/pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })))
+const About = lazy(() =>
+  import('@/pages/About').then(m => ({ default: m.About }))
+)
+const Profile = lazy(() =>
+  import('@/pages/Profile').then(m => ({ default: m.Profile }))
+)
+const PostDetail = lazy(() =>
+  import('@/pages/PostDetail').then(m => ({ default: m.PostDetail }))
+)
+const AdminDashboard = lazy(() =>
+  import('@/pages/AdminDashboard').then(m => ({ default: m.AdminDashboard }))
+)
 
 // Guards
 import { RoleGuard } from '@/guards/RoleGuard'

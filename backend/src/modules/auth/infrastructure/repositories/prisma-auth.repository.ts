@@ -79,7 +79,10 @@ export class PrismaAuthRepository implements AR {
     return this.mapToAuthUser(user)
   }
 
-  async updateUser(id: string, data: Partial<{ googleId: string }>): Promise<AR.AuthUser> {
+  async updateUser(
+    id: string,
+    data: Partial<{ googleId: string }>
+  ): Promise<AR.AuthUser> {
     const user = await this.prisma.user.update({
       where: { id },
       data,

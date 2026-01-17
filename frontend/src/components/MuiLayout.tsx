@@ -51,12 +51,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const menuItems = [
     { text: 'Feed', icon: <HomeIcon />, path: '/', private: true },
-    ...(user?.username ? [{
-      text: 'Mi perfil',
-      icon: <Avatar src={user.avatar || ''} sx={{ width: 24, height: 24 }} />,
-      path: `/profile/${user.username}`,
-      private: true,
-    }] : []),
+    ...(user?.username
+      ? [
+          {
+            text: 'Mi perfil',
+            icon: (
+              <Avatar src={user.avatar || ''} sx={{ width: 24, height: 24 }} />
+            ),
+            path: `/profile/${user.username}`,
+            private: true,
+          },
+        ]
+      : []),
     { text: 'Acerca de', icon: <InfoIcon />, path: '/about', private: false },
   ]
 

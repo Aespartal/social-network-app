@@ -56,7 +56,12 @@ export const register = async (
       },
     })
 
-    const payload = { id: user.id, email: user.email, username: user.username, role: Role.USER }
+    const payload = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: Role.USER,
+    }
 
     const token = request.server.jwt.sign(payload, {
       expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
@@ -119,7 +124,12 @@ export const login = async (
       } as ApiResponse)
     }
 
-    const payload = { id: user.id, email: user.email, username: user.username, role: user.role as Role }
+    const payload = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role as Role,
+    }
 
     const token = request.server.jwt.sign(payload, {
       expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
@@ -177,14 +187,14 @@ export const googleLogin = async (
       picture?: string
       [key: string]: any
     }
-  
+
     const payload = (await googleResponse.json()) as GoogleUserPayload
 
     if (!payload || typeof payload !== 'object' || !payload.email) {
       return reply.status(400).send({
         success: false,
         error: 'Google no devolvió la información de perfil necesaria.',
-      });
+      })
     }
 
     const { sub: googleId, email, name, picture } = payload

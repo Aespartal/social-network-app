@@ -8,7 +8,11 @@ interface ProfileHeaderProps {
   onEditClick?: () => void
 }
 
-export const ProfileHeader = ({ user, isOwnProfile, onEditClick }: ProfileHeaderProps) => (
+export const ProfileHeader = ({
+  user,
+  isOwnProfile,
+  onEditClick,
+}: ProfileHeaderProps) => (
   <Paper
     elevation={0}
     variant='outlined'

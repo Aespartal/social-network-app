@@ -40,7 +40,7 @@ export function isStrongPassword(password: string): boolean {
   const hasUpperCase = /[A-Z]/.test(password)
   const hasLowerCase = /[a-z]/.test(password)
   const hasNumber = /\d/.test(password)
-  
+
   return minLength && hasUpperCase && hasLowerCase && hasNumber
 }
 
@@ -87,7 +87,13 @@ export function isRequired(value: string | null | undefined): boolean {
  */
 export function getValidationError(
   field: string,
-  type: 'required' | 'email' | 'minLength' | 'maxLength' | 'username' | 'password',
+  type:
+    | 'required'
+    | 'email'
+    | 'minLength'
+    | 'maxLength'
+    | 'username'
+    | 'password',
   extra?: number | string
 ): string {
   const errors = {
@@ -96,8 +102,9 @@ export function getValidationError(
     minLength: `${field} debe tener al menos ${extra} caracteres`,
     maxLength: `${field} no puede exceder ${extra} caracteres`,
     username: 'Usuario debe ser alfanumérico y tener entre 3-20 caracteres',
-    password: 'Contraseña debe tener mínimo 8 caracteres, 1 mayúscula, 1 minúscula y 1 número',
+    password:
+      'Contraseña debe tener mínimo 8 caracteres, 1 mayúscula, 1 minúscula y 1 número',
   }
-  
+
   return errors[type]
 }

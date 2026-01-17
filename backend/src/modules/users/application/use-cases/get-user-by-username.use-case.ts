@@ -14,7 +14,10 @@ export class GetUserByUsernameUseCase {
     currentUserId?: string,
     includeRelations?: UR.IncludeOptions
   ): Promise<UserResponseDTO> {
-    const user = await this.userRepository.findByUsername(username, includeRelations)
+    const user = await this.userRepository.findByUsername(
+      username,
+      includeRelations
+    )
 
     if (!user) {
       throw UserError.notFound(username)

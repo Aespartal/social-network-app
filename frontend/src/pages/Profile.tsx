@@ -57,13 +57,16 @@ export const Profile = () => {
     setUpdating(true)
     try {
       const formData = new FormData()
-      
+
       if (data.username) formData.append('username', data.username)
       if (data.name) formData.append('name', data.name)
       if (data.bio !== undefined) formData.append('bio', data.bio)
       if (data.avatarFile) formData.append('avatar', data.avatarFile)
 
-      const updatedUser = await profileService.updateProfile(userProfile.id, formData)
+      const updatedUser = await profileService.updateProfile(
+        userProfile.id,
+        formData
+      )
       setUserProfile(updatedUser)
 
       if (currentUser?.id === userProfile.id) {
@@ -90,18 +93,18 @@ export const Profile = () => {
   useEffect(() => {
     const loadProfile = async () => {
       if (!username || profileLoadingRef.current) return
-      
+
       profileLoadingRef.current = true
-      
+
       try {
         const data = await profileService.getByUsername(username)
         setUserProfile(data)
-        
+
         // Solo registrar visita si no es tu propio perfil y no se ha registrado ya
         if (
-          data.id && 
-          currentUser?.id && 
-          data.id !== currentUser.id && 
+          data.id &&
+          currentUser?.id &&
+          data.id !== currentUser.id &&
           visitRegisteredRef.current !== data.id
         ) {
           visitRegisteredRef.current = data.id
@@ -124,12 +127,12 @@ export const Profile = () => {
       setLoadingPosts(true)
       try {
         // Primera carga de posts para este usuario
-        const response = await postService.getUserPosts(username, { 
-          limit: 10 
+        const response = await postService.getUserPosts(username, {
+          limit: 10,
         })
-        
+
         setPosts(response.posts ?? [])
-        
+
         // Guardar el cursor para la siguiente página
         setNextCursor(response.meta?.nextCursor ?? null)
         setHasMore(response.meta?.hasMore ?? false)
@@ -146,14 +149,14 @@ export const Profile = () => {
   // Función para cargar más posts
   const loadMorePosts = async () => {
     if (!username || !hasMore || loadingPosts || !nextCursor) return
-    
+
     setLoadingPosts(true)
     try {
-      const response = await postService.getUserPosts(username, { 
-        cursor: nextCursor, 
-        limit: 10 
+      const response = await postService.getUserPosts(username, {
+        cursor: nextCursor,
+        limit: 10,
       })
-      
+
       setPosts(prev => [...prev, ...(response.posts ?? [])])
       setNextCursor(response.meta?.nextCursor ?? null)
       setHasMore(response.meta?.hasMore ?? false)
@@ -215,8 +218,8 @@ export const Profile = () => {
   return (
     <>
       <Paper variant='outlined' sx={{ borderRadius: 0, overflow: 'hidden' }}>
-        <ProfileHeader 
-          user={userProfile} 
+        <ProfileHeader
+          user={userProfile}
           isOwnProfile={isOwnProfile}
           onEditClick={() => setEditDialogOpen(true)}
         />

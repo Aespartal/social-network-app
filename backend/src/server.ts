@@ -45,13 +45,14 @@ async function registerPlugins(server: FastifyInstance) {
   server.setErrorHandler((error: FastifyError, request, reply) => {
     if (error.validation) {
       const validationErrors = error.validation.map((err: any) => {
-        const field = err.instancePath?.replace(/^\//, '') || err.params?.missingProperty
-        
+        const field =
+          err.instancePath?.replace(/^\//, '') || err.params?.missingProperty
+
         // Handle password length validation
         if (field === 'password' && err.keyword === 'minLength') {
           return 'La contraseña debe tener al menos 8 caracteres'
         }
-        
+
         // Handle username validation
         if (field === 'username') {
           if (err.keyword === 'minLength') {
@@ -61,21 +62,24 @@ async function registerPlugins(server: FastifyInstance) {
             return 'El nombre de usuario solo puede contener letras, números y guiones bajos'
           }
         }
-        
+
         // Handle email validation
         if (field === 'email' && err.keyword === 'format') {
           return 'El email no es válido'
         }
-        
+
         // Handle name validation
         if (field === 'name' && err.keyword === 'minLength') {
           return 'El nombre es requerido'
         }
-        
+
         // Generic error message
-        return err.message || `Error de validación en el campo ${field || 'desconocido'}`
+        return (
+          err.message ||
+          `Error de validación en el campo ${field || 'desconocido'}`
+        )
       })
-      
+
       return reply.status(400).send({
         success: false,
         error: validationErrors[0] || 'Error de validación',
@@ -83,7 +87,7 @@ async function registerPlugins(server: FastifyInstance) {
         statusCode: 400,
       })
     }
-    
+
     // Handle other errors
     const statusCode = error.statusCode || 500
     return reply.status(statusCode).send({

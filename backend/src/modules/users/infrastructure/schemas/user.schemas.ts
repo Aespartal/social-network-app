@@ -9,15 +9,21 @@ export const UserSchema = Type.Object({
   bio: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   verified: Type.Boolean(),
   active: Type.Boolean(),
-  role: Type.Union([Type.Literal('USER'), Type.Literal('MODERATOR'), Type.Literal('ADMIN')]),
+  role: Type.Union([
+    Type.Literal('USER'),
+    Type.Literal('MODERATOR'),
+    Type.Literal('ADMIN'),
+  ]),
   createdAt: Type.String({ format: 'date-time' }),
   updatedAt: Type.String({ format: 'date-time' }),
-  counts: Type.Optional(Type.Object({
-    followers: Type.Number({ minimum: 0 }),
-    following: Type.Number({ minimum: 0 }),
-    posts: Type.Number({ minimum: 0 }),
-    visitsReceived: Type.Number({ minimum: 0 }),
-  })),
+  counts: Type.Optional(
+    Type.Object({
+      followers: Type.Number({ minimum: 0 }),
+      following: Type.Number({ minimum: 0 }),
+      posts: Type.Number({ minimum: 0 }),
+      visitsReceived: Type.Number({ minimum: 0 }),
+    })
+  ),
   isFollowing: Type.Optional(Type.Boolean()),
 })
 

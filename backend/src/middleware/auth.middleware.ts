@@ -30,9 +30,5 @@ export const optionalAuth = async (
   request: FastifyRequest,
   _reply: FastifyReply
 ) => {
-  try {
-    await request.jwtVerify()
-  } catch (err) {
-    request.user = undefined;
-  }
+  await request.jwtVerify()
 }

@@ -17,7 +17,7 @@ export const VisitorList = () => {
     const fetchVisits = async () => {
       if (hasFetchedRef.current) return
       hasFetchedRef.current = true
-      
+
       try {
         setLoading(true)
         const data = await profileService.getProfileVisits()

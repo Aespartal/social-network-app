@@ -1,11 +1,12 @@
 import type { UserRepository } from '../../domain/repositories/user.repository.interface'
-import type { UserRepository as UR } from '../../domain/repositories/user.repository.interface'
 import type { PrismaClient } from '@/generated/prisma'
 
 export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async create(input: UR.CreateInput): Promise<UR.User> {
+  async create(
+    input: UserRepository.CreateInput
+  ): Promise<UserRepository.User> {
     const { email, username, name, passwordHash, avatar, bio, role } = input
 
     const user = await this.prisma.user.create({
@@ -26,8 +27,8 @@ export class PrismaUserRepository implements UserRepository {
 
   async findById(
     id: string,
-    includeRelations?: UR.IncludeOptions
-  ): Promise<UR.User | null> {
+    includeRelations?: UserRepository.IncludeOptions
+  ): Promise<UserRepository.User | null> {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: this.buildInclude(includeRelations),
@@ -38,7 +39,10 @@ export class PrismaUserRepository implements UserRepository {
     return this.mapToDomain(user)
   }
 
-  async findByEmail(email: string, includeRelations?: UR.IncludeOptions): Promise<UR.User | null> {
+  async findByEmail(
+    email: string,
+    includeRelations?: UserRepository.IncludeOptions
+  ): Promise<UserRepository.User | null> {
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: this.buildInclude(includeRelations),
@@ -49,7 +53,10 @@ export class PrismaUserRepository implements UserRepository {
     return this.mapToDomain(user)
   }
 
-  async findByUsername(username: string, includeRelations?: UR.IncludeOptions): Promise<UR.User | null> {
+  async findByUsername(
+    username: string,
+    includeRelations?: UserRepository.IncludeOptions
+  ): Promise<UserRepository.User | null> {
     const user = await this.prisma.user.findUnique({
       where: { username },
       include: this.buildInclude(includeRelations),
@@ -61,14 +68,25 @@ export class PrismaUserRepository implements UserRepository {
   }
 
   async findMany(
-    options: UR.FindManyOptions
-  ): Promise<UR.PaginatedResult> {
-    const { email, username, role, cursor, limit = 20, excludeSelfId, followerId, includeRelations } = options
+    options: UserRepository.FindManyOptions
+  ): Promise<UserRepository.PaginatedResult> {
+    const {
+      email,
+      username,
+      role,
+      cursor,
+      limit = 20,
+      excludeSelfId,
+      followerId,
+      includeRelations,
+    } = options
 
     const where: any = {
       deletedAt: null,
       ...(email && { email: { contains: email, mode: 'insensitive' } }),
-      ...(username && { username: { contains: username, mode: 'insensitive' } }),
+      ...(username && {
+        username: { contains: username, mode: 'insensitive' },
+      }),
       ...(role && { role }),
       ...(excludeSelfId && { id: { not: excludeSelfId } }),
     }
@@ -80,7 +98,11 @@ export class PrismaUserRepository implements UserRepository {
       cursor: cursor ? { id: cursor } : undefined,
       skip: cursor ? 1 : 0,
       orderBy: { createdAt: 'desc' },
-      include: this.buildInclude({ ...includeRelations, counts: true, followerId }),
+      include: this.buildInclude({
+        ...includeRelations,
+        counts: true,
+        followerId,
+      }),
     })
 
     const hasMore = users.length > pageSize
@@ -88,9 +110,10 @@ export class PrismaUserRepository implements UserRepository {
 
     const domainUsers = results.map(user => {
       const userData = user as any
-      const isFollowing = followerId && userData.followers
-        ? userData.followers.some((f: any) => f.followerId === followerId)
-        : false
+      const isFollowing =
+        followerId && userData.followers
+          ? userData.followers.some((f: any) => f.followerId === followerId)
+          : false
 
       return {
         ...this.mapToDomain(user),
@@ -102,12 +125,16 @@ export class PrismaUserRepository implements UserRepository {
       users: domainUsers,
       meta: {
         hasNext: hasMore,
-        nextCursor: hasMore && domainUsers.length > 0 ? domainUsers.at(-1)!.id : null,
+        nextCursor:
+          hasMore && domainUsers.length > 0 ? domainUsers.at(-1)!.id : null,
       },
     }
   }
 
-  async update(id: string, input: UR.UpdateInput): Promise<UR.User> {
+  async update(
+    id: string,
+    input: UserRepository.UpdateInput
+  ): Promise<UserRepository.User> {
     const updateData: any = { ...input }
 
     if ((input as any).passwordHash) {
@@ -147,7 +174,7 @@ export class PrismaUserRepository implements UserRepository {
     return user !== null
   }
 
-  private buildInclude(includeRelations?: UR.IncludeOptions) {
+  private buildInclude(includeRelations?: UserRepository.IncludeOptions) {
     const include: any = {}
 
     if (includeRelations?.counts !== false) {
@@ -171,8 +198,13 @@ export class PrismaUserRepository implements UserRepository {
     return include
   }
 
-  private mapToDomain(user: any): UR.User {
-    const counts = user._count || { followers: 0, following: 0, posts: 0, visitsReceived: 0 }
+  private mapToDomain(user: any): UserRepository.User {
+    const counts = user._count || {
+      followers: 0,
+      following: 0,
+      posts: 0,
+      visitsReceived: 0,
+    }
 
     return {
       id: user.id,

@@ -47,9 +47,13 @@ const Register: React.FC = () => {
           newErrors.password = 'La contraseña debe tener al menos 8 caracteres'
         }
         if (vals.username.length > 0 && vals.username.length < 3) {
-          newErrors.username = 'El nombre de usuario debe tener al menos 3 caracteres'
+          newErrors.username =
+            'El nombre de usuario debe tener al menos 3 caracteres'
         }
-        if (vals.username.length > 0 && !/^[a-zA-Z0-9_]+$/.test(vals.username)) {
+        if (
+          vals.username.length > 0 &&
+          !/^[a-zA-Z0-9_]+$/.test(vals.username)
+        ) {
           newErrors.username = 'Solo letras, números y guiones bajos'
         }
         return newErrors

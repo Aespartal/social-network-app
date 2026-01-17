@@ -23,7 +23,7 @@ export const useFeed = () => {
     async (isInitial = true) => {
       // Evitar peticiones concurrentes
       if (loading || loadingMore) return
-      
+
       let timeoutId: ReturnType<typeof setTimeout> | undefined
 
       try {
@@ -40,7 +40,7 @@ export const useFeed = () => {
         if (timeoutId) clearTimeout(timeoutId)
 
         const newPosts = response.posts || []
-        setPosts(prev => isInitial ? newPosts : [...prev, ...newPosts])
+        setPosts(prev => (isInitial ? newPosts : [...prev, ...newPosts]))
         setNextCursor(response.meta?.nextCursor ?? null)
         setHasMorePosts(response.meta?.hasMore ?? false)
       } catch {

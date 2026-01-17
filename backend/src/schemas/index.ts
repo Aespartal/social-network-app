@@ -1,7 +1,7 @@
 import { Type, Static } from '@sinclair/typebox'
 
 export const ErrorSchema = Type.Object({
-  success: Type.Boolean({ default: false }), 
+  success: Type.Boolean({ default: false }),
   error: Type.String({ description: 'Mensaje de error' }),
   code: Type.Optional(
     Type.String({ description: 'Código de error específico' })
@@ -24,7 +24,9 @@ export const SuccessSchema = Type.Object({
 })
 
 export const PaginationSchema = Type.Object({
-  hasNext: Type.Optional( Type.Boolean({ description: 'Tiene página siguiente' })),
+  hasNext: Type.Optional(
+    Type.Boolean({ description: 'Tiene página siguiente' })
+  ),
   nextCursor: Type.Optional(
     Type.String({ description: 'Cursor para la siguiente página' })
   ),

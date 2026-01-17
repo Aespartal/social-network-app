@@ -7,7 +7,6 @@ import {
 } from '../../application'
 import { isUserError, USER_ERROR_HTTP_MAPPING } from '../../domain/errors'
 import { GetUserByUsernameUseCase } from '../../application/use-cases/get-user-by-username.use-case'
-import { UserMapper } from '../mappers/user.mapper'
 
 export class UserController {
   constructor(

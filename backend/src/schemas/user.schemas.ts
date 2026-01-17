@@ -47,7 +47,9 @@ export const UserSchema = Type.Object({
       posts: Type.Number({ description: 'Número de posts' }),
       followers: Type.Number({ description: 'Número de seguidores' }),
       following: Type.Number({ description: 'Número de usuarios seguidos' }),
-      visitsReceived: Type.Number({ description: 'Número de visitas recibidas' }),
+      visitsReceived: Type.Number({
+        description: 'Número de visitas recibidas',
+      }),
     })
   ),
 })

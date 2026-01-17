@@ -14,12 +14,12 @@ export const useAuth = () => {
   const isModerator = user?.role === Role.MODERATOR
   const isStaff = isAdmin || isModerator
   const isUser = user?.role === Role.USER
-  
+
   return {
     ...context,
     isAdmin,
     isModerator,
     isStaff,
-    isUser
+    isUser,
   }
 }

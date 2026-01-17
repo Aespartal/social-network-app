@@ -9,7 +9,8 @@ async function swaggerPlugin(fastify: FastifyInstance) {
     openapi: {
       info: {
         title: 'Social Network API',
-        description: 'API REST profesional para red social con validación de esquemas',
+        description:
+          'API REST profesional para red social con validación de esquemas',
         version: '1.0.0',
       },
       servers: [
@@ -24,9 +25,9 @@ async function swaggerPlugin(fastify: FastifyInstance) {
             type: 'http',
             scheme: 'bearer',
             bearerFormat: 'JWT',
-            description: 'Introduce el token obtenido en /login'
-          }
-        }
+            description: 'Introduce el token obtenido en /login',
+          },
+        },
       },
       tags: [
         { name: 'auth', description: 'Acceso y tokens' },

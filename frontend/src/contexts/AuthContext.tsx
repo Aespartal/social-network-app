@@ -1,6 +1,17 @@
-import { createContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react'
+import {
+  createContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useMemo,
+  useCallback,
+} from 'react'
 import { authService, profileService } from '@/services'
-import { backupSession, restoreSession, clearSessionBackup } from '@/utils/sessionGuard'
+import {
+  backupSession,
+  restoreSession,
+  clearSessionBackup,
+} from '@/utils/sessionGuard'
 import type {
   User,
   LoginRequest,
@@ -32,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('user_data', JSON.stringify(userData))
 
     setUser(userData)
-    
+
     backupSession()
   }, [])
 
@@ -45,12 +56,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   useEffect(() => {
-      const wasRestored = restoreSession()
-      if (wasRestored) {
-        console.log('🔄 Session recovered from backup')
-      }
+    const wasRestored = restoreSession()
+    if (wasRestored) {
+      console.log('🔄 Session recovered from backup')
+    }
 
-      const checkAuth = async () => {
+    const checkAuth = async () => {
       const token = localStorage.getItem('access_token')
       const savedUser = localStorage.getItem('user_data')
 
@@ -81,7 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (e.key === 'access_token' && !e.newValue) {
         setUser(null)
       }
-      
+
       if (e.key === 'user_data' && e.newValue) {
         try {
           const newUser = JSON.parse(e.newValue)
@@ -96,38 +107,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => globalThis.removeEventListener('storage', handleStorageChange)
   }, [clearAuthData])
 
-  const login = useCallback(async (credentials: LoginRequest) => {
-    try {
-      setLoading(true)
-      const response = await authService.login(credentials)
-      saveAuthData(response)
-    } finally {
-      setLoading(false)
-    }
-  }, [saveAuthData])
+  const login = useCallback(
+    async (credentials: LoginRequest) => {
+      try {
+        setLoading(true)
+        const response = await authService.login(credentials)
+        saveAuthData(response)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [saveAuthData]
+  )
 
-  const register = useCallback(async (userData: CreateUserRequest) => {
-    try {
-      setLoading(true)
-      const response = await authService.register(userData)
-      saveAuthData(response)
-    } catch (error) {
-      console.error('Registration failed:', error)
-      throw error
-    } finally {
-      setLoading(false)
-    }
-  }, [saveAuthData])
+  const register = useCallback(
+    async (userData: CreateUserRequest) => {
+      try {
+        setLoading(true)
+        const response = await authService.register(userData)
+        saveAuthData(response)
+      } catch (error) {
+        console.error('Registration failed:', error)
+        throw error
+      } finally {
+        setLoading(false)
+      }
+    },
+    [saveAuthData]
+  )
 
-  const loginWithGoogle = useCallback(async (idToken: string) => {
-    try {
-      setLoading(true)
-      const response = await authService.loginWithGoogle(idToken)
-      saveAuthData(response)
-    } finally {
-      setLoading(false)
-    }
-  }, [saveAuthData])
+  const loginWithGoogle = useCallback(
+    async (idToken: string) => {
+      try {
+        setLoading(true)
+        const response = await authService.loginWithGoogle(idToken)
+        saveAuthData(response)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [saveAuthData]
+  )
 
   const logout = useCallback(async () => {
     try {

@@ -7,7 +7,12 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { routes } from '@/routes'
 
 const LoadingFallback = () => (
-  <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+  <Box
+    display='flex'
+    justifyContent='center'
+    alignItems='center'
+    minHeight='80vh'
+  >
     <CircularProgress />
   </Box>
 )
@@ -19,9 +24,7 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <Layout>
-          <Suspense fallback={<LoadingFallback />}>
-            {element}
-          </Suspense>
+          <Suspense fallback={<LoadingFallback />}>{element}</Suspense>
         </Layout>
       </AuthProvider>
     </ThemeProvider>

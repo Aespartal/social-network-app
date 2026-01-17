@@ -1,12 +1,26 @@
-import { Role } from "@/enums/role.enum"
+import { Role } from '@/enums/role.enum'
 
 export interface UserRepository {
   create(input: UserRepository.CreateInput): Promise<UserRepository.User>
-  findById(id: string, includeRelations?: UserRepository.IncludeOptions): Promise<UserRepository.User | null>
-  findByEmail(email: string, includeRelations?: UserRepository.IncludeOptions): Promise<UserRepository.User | null>
-  findByUsername(username: string, includeRelations?: UserRepository.IncludeOptions): Promise<UserRepository.User | null>
-  findMany(options: UserRepository.FindManyOptions): Promise<UserRepository.PaginatedResult>
-  update(id: string, input: UserRepository.UpdateInput): Promise<UserRepository.User>
+  findById(
+    id: string,
+    includeRelations?: UserRepository.IncludeOptions
+  ): Promise<UserRepository.User | null>
+  findByEmail(
+    email: string,
+    includeRelations?: UserRepository.IncludeOptions
+  ): Promise<UserRepository.User | null>
+  findByUsername(
+    username: string,
+    includeRelations?: UserRepository.IncludeOptions
+  ): Promise<UserRepository.User | null>
+  findMany(
+    options: UserRepository.FindManyOptions
+  ): Promise<UserRepository.PaginatedResult>
+  update(
+    id: string,
+    input: UserRepository.UpdateInput
+  ): Promise<UserRepository.User>
   softDelete(id: string): Promise<void>
   existsByEmail(email: string): Promise<boolean>
   existsByUsername(username: string): Promise<boolean>

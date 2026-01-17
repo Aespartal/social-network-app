@@ -12,15 +12,18 @@ export const profileService = {
    * Registra una visita de forma silenciosa.
    */
   async recordVisit(visitedId: string): Promise<void> {
-    await axiosInstance.post<ApiResponse<void>>(API_ENDPOINTS.PROFILE.VISIT(visitedId))
+    await axiosInstance.post<ApiResponse<void>>(
+      API_ENDPOINTS.PROFILE.VISIT(visitedId)
+    )
   },
 
   /**
    * Obtiene la lista de usuarios que han visitado mi perfil.
    */
   async getProfileVisits(): Promise<User[]> {
-    const { data } =
-      await axiosInstance.get<ApiResponse<User[]>>(API_ENDPOINTS.PROFILE.MY_VISITS)
+    const { data } = await axiosInstance.get<ApiResponse<User[]>>(
+      API_ENDPOINTS.PROFILE.MY_VISITS
+    )
     return data.data ?? []
   },
 
@@ -30,8 +33,9 @@ export const profileService = {
    * @throws Error si el token ha expirado o no se encuentra el usuario.
    */
   async getProfile(): Promise<User> {
-    const { data } =
-      await axiosInstance.get<ApiResponse<User>>(API_ENDPOINTS.PROFILE.ME)
+    const { data } = await axiosInstance.get<ApiResponse<User>>(
+      API_ENDPOINTS.PROFILE.ME
+    )
 
     if (!data.data) {
       throw new Error(
@@ -70,11 +74,11 @@ export const profileService = {
       API_ENDPOINTS.PROFILE.UPDATE(userId),
       formData
     )
-    
+
     if (!data.data) {
       throw new Error('Error al actualizar el perfil')
     }
-    
+
     return data.data
   },
 }

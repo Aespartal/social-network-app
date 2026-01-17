@@ -124,7 +124,7 @@ export default fp(async function usersPlugin(fastify: FastifyInstance) {
       },
       userController.deleteUser.bind(userController)
     )
-    
+
     privateRoutes.get(
       '/users/me',
       {

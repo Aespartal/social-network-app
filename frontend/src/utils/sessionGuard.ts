@@ -1,6 +1,6 @@
 /**
  * Session Guard - Protección contra pérdida de sesión
- * 
+ *
  * Este módulo previene la pérdida de datos de sesión debido a errores
  * temporales de red o CORS durante el ciclo de vida de la aplicación.
  */
@@ -40,12 +40,12 @@ export function backupSession(): void {
  */
 export function restoreSession(): boolean {
   const backupStr = sessionStorage.getItem(SESSION_BACKUP_KEY)
-  
+
   if (!backupStr) return false
 
   try {
     const backup = JSON.parse(backupStr) as SessionData & { timestamp: number }
-    
+
     // Verificar que el backup no haya expirado
     if (Date.now() - backup.timestamp > BACKUP_EXPIRY_MS) {
       sessionStorage.removeItem(SESSION_BACKUP_KEY)
@@ -54,12 +54,12 @@ export function restoreSession(): boolean {
 
     // Solo restaurar si localStorage está vacío (se perdió la sesión)
     const hasCurrentSession = localStorage.getItem('access_token')
-    
+
     if (!hasCurrentSession) {
       localStorage.setItem('access_token', backup.access_token)
       localStorage.setItem('refresh_token', backup.refresh_token)
       localStorage.setItem('user_data', backup.user_data)
-      
+
       console.log('✅ Session restored from backup')
       return true
     }

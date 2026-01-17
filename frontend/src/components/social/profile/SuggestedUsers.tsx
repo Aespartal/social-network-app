@@ -26,7 +26,7 @@ export const SuggestedUsers: React.FC = () => {
     const fetchSuggestions = async () => {
       if (hasFetchedRef.current) return
       hasFetchedRef.current = true
-      
+
       try {
         const response = await profileService.getSuggestions(5)
         setSuggestions(response || [])
