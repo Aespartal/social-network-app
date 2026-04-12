@@ -1,31 +1,57 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
+import { injectable, inject } from 'inversify'
+import { TYPES } from '@/lib/di-types'
 import {
-  RegisterUseCase,
-  LoginUseCase,
-  GoogleLoginUseCase,
-  RefreshTokenUseCase,
-  LogoutUseCase,
+  RegisterCommandHandler,
+  LoginCommandHandler,
+  GoogleLoginCommandHandler,
+  RefreshTokenCommandHandler,
+  LogoutCommandHandler,
+  GetMeHandler,
 } from '../../application'
 import {
   isAuthError,
   AUTH_ERROR_HTTP_MAPPING,
 } from '../../domain/errors/auth.errors'
-import { CreateAuthUserInput } from '../../domain/entities/auth-user.entity'
+import {
+  RegisterBodyType,
+  LoginBodyType,
+  GoogleLoginBodyType,
+  RefreshTokenBodyType,
+  LogoutBodyType,
+} from '../schemas'
 
+@injectable()
 export class AuthController {
   constructor(
-    private readonly registerUseCase: RegisterUseCase,
-    private readonly loginUseCase: LoginUseCase,
-    private readonly googleLoginUseCase: GoogleLoginUseCase,
-    private readonly refreshTokenUseCase: RefreshTokenUseCase,
-    private readonly logoutUseCase: LogoutUseCase
+    @inject(TYPES.RegisterCommandHandler)
+    private readonly registerHandler: RegisterCommandHandler,
+    @inject(TYPES.LoginCommandHandler)
+    private readonly loginHandler: LoginCommandHandler,
+    @inject(TYPES.GoogleLoginCommandHandler)
+    private readonly googleLoginHandler: GoogleLoginCommandHandler,
+    @inject(TYPES.RefreshTokenCommandHandler)
+    private readonly refreshTokenHandler: RefreshTokenCommandHandler,
+    @inject(TYPES.LogoutCommandHandler)
+    private readonly logoutHandler: LogoutCommandHandler,
+    @inject(TYPES.GetMeHandler) private readonly getMeHandler: GetMeHandler
   ) {}
 
-  async register(request: FastifyRequest, reply: FastifyReply) {
+  async register(
+    request: FastifyRequest<{ Body: RegisterBodyType }>,
+    reply: FastifyReply
+  ) {
     try {
-      const body = request.body as CreateAuthUserInput & { password: string }
+      const body = request.body
 
-      const authResponse = await this.registerUseCase.execute(body)
+      const authResponse = await this.registerHandler.execute({
+        email: body.email,
+        username: body.username,
+        name: body.name,
+        password: body.password,
+        avatar: body.avatar,
+        bio: body.bio,
+      })
 
       return reply.status(201).send({
         success: true,
@@ -37,11 +63,17 @@ export class AuthController {
     }
   }
 
-  async login(request: FastifyRequest, reply: FastifyReply) {
+  async login(
+    request: FastifyRequest<{ Body: LoginBodyType }>,
+    reply: FastifyReply
+  ) {
     try {
-      const body = request.body as any
+      const body = request.body
 
-      const authResponse = await this.loginUseCase.execute(body)
+      const authResponse = await this.loginHandler.execute({
+        email: body.email,
+        password: body.password,
+      })
 
       return reply.send({
         success: true,
@@ -53,11 +85,16 @@ export class AuthController {
     }
   }
 
-  async googleLogin(request: FastifyRequest, reply: FastifyReply) {
+  async googleLogin(
+    request: FastifyRequest<{ Body: GoogleLoginBodyType }>,
+    reply: FastifyReply
+  ) {
     try {
-      const body = request.body as { token: string }
+      const body = request.body
 
-      const authResponse = await this.googleLoginUseCase.execute(body.token)
+      const authResponse = await this.googleLoginHandler.execute({
+        token: body.token,
+      })
 
       return reply.send({
         success: true,
@@ -69,13 +106,16 @@ export class AuthController {
     }
   }
 
-  async refreshToken(request: FastifyRequest, reply: FastifyReply) {
+  async refreshToken(
+    request: FastifyRequest<{ Body: RefreshTokenBodyType }>,
+    reply: FastifyReply
+  ) {
     try {
-      const body = request.body as { refreshToken: string }
+      const body = request.body
 
-      const authResponse = await this.refreshTokenUseCase.execute(
-        body.refreshToken
-      )
+      const authResponse = await this.refreshTokenHandler.execute({
+        refreshToken: body.refreshToken,
+      })
 
       return reply.send({
         success: true,
@@ -87,9 +127,12 @@ export class AuthController {
     }
   }
 
-  async logout(request: FastifyRequest, reply: FastifyReply) {
+  async logout(
+    request: FastifyRequest<{ Body: LogoutBodyType }>,
+    reply: FastifyReply
+  ) {
     try {
-      const body = request.body as { refreshToken: string }
+      const body = request.body
       const userId = request.user?.id
 
       if (!userId) {
@@ -99,12 +142,38 @@ export class AuthController {
         })
       }
 
-      await this.logoutUseCase.execute(body.refreshToken, userId)
+      await this.logoutHandler.execute({
+        refreshToken: body.refreshToken,
+      })
 
       return reply.send({
         success: true,
         data: null,
         message: 'Sesión cerrada exitosamente',
+      })
+    } catch (error) {
+      return this.handleError(error, reply)
+    }
+  }
+
+  async getMe(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const userId = request.user?.id
+
+      if (!userId) {
+        return reply.status(401).send({
+          success: false,
+          error: 'No autenticado',
+        })
+      }
+
+      const userResponse = await this.getMeHandler.execute({
+        userId,
+      })
+
+      return reply.send({
+        success: true,
+        data: userResponse,
       })
     } catch (error) {
       return this.handleError(error, reply)

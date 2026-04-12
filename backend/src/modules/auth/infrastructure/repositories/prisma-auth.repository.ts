@@ -1,18 +1,20 @@
-import bcrypt from 'bcryptjs'
-import type { PrismaClient } from '@/generated/prisma'
+import { injectable, inject } from 'inversify'
+import { TYPES } from '@/lib/di-types'
+import type { PrismaClient, Role as PrismaRole } from '@/generated/prisma'
 import type { AuthRepository } from '../../domain/repositories/auth.repository.interface'
-import type {
-  AuthUser,
-  CreateAuthUserInput,
-  UpdateAuthUserInput,
-} from '../../domain/entities/auth-user.entity'
-import type {
+import { AuthUser } from '../../domain/entities/auth-user.entity'
+import {
   CreateSessionInput,
   SessionEntity,
 } from '../../domain/entities/session.entity'
+import { AuthMapper } from '../mappers/auth.mapper'
+import bcrypt from 'bcryptjs'
 
+@injectable()
 export class PrismaAuthRepository implements AuthRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    @inject(TYPES.PrismaClient) private readonly prisma: PrismaClient
+  ) {}
 
   async findByEmail(email: string): Promise<AuthUser | null> {
     const user = await this.prisma.user.findUnique({
@@ -21,7 +23,7 @@ export class PrismaAuthRepository implements AuthRepository {
 
     if (!user) return null
 
-    return this.mapToAuthUser(user)
+    return AuthMapper.toDomain(user)
   }
 
   async findByGoogleId(googleId: string): Promise<AuthUser | null> {
@@ -31,7 +33,7 @@ export class PrismaAuthRepository implements AuthRepository {
 
     if (!user) return null
 
-    return this.mapToAuthUser(user)
+    return AuthMapper.toDomain(user)
   }
 
   async findByUsername(username: string): Promise<AuthUser | null> {
@@ -41,7 +43,7 @@ export class PrismaAuthRepository implements AuthRepository {
 
     if (!user) return null
 
-    return this.mapToAuthUser(user)
+    return AuthMapper.toDomain(user)
   }
 
   async findById(id: string): Promise<AuthUser | null> {
@@ -51,7 +53,7 @@ export class PrismaAuthRepository implements AuthRepository {
 
     if (!user) return null
 
-    return this.mapToAuthUser(user)
+    return AuthMapper.toDomain(user)
   }
 
   async emailExists(email: string): Promise<boolean> {
@@ -70,34 +72,44 @@ export class PrismaAuthRepository implements AuthRepository {
     return user !== null
   }
 
-  async createUser(input: CreateAuthUserInput): Promise<AuthUser> {
-    const { email, username, name, passwordHash, avatar, bio, role } = input
-
-    const user = await this.prisma.user.create({
+  async save(user: AuthUser): Promise<AuthUser> {
+    const prismaUser = await this.prisma.user.create({
       data: {
-        email,
-        username,
-        name,
-        password: passwordHash,
-        avatar,
-        bio,
-        role: (role as any) || 'USER',
+        email: user.email,
+        username: user.username,
+        name: user.name,
+        password: user.password,
+        googleId: user.googleId,
+        avatar: user.avatar,
+        bio: user.bio,
+        role: user.role as PrismaRole,
+        verified: user.verified,
+        active: user.active,
       },
     })
 
-    return this.mapToAuthUser(user)
+    return AuthMapper.toDomain(prismaUser)
   }
 
-  async updateUser(
-    id: string,
-    updates: Partial<UpdateAuthUserInput>
-  ): Promise<AuthUser> {
-    const user = await this.prisma.user.update({
-      where: { id },
-      data: updates as any,
+  async update(user: AuthUser): Promise<AuthUser> {
+    const prismaUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        email: user.email,
+        username: user.username,
+        name: user.name,
+        password: user.password,
+        googleId: user.googleId,
+        avatar: user.avatar,
+        bio: user.bio,
+        role: user.role as PrismaRole,
+        verified: user.verified,
+        active: user.active,
+        updatedAt: user.updatedAt,
+      },
     })
 
-    return this.mapToAuthUser(user)
+    return AuthMapper.toDomain(prismaUser)
   }
 
   async verifyPassword(password: string, hash: string): Promise<boolean> {
@@ -141,7 +153,7 @@ export class PrismaAuthRepository implements AuthRepository {
     }
 
     if (session.user) {
-      result.user = this.mapToAuthUser(session.user)
+      result.user = AuthMapper.toDomain(session.user)
     }
 
     return result
@@ -161,23 +173,5 @@ export class PrismaAuthRepository implements AuthRepository {
 
   isSessionExpired(expiresAt: Date): boolean {
     return new Date() > expiresAt
-  }
-
-  private mapToAuthUser(user: any): AuthUser {
-    return {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      name: user.name,
-      password: user.password,
-      googleId: user.googleId,
-      avatar: user.avatar,
-      bio: user.bio,
-      verified: user.verified,
-      active: user.active,
-      role: user.role,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    }
   }
 }

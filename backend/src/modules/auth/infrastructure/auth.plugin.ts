@@ -1,14 +1,8 @@
 import fp from 'fastify-plugin'
 import rateLimit from '@fastify/rate-limit'
-import { FastifyInstance } from 'fastify'
-import { PrismaAuthRepository } from './repositories'
-import {
-  RegisterUseCase,
-  LoginUseCase,
-  GoogleLoginUseCase,
-  RefreshTokenUseCase,
-  LogoutUseCase,
-} from '../application'
+import { FastifyInstance, FastifyRequest } from 'fastify'
+import { container } from '@/lib/di-container'
+import { TYPES } from '@/lib/di-types'
 import { AuthController } from './controllers'
 import {
   RegisterBodySchema,
@@ -19,44 +13,27 @@ import {
   SuccessResponseSchema,
   ErrorResponseSchema,
 } from './schemas'
-import { prisma } from '@/lib/prisma'
 import { authenticateToken } from '@/middleware/auth.middleware'
-import { TokenService } from './services/token.service'
 
 export default fp(async function authPlugin(fastify: FastifyInstance) {
-  const authRepository = new PrismaAuthRepository(prisma)
-  const tokenService = new TokenService(fastify.jwt)
-  const registerUseCase = new RegisterUseCase(authRepository, tokenService)
-  const loginUseCase = new LoginUseCase(authRepository, tokenService)
-  const googleLoginUseCase = new GoogleLoginUseCase(
-    authRepository,
-    tokenService
-  )
-  const refreshTokenUseCase = new RefreshTokenUseCase(
-    authRepository,
-    tokenService
-  )
-  const logoutUseCase = new LogoutUseCase(authRepository)
+  // Bind fastify.jwt to the container so TokenService can use it
+  if (!container.isBound(TYPES.JWT)) {
+    container.bind(TYPES.JWT).toConstantValue(fastify.jwt)
+  }
 
-  const authController = new AuthController(
-    registerUseCase,
-    loginUseCase,
-    googleLoginUseCase,
-    refreshTokenUseCase,
-    logoutUseCase
-  )
+  const authController = container.get<AuthController>(TYPES.AuthController)
 
   fastify.register(async function (authRoutes) {
     authRoutes.register(async function (loginRoutes) {
       await loginRoutes.register(rateLimit, {
         max: 10,
         timeWindow: '15 minutes',
-        keyGenerator: (req: any) => {
-          const body = req.body || {}
-          const identifier = body.email || 'anonymous'
+        keyGenerator: (req: FastifyRequest) => {
+          const body = (req.body as Record<string, unknown>) || {}
+          const identifier = (body.email as string) || 'anonymous'
           return `login-${req.ip}-${identifier}`
         },
-        errorResponseBuilder: (_req: any, context: any) => ({
+        errorResponseBuilder: (_req, context) => ({
           success: false,
           error: 'Demasiados intentos de login. Intenta en 15 minutos.',
           retryAfter: Math.round(context.ttl / 1000),
@@ -102,8 +79,8 @@ export default fp(async function authPlugin(fastify: FastifyInstance) {
       await registerRoutes.register(rateLimit, {
         max: 3,
         timeWindow: '1 hour',
-        keyGenerator: (req: any) => `register-${req.ip}`,
-        errorResponseBuilder: (_req: any, context: any) => ({
+        keyGenerator: (req: FastifyRequest) => `register-${req.ip}`,
+        errorResponseBuilder: (_req, context) => ({
           success: false,
           error: 'Límite de registros alcanzado. Intenta más tarde.',
           retryAfter: Math.round(context.ttl / 1000),
@@ -152,10 +129,10 @@ export default fp(async function authPlugin(fastify: FastifyInstance) {
       )
     })
 
-    authRoutes.register(async function (logoutRoutes) {
-      logoutRoutes.addHook('preHandler', authenticateToken)
+    authRoutes.register(async function (privateRoutes) {
+      privateRoutes.addHook('preHandler', authenticateToken)
 
-      logoutRoutes.post(
+      privateRoutes.post(
         '/auth/logout',
         {
           schema: {
@@ -171,6 +148,22 @@ export default fp(async function authPlugin(fastify: FastifyInstance) {
           },
         },
         authController.logout.bind(authController)
+      )
+
+      privateRoutes.get(
+        '/auth/me',
+        {
+          schema: {
+            tags: ['auth'],
+            summary: 'Obtener usuario autenticado',
+            security: [{ bearerAuth: [] }],
+            response: {
+              200: SuccessResponseSchema,
+              401: ErrorResponseSchema,
+            },
+          },
+        },
+        authController.getMe.bind(authController)
       )
     })
   })

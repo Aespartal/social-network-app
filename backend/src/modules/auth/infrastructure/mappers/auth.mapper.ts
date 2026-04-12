@@ -1,3 +1,4 @@
+import { User as PrismaUser } from '@/generated/prisma'
 import {
   AuthResponseDTO,
   AuthTokensDTO,
@@ -18,10 +19,31 @@ export class AuthMapper {
     }
   }
 
-  static toResponseDTO(user: AuthUser, tokens: AuthTokensDTO): AuthResponseDTO {
+  static toResponseDTO(
+    user: AuthUser,
+    tokens?: AuthTokensDTO
+  ): AuthResponseDTO {
     return {
       user: this.toDTO(user),
       tokens,
     }
+  }
+
+  static toDomain(raw: PrismaUser): AuthUser {
+    return AuthUser.reconstitute({
+      id: raw.id,
+      email: raw.email,
+      username: raw.username,
+      name: raw.name,
+      password: raw.password,
+      googleId: raw.googleId,
+      avatar: raw.avatar,
+      bio: raw.bio,
+      verified: raw.verified,
+      active: raw.active,
+      role: raw.role,
+      createdAt: raw.createdAt,
+      updatedAt: raw.updatedAt,
+    })
   }
 }
