@@ -1,3 +1,5 @@
+import { injectable, inject } from 'inversify'
+import { TYPES } from '@/lib/di-types'
 import type { PostRepository } from '../../../domain/repositories/post.repository.interface'
 import { PostError } from '../../../domain/errors'
 import { PostResponseDTO } from '../../dto/post.dto'
@@ -14,8 +16,12 @@ import type { UpdatePostCommand } from './update-post.command'
  * Domain Events (to implement):
  * - PostUpdated: When post content is successfully modified
  */
+@injectable()
 export class UpdatePostCommandHandler {
-  constructor(private readonly postRepository: PostRepository) {}
+  constructor(
+    @inject(TYPES.PostRepository)
+    private readonly postRepository: PostRepository
+  ) {}
 
   async execute(command: UpdatePostCommand): Promise<PostResponseDTO> {
     const { postId, content, image, userId, userRole } = command
@@ -33,7 +39,9 @@ export class UpdatePostCommandHandler {
     }
 
     try {
-      post.updateContent(content)
+      if (content !== undefined) {
+        post.updateContent(content)
+      }
 
       if (image !== undefined) {
         post.updateImage(image)

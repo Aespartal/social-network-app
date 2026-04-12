@@ -1,3 +1,5 @@
+import { injectable, inject } from 'inversify'
+import { TYPES } from '@/lib/di-types'
 import { PostError } from '../../../domain/errors'
 import type { PostRepository } from '../../../domain/repositories/post.repository.interface'
 import type { ToggleLikeCommand } from './toggle-like.command'
@@ -20,9 +22,18 @@ import type { ToggleLikeCommand } from './toggle-like.command'
  * - Notifications to post author
  * - Activity feed updates
  * - Analytics tracking
+ * - User interest profiling
  */
+import { PostLikedEvent } from '@/lib/events/domain-events'
+import type { EventBus } from '@/lib/events/event-bus.interface'
+
+@injectable()
 export class ToggleLikeCommandHandler {
-  constructor(private readonly postRepository: PostRepository) {}
+  constructor(
+    @inject(TYPES.PostRepository)
+    private readonly postRepository: PostRepository,
+    @inject(TYPES.EventBus) private readonly eventBus: EventBus
+  ) {}
 
   async execute(
     command: ToggleLikeCommand
@@ -34,19 +45,17 @@ export class ToggleLikeCommandHandler {
       throw PostError.notFound(postId)
     }
 
-    // Execute atomic toggle operation
-    // Repository handles transaction:
-    // - Check if like exists
-    // - Create or delete like record
-    // - Update likesCount accordingly
     const result = await this.postRepository.toggleLike(postId, userId)
 
-    // TODO: Dispatch domain event
-    // if (result.isLiked) {
-    //   await this.eventBus.publish(new PostLikedEvent(postId, userId))
-    // } else {
-    //   await this.eventBus.publish(new PostUnlikedEvent(postId, userId))
-    // }
+    // Publish event if liked
+    if (result.isLiked) {
+      const post = await this.postRepository.findById(postId)
+      if (post && post.authorId !== userId) {
+        await this.eventBus.publish([
+          new PostLikedEvent(postId, userId, post.authorId),
+        ])
+      }
+    }
 
     return result
   }

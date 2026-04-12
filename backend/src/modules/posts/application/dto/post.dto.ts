@@ -14,6 +14,8 @@ export const CreatePostMultipartSchema = Type.Object({
   parentId: Type.Optional(Type.String()),
   tags: Type.Optional(Type.String()),
   image: Type.Optional(Type.Any()),
+  country: Type.Optional(Type.String()),
+  city: Type.Optional(Type.String()),
 })
 
 /**
@@ -51,6 +53,8 @@ export const CreatePostDTOSchema = Type.Object({
       }
     )
   ),
+  country: Type.Optional(Type.String()),
+  city: Type.Optional(Type.String()),
 })
 
 /**
@@ -99,6 +103,9 @@ export const AuthorResponseSchema = Type.Object({
 export const ParentPostResponseSchema = Type.Object({
   id: Type.String(),
   content: Type.String(),
+  createdAt: Type.String({
+    description: 'Fecha de creación (ISO 8601)',
+  }),
   author: Type.Object({
     username: Type.String(),
     name: Type.String(),
@@ -125,6 +132,9 @@ export const PostResponseSchema = Type.Object({
       description: 'URL de imagen adjunta (opcional)',
     })
   ),
+  authorId: Type.String({
+    description: 'ID de autor',
+  }),
   parentId: Type.Optional(
     Type.String({
       description: 'ID del post padre si es una respuesta',
@@ -173,6 +183,13 @@ export const PostResponseSchema = Type.Object({
     default: false,
     description: 'Si el usuario actual ha guardado el post',
   }),
+  isAuthorReply: Type.Optional(
+    Type.Boolean({
+      description: 'Si el post es una respuesta del mismo autor del post padre',
+    })
+  ),
+  country: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  city: Type.Optional(Type.Union([Type.String(), Type.Null()])),
 })
 
 /**

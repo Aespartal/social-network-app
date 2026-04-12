@@ -6,7 +6,7 @@
  */
 export interface UpdatePostCommand {
   postId: string
-  content: string
+  content?: string
   image?: string | null
   userId: string
   userRole: string

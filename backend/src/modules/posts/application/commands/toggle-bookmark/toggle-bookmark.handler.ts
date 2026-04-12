@@ -1,3 +1,5 @@
+import { injectable, inject } from 'inversify'
+import { TYPES } from '@/lib/di-types'
 import { PostError } from '../../../domain/errors'
 import type { PostRepository } from '../../../domain/repositories/post.repository.interface'
 import type { ToggleBookmarkCommand } from './toggle-bookmark.command'
@@ -20,8 +22,12 @@ import type { ToggleBookmarkCommand } from './toggle-bookmark.command'
  * - User's bookmark collection update
  * - Analytics tracking
  */
+@injectable()
 export class ToggleBookmarkCommandHandler {
-  constructor(private readonly postRepository: PostRepository) {}
+  constructor(
+    @inject(TYPES.PostRepository)
+    private readonly postRepository: PostRepository
+  ) {}
 
   async execute(
     command: ToggleBookmarkCommand

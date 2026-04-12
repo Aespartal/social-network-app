@@ -1,3 +1,5 @@
+import { injectable, inject } from 'inversify'
+import { TYPES } from '@/lib/di-types'
 import type { PostRepository } from '../../../domain/repositories/post.repository.interface'
 import { PostError } from '../../../domain/errors'
 import { Role } from '@/enums/role.enum'
@@ -16,8 +18,12 @@ import type { DeletePostCommand } from './delete-post.command'
  * Domain Events (to implement):
  * - PostDeleted: When post is successfully soft-deleted
  */
+@injectable()
 export class DeletePostCommandHandler {
-  constructor(private readonly postRepository: PostRepository) {}
+  constructor(
+    @inject(TYPES.PostRepository)
+    private readonly postRepository: PostRepository
+  ) {}
 
   async execute(command: DeletePostCommand): Promise<void> {
     const { postId, userId, userRole } = command

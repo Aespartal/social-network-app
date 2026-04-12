@@ -10,4 +10,6 @@ export interface CreatePostCommand {
   authorId: string
   parentId?: string
   tags?: string[]
+  country?: string
+  city?: string
 }
