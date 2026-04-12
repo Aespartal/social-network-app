@@ -20,6 +20,17 @@ const PostDetail = lazy(() =>
 const AdminDashboard = lazy(() =>
   import('@/pages/AdminDashboard').then(m => ({ default: m.AdminDashboard }))
 )
+const Search = lazy(() =>
+  import('@/pages/Search').then(m => ({ default: m.Search }))
+)
+const Explore = lazy(() =>
+  import('@/pages/Explore').then(m => ({ default: m.Explore }))
+)
+const Notifications = lazy(() =>
+  import('@/pages/social/NotificationsPage').then(m => ({
+    default: m.NotificationsPage,
+  }))
+)
 
 // Guards
 import { RoleGuard } from '@/guards/RoleGuard'
@@ -48,6 +59,18 @@ export const routes: RouteObject[] = [
   {
     path: '/post/:id',
     element: <PostDetail />,
+  },
+  {
+    path: '/search',
+    element: <Search />,
+  },
+  {
+    path: '/explore',
+    element: <Explore />,
+  },
+  {
+    path: '/notifications',
+    element: <Notifications />,
   },
   {
     element: <RoleGuard allowedRoles={[Role.ADMIN]} />,
