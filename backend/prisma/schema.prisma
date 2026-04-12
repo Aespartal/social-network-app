@@ -4,6 +4,13 @@ enum Role {
   ADMIN
 }
 
+enum NotificationType {
+  LIKE
+  REPLY
+  FOLLOW
+  MENTION
+}
+
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -38,6 +45,11 @@ model User {
   sessions       Session[]
   visitsMade     ProfileVisit[] @relation("VisitorRelation")
   visitsReceived ProfileVisit[] @relation("VisitedRelation")
+  mentions       Mention[]
+  recentSearches RecentSearch[]
+  
+  notificationsReceived Notification[] @relation("NotificationRecipient")
+  notificationsIssued   Notification[] @relation("NotificationIssuer")
 
   role Role @default(USER)
 
@@ -77,10 +89,17 @@ model Post {
   likes     Like[]
   bookmarks Bookmark[]
   tags      PostTag[]
+  mentions  Mention[]
+  notifications Notification[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+
+  country   String?
+  city      String?
+
+  // searchVector Unsupported("tsvector")? @map("search_vector")
 
   // Índices existentes
   @@index([parentId])
@@ -91,6 +110,8 @@ model Post {
   @@index([deletedAt, createdAt])
   @@index([deletedAt, parentId, createdAt])
   @@index([deletedAt, createdAt, likesCount])
+  @@index([country, deletedAt, createdAt])
+  @@index([city, deletedAt, createdAt])
   @@map("posts")
 }
 
@@ -164,6 +185,19 @@ model PostTag {
   @@map("post_tags")
 }
 
+model Mention {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("mentions")
+}
+
 // --- SOCIAL / MÉTRICAS ---
 model ProfileVisit {
   id        String   @id @default(uuid())
@@ -178,4 +212,36 @@ model ProfileVisit {
   @@index([visitedId])
   @@index([visitorId])
   @@map("profile_visits")
+}
+
+model RecentSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  query     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@map("recent_searches")
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  type        NotificationType
+  recipientId String           // Usuario que recibe la notificación
+  issuerId    String           // Usuario que provocó la notificación
+  postId      String?          // Post relacionado (opcional)
+  read        Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  recipient User  @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  issuer    User  @relation("NotificationIssuer", fields: [issuerId], references: [id], onDelete: Cascade)
+  post      Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId])
+  @@index([recipientId, read])
+  @@index([createdAt])
+  @@map("notifications")
 }
