@@ -1,4 +1,4 @@
-import { Type } from '@sinclair/typebox'
+import { Static, Type } from '@sinclair/typebox'
 import { MAX_POST_CONTENT_LENGTH } from '../../domain'
 
 export const PostAuthorSchema = Type.Object({
@@ -51,11 +51,7 @@ export const CreatePostBodySchema = Type.Object({
 
 export const GetFeedQuerySchema = Type.Object({
   cursor: Type.Optional(Type.String()),
-  since: Type.Optional(Type.String()),
   limit: Type.Optional(Type.Number({ minimum: 1, maximum: 100 })),
-  authorId: Type.Optional(Type.String()),
-  parentId: Type.Optional(Type.String()),
-  following: Type.Optional(Type.Boolean()),
 })
 
 export const PaginationQuerySchema = Type.Object({
@@ -63,8 +59,20 @@ export const PaginationQuerySchema = Type.Object({
   limit: Type.Optional(Type.Number({ minimum: 1, maximum: 100 })),
 })
 
+export const TrendingQuerySchema = Type.Intersect([
+  PaginationQuerySchema,
+  Type.Object({
+    country: Type.Optional(Type.String()),
+    city: Type.Optional(Type.String()),
+  }),
+])
+
 export const TagNameParamsSchema = Type.Object({
   tagName: Type.String(),
+})
+
+export const UsernameParamsSchema = Type.Object({
+  username: Type.String(),
 })
 
 export const UpdatePostBodySchema = Type.Object({
@@ -73,6 +81,13 @@ export const UpdatePostBodySchema = Type.Object({
   ),
   image: Type.Optional(Type.String()),
 })
+
+export const SearchQuerySchema = Type.Intersect([
+  PaginationQuerySchema,
+  Type.Object({
+    q: Type.String({ minLength: 1 }),
+  }),
+])
 
 export const ToggleLikeResponseSchema = Type.Object({
   success: Type.Literal(true),
@@ -91,6 +106,19 @@ export const ToggleBookmarkResponseSchema = Type.Object({
   message: Type.Optional(Type.String()),
 })
 
+export const PaginatedPostsSchema = Type.Object({
+  posts: Type.Array(PostSchema),
+  meta: Type.Object({
+    hasMore: Type.Boolean(),
+    nextCursor: Type.Union([Type.String(), Type.Null()]),
+  }),
+})
+
+export const PostDetailResponseSchema = Type.Object({
+  post: PostSchema,
+  replies: PaginatedPostsSchema,
+})
+
 export const SuccessResponseSchema = Type.Object({
   success: Type.Literal(true),
   data: Type.Any(),
@@ -103,3 +131,16 @@ export const ErrorResponseSchema = Type.Object({
   code: Type.Optional(Type.String()),
   statusCode: Type.Optional(Type.Number()),
 })
+
+// ========== TypeScript Types ==========
+export type PostParams = Static<typeof PostParamsSchema>
+export type CreatePostBody = Static<typeof CreatePostBodySchema>
+export type GetFeedQuery = Static<typeof GetFeedQuerySchema>
+export type PaginationQuery = Static<typeof PaginationQuerySchema>
+export type TrendingQuery = Static<typeof TrendingQuerySchema>
+export type TagNameParams = Static<typeof TagNameParamsSchema>
+export type UsernameParams = Static<typeof UsernameParamsSchema>
+export type UpdatePostBody = Static<typeof UpdatePostBodySchema>
+export type SearchQuery = Static<typeof SearchQuerySchema>
+export type PostResponse = Static<typeof PostSchema>
+export type PaginatedPostsResponse = Static<typeof PaginatedPostsSchema>

@@ -1,3 +1,5 @@
+import { injectable, inject } from 'inversify'
+import { TYPES } from '@/lib/di-types'
 import type { PrismaClient } from '@/generated/prisma'
 import type {
   PostQueryProvider,
@@ -10,7 +12,7 @@ import type {
   LikedPostsFilter,
   PageRequest,
 } from '../../application/queries/common/post-query.provider.interface'
-import { PostMapper } from '../mappers/post.mapper'
+import { PostMapper, PrismaPost } from '../mappers/post.mapper'
 import { PostResponseDTO } from '../../application/dto/post.dto'
 import {
   AUTHOR_SELECT,
@@ -44,8 +46,11 @@ import {
  * Used exclusively by: QueryHandlers
  * Separation: CommandHandlers use PrismaPostRepository
  */
+@injectable()
 export class PrismaPostQueryProvider implements PostQueryProvider {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    @inject(TYPES.PrismaClient) private readonly prisma: PrismaClient
+  ) {}
 
   /**
    * Gets the user's feed (posts from followed users)
@@ -71,6 +76,168 @@ export class PrismaPostQueryProvider implements PostQueryProvider {
     })
 
     return this.buildPagedResultWithBatchContext(posts, pageSize, userId)
+  }
+
+  /**
+   * Gets the "Following Feed" (posts and replies from followed users)
+   * Includes threading context for visual visualization
+   */
+  async getFollowingFeed(filter: FeedFilter): Promise<PagedPosts> {
+    const { followingUserIds, userId, page } = filter
+    const { pageSize, prismaParams } = this.getPaginationParams(page)
+
+    if (followingUserIds.length === 0) {
+      return {
+        posts: [],
+        meta: { hasMore: false, nextCursor: null },
+      }
+    }
+
+    // 1. Fetch primary posts (followed authors)
+    const primaryPostsRaw = await this.prisma.post.findMany({
+      where: {
+        deletedAt: null,
+        authorId: { in: followingUserIds },
+      },
+      take: prismaParams.take,
+      cursor: prismaParams.cursor,
+      skip: prismaParams.skip,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        ...this.getBasicInclude(),
+        parent: {
+          include: {
+            author: { select: AUTHOR_SELECT_BASIC },
+          },
+        },
+      },
+    })
+
+    const hasMore = primaryPostsRaw.length > pageSize
+    const primaryPosts = hasMore
+      ? primaryPostsRaw.slice(0, -1)
+      : primaryPostsRaw
+
+    if (primaryPosts.length === 0) {
+      return {
+        posts: [],
+        meta: { hasMore, nextCursor: null },
+      }
+    }
+
+    // 2. Fetch context parents for replies
+    const existingIds = new Set(primaryPosts.map(p => p.id))
+    const parentIdsToFetch = primaryPosts
+      .filter(p => p.parentId && !existingIds.has(p.parentId))
+      .map(p => p.parentId as string)
+
+    const uniqueParentIds = Array.from(new Set(parentIdsToFetch))
+
+    let contextParents: PrismaPost[] = []
+    if (uniqueParentIds.length > 0) {
+      contextParents = await this.prisma.post.findMany({
+        where: {
+          id: { in: uniqueParentIds },
+          deletedAt: null,
+        },
+        include: {
+          ...this.getBasicInclude(),
+          parent: {
+            include: {
+              author: { select: AUTHOR_SELECT_BASIC },
+            },
+          },
+        },
+      })
+    }
+
+    // 3. Combine and group (Parent then Children)
+    // We want the rendering to be: Parent -> Reply.
+    // We process primary posts (which are already sorted DESC by creation)
+    // For each primary post, if it's a reply, we try to put its parent above it.
+
+    const allPostsRaw = [...primaryPosts, ...contextParents]
+    const postMap = new Map(allPostsRaw.map(p => [p.id, p]))
+
+    const finalSortedPosts: PrismaPost[] = []
+    const addedIds = new Set<string>()
+
+    // Sort primary posts DESC (newest first)
+    // For each, if it's a reply and we have the parent, we bundle them.
+    for (const post of primaryPosts) {
+      if (addedIds.has(post.id)) continue
+
+      if (post.parentId && postMap.has(post.parentId)) {
+        const parent = postMap.get(post.parentId)
+
+        // If the parent is not already added, we add it now.
+        if (parent && !addedIds.has(parent.id)) {
+          finalSortedPosts.push(parent)
+          addedIds.add(parent.id)
+        }
+
+        // Now add all replies to this parent that are in our primary posts
+        // sorted ASC so they appear Parent -> R1 -> R2
+        const repliesToThisParent = primaryPosts
+          .filter(p => p.parentId === parent?.id)
+          .sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          )
+
+        for (const reply of repliesToThisParent) {
+          if (!addedIds.has(reply.id)) {
+            finalSortedPosts.push(reply)
+            addedIds.add(reply.id)
+          }
+        }
+      } else {
+        // Top level post or parent not found
+        finalSortedPosts.push(post)
+        addedIds.add(post.id)
+      }
+    }
+
+    // Build context with user interactions (likes/bookmarks)
+    const domainPosts = finalSortedPosts.map(p => PostMapper.toDomain(p))
+    let contextMap:
+      | Map<string, { isLiked: boolean; isBookmarked: boolean }>
+      | undefined
+
+    if (userId && domainPosts.length > 0) {
+      const postIds = domainPosts.map(p => p.id)
+      const [likes, bookmarks] = await Promise.all([
+        this.prisma.like.findMany({
+          where: { userId, postId: { in: postIds } },
+          select: { postId: true },
+        }),
+        this.prisma.bookmark.findMany({
+          where: { userId, postId: { in: postIds } },
+          select: { postId: true },
+        }),
+      ])
+
+      const likedSet = new Set(likes.map(l => l.postId))
+      const bookmarkedSet = new Set(bookmarks.map(b => b.postId))
+
+      contextMap = new Map(
+        domainPosts.map(p => [
+          p.id,
+          {
+            isLiked: likedSet.has(p.id),
+            isBookmarked: bookmarkedSet.has(p.id),
+          },
+        ])
+      )
+    }
+
+    return {
+      posts: PostMapper.toDTOList(domainPosts, contextMap),
+      meta: {
+        hasMore,
+        nextCursor: hasMore ? primaryPosts.at(-1)!.id : null,
+      },
+    }
   }
 
   /**
@@ -211,15 +378,18 @@ export class PrismaPostQueryProvider implements PostQueryProvider {
    * Gets trending posts (most liked recently)
    */
   async getTrendingPosts(
-    page: PageRequest,
+    page: PageRequest & { country?: string; city?: string },
     userId?: string
   ): Promise<PagedPosts> {
     const { pageSize, prismaParams } = this.getPaginationParams(page)
+    const { country, city } = page
 
     const posts = await this.prisma.post.findMany({
       where: {
         ...TOP_LEVEL_POST_WHERE,
         createdAt: { gte: getDaysAgo(7) },
+        ...(country && { country }),
+        ...(city && { city }),
       },
       take: prismaParams.take,
       cursor: prismaParams.cursor,
@@ -306,7 +476,9 @@ export class PrismaPostQueryProvider implements PostQueryProvider {
    */
   private getBasicInclude() {
     return {
-      author: { select: AUTHOR_SELECT },
+      author: {
+        select: AUTHOR_SELECT,
+      },
       tags: { include: { tag: true } },
       _count: { select: { likes: true, replies: true, bookmarks: true } },
     }
@@ -351,7 +523,7 @@ export class PrismaPostQueryProvider implements PostQueryProvider {
    * Builds paginated result from Prisma posts
    */
   private buildPagedResult(
-    posts: any[],
+    posts: PrismaPost[],
     pageSize: number,
     userId?: string
   ): PagedPosts {
@@ -362,7 +534,7 @@ export class PrismaPostQueryProvider implements PostQueryProvider {
 
     const contextMap = userId
       ? new Map(
-          results.map((post: any, index) => [
+          results.map((post: PrismaPost, index) => [
             domainPosts[index]!.id,
             {
               isLiked: Array.isArray(post.likes) && post.likes.length > 0,
@@ -388,7 +560,7 @@ export class PrismaPostQueryProvider implements PostQueryProvider {
    * Prevents N+1 queries by loading likes/bookmarks in a single query
    */
   private async buildPagedResultWithBatchContext(
-    posts: any[],
+    posts: PrismaPost[],
     pageSize: number,
     userId?: string
   ): Promise<PagedPosts> {
@@ -444,7 +616,7 @@ export class PrismaPostQueryProvider implements PostQueryProvider {
    * Handles filtering null/deleted posts and batch loading the opposite interaction
    */
   private async buildInteractionBasedResult(
-    rawPosts: any[],
+    rawPosts: PrismaPost[],
     pageSize: number,
     userId: string,
     baseInteraction:

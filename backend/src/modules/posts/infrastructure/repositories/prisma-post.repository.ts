@@ -1,3 +1,5 @@
+import { injectable, inject } from 'inversify'
+import { TYPES } from '@/lib/di-types'
 import type { PostRepository } from '../../domain/repositories/post.repository.interface'
 import type { PrismaClient } from '@/generated/prisma'
 import { Post } from '../../domain/entities/post.entity'
@@ -20,8 +22,11 @@ import {
  * - Map between Prisma models and Domain entities
  * - Handle database transactions
  */
+@injectable()
 export class PrismaPostRepository implements PostRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    @inject(TYPES.PrismaClient) private readonly prisma: PrismaClient
+  ) {}
 
   /**
    * Saves a new Post to the database
@@ -52,6 +57,12 @@ export class PrismaPostRepository implements PostRepository {
             tagObjects.length > 0
               ? { create: tagObjects.map(t => ({ tagId: t.id })) }
               : undefined,
+          mentions:
+            post.mentions.length > 0
+              ? { create: post.mentions.map(userId => ({ userId })) }
+              : undefined,
+          country: post.country,
+          city: post.city,
         },
         include: COMMAND_POST_INCLUDE,
       })

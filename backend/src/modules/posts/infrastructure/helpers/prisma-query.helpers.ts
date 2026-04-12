@@ -22,6 +22,7 @@ export const AUTHOR_SELECT = {
  * Used when we don't need full author context
  */
 export const AUTHOR_SELECT_BASIC = {
+  id: true,
   username: true,
   name: true,
   avatar: true,
@@ -34,7 +35,6 @@ export const AUTHOR_SELECT_BASIC = {
 export const COMMAND_POST_INCLUDE = {
   author: { select: AUTHOR_SELECT },
   tags: { include: { tag: true } },
-  _count: { select: { likes: true, replies: true, bookmarks: true } },
 } as const
 
 /**

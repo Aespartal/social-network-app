@@ -2,6 +2,57 @@ import { PostResponseDTO } from '../../application/dto/post.dto'
 import { Post, PostAuthor } from '../../domain/entities/post.entity'
 
 /**
+ * Interface to represent the shape of a Post coming from Prisma
+ * including the fields added by our various 'include' configurations.
+ */
+export interface PrismaPost {
+  id: string
+  content: string
+  image: string | null
+  authorId: string
+  author?: {
+    id: string
+    username?: string
+    name?: string
+    avatar?: string | null
+    verified?: boolean
+  }
+  parentId?: string | null
+  parent?: {
+    id: string
+    content: string
+    createdAt: Date
+    author: {
+      id: string
+      username: string
+      name: string
+      avatar: string | null
+    }
+  } | null
+  tags?: Array<{
+    tag: {
+      name: string
+    }
+  }>
+  _count?: {
+    likes?: number
+    replies?: number
+    bookmarks?: number
+  }
+  likesCount?: number
+  repliesCount?: number
+  bookmarksCount?: number
+  createdAt: Date
+  updatedAt: Date
+  deletedAt: Date | null
+  country: string | null
+  city: string | null
+  // Fields for user context (from some queries)
+  likes?: Array<{ id: string }>
+  bookmarks?: Array<{ id: string }>
+}
+
+/**
  * PostMapper - Infrastructure Layer
  *
  * Maps between Domain entities and DTOs/Infrastructure models.
@@ -32,11 +83,13 @@ export class PostMapper {
       id: entity.id,
       content: entity.content,
       image: entity.image ?? undefined,
+      authorId: entity.authorId,
       parentId: entity.parentId ?? undefined,
       parent: entity.parent
         ? {
             id: entity.parent.id,
             content: entity.parent.content,
+            createdAt: entity.parent.createdAt.toISOString(),
             author: {
               username: entity.parent.author.username,
               name: entity.parent.author.name,
@@ -59,6 +112,13 @@ export class PostMapper {
       bookmarksCount: entity.bookmarksCount,
       isLiked: userContext?.isLiked ?? false,
       isBookmarked: userContext?.isBookmarked ?? false,
+      isAuthorReply:
+        entity.parentId && entity.parent
+          ? entity.authorId === entity.parent.author.id ||
+            author.username === entity.parent.author.username
+          : false,
+      country: entity.country ?? undefined,
+      city: entity.city ?? undefined,
     }
   }
 
@@ -83,13 +143,13 @@ export class PostMapper {
    * Maps Prisma post data to Domain Post entity
    * Used by repository when loading from database
    */
-  static toDomain(prismaPost: any): Post {
+  static toDomain(prismaPost: PrismaPost): Post {
     const author: PostAuthor | undefined = prismaPost.author
       ? {
           id: prismaPost.author.id,
-          username: prismaPost.author.username,
-          name: prismaPost.author.name,
-          avatar: prismaPost.author.avatar,
+          username: prismaPost.author.username ?? '',
+          name: prismaPost.author.name ?? '',
+          avatar: prismaPost.author.avatar ?? null,
           verified: prismaPost.author.verified ?? false,
         }
       : undefined
@@ -98,7 +158,9 @@ export class PostMapper {
       ? {
           id: prismaPost.parent.id,
           content: prismaPost.parent.content,
+          createdAt: prismaPost.parent.createdAt,
           author: {
+            id: prismaPost.parent.author.id,
             username: prismaPost.parent.author.username,
             name: prismaPost.parent.author.name,
             avatar: prismaPost.parent.author.avatar,
@@ -106,9 +168,7 @@ export class PostMapper {
         }
       : undefined
 
-    const tags = prismaPost.tags
-      ? prismaPost.tags.map((t: any) => t.tag.name)
-      : []
+    const tags = prismaPost.tags ? prismaPost.tags.map(t => t.tag.name) : []
 
     const likesCount = prismaPost._count?.likes ?? prismaPost.likesCount ?? 0
     const repliesCount =
@@ -122,7 +182,7 @@ export class PostMapper {
       image: prismaPost.image,
       authorId: prismaPost.authorId,
       author,
-      parentId: prismaPost.parentId,
+      parentId: prismaPost.parentId ?? null,
       parent,
       likesCount,
       repliesCount,
@@ -131,13 +191,15 @@ export class PostMapper {
       updatedAt: prismaPost.updatedAt,
       deletedAt: prismaPost.deletedAt,
       tags,
+      country: prismaPost.country,
+      city: prismaPost.city,
     })
   }
 
   /**
    * Maps a list of Prisma posts to Domain entities
    */
-  static toDomainList(prismaPosts: any[]): Post[] {
-    return prismaPosts.map(this.toDomain)
+  static toDomainList(prismaPosts: PrismaPost[]): Post[] {
+    return prismaPosts.map(post => this.toDomain(post))
   }
 }

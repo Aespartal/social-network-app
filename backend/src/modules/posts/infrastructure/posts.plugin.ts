@@ -1,25 +1,8 @@
 import fp from 'fastify-plugin'
 import { FastifyInstance } from 'fastify'
-import { PrismaPostRepository } from './repositories'
-import { PrismaPostQueryProvider } from './services/prisma-post-query.service'
-import {
-  // Command Handlers (Write)
-  CreatePostCommandHandler,
-  DeletePostCommandHandler,
-  UpdatePostCommandHandler,
-  ToggleLikeCommandHandler,
-  ToggleBookmarkCommandHandler,
-  // Query Handlers (Read)
-  GetFeedHandler,
-  GetUserPostsHandler,
-  GetTrendingPostsHandler,
-  GetPostByIdHandler,
-  GetBookmarkedPostsHandler,
-  GetLikedPostsHandler,
-  GetPostsByTagHandler,
-  GetPostsWithMediaHandler,
-  GetPostRepliesHandler,
-} from '../application'
+import { Type } from '@sinclair/typebox'
+import { container } from '@/lib/di-container'
+import { TYPES } from '@/lib/di-types'
 import { PostController } from './controllers'
 import {
   PostParamsSchema,
@@ -30,9 +13,9 @@ import {
   ToggleLikeResponseSchema,
   ToggleBookmarkResponseSchema,
   SuccessResponseSchema,
+  PostDetailResponseSchema,
   ErrorResponseSchema,
 } from './schemas'
-import { prisma } from '@/lib/prisma'
 import { authenticateToken, optionalAuth } from '@/middleware/auth.middleware'
 
 /**
@@ -59,47 +42,9 @@ const RATE_LIMITS = {
 }
 
 export default fp(async function postsPlugin(fastify: FastifyInstance) {
-  const postRepository = new PrismaPostRepository(prisma)
-  const postQueryProvider = new PrismaPostQueryProvider(prisma)
-
-  // Command Handlers - Write Operations
-  const createPostHandler = new CreatePostCommandHandler(postRepository)
-  const updatePostHandler = new UpdatePostCommandHandler(postRepository)
-  const deletePostHandler = new DeletePostCommandHandler(postRepository)
-  const toggleLikeHandler = new ToggleLikeCommandHandler(postRepository)
-  const toggleBookmarkHandler = new ToggleBookmarkCommandHandler(postRepository)
-
-  // Query Handlers - Read Operations
-  const getFeedHandler = new GetFeedHandler(postQueryProvider)
-  const getPostHandler = new GetPostByIdHandler(postQueryProvider)
-  const getPostRepliesHandler = new GetPostRepliesHandler(postQueryProvider)
-  const getTrendingPostsHandler = new GetTrendingPostsHandler(postQueryProvider)
-  const getBookmarkedPostsHandler = new GetBookmarkedPostsHandler(
-    postQueryProvider
-  )
-  const getLikedPostsHandler = new GetLikedPostsHandler(postQueryProvider)
-  const getPostsByTagHandler = new GetPostsByTagHandler(postQueryProvider)
-  const getPostsWithMediaHandler = new GetPostsWithMediaHandler(
-    postQueryProvider
-  )
-  const getPostsByUserHandler = new GetUserPostsHandler(postQueryProvider)
-
-  const postController = new PostController(
-    getFeedHandler,
-    getPostHandler,
-    getPostRepliesHandler,
-    getTrendingPostsHandler,
-    getBookmarkedPostsHandler,
-    getLikedPostsHandler,
-    getPostsByTagHandler,
-    getPostsWithMediaHandler,
-    getPostsByUserHandler,
-    createPostHandler,
-    deletePostHandler,
-    updatePostHandler,
-    toggleLikeHandler,
-    toggleBookmarkHandler
-  )
+  // Resolve PostController from the DI container (InversifyJS)
+  // This automatically resolves the repository and all 15 handlers
+  const postController = container.get<PostController>(TYPES.PostController)
 
   fastify.register(async function (publicRoutes) {
     publicRoutes.addHook('preHandler', optionalAuth)
@@ -122,6 +67,24 @@ export default fp(async function postsPlugin(fastify: FastifyInstance) {
     )
 
     publicRoutes.get(
+      '/posts/following',
+      {
+        schema: {
+          tags: ['posts'],
+          summary: 'Obtener feed de usuarios seguidos',
+          security: [{ bearerAuth: [] }],
+          querystring: GetFeedQuerySchema,
+          response: {
+            200: SuccessResponseSchema,
+            401: ErrorResponseSchema,
+            500: ErrorResponseSchema,
+          },
+        },
+      },
+      postController.getFollowingFeed.bind(postController)
+    )
+
+    publicRoutes.get(
       '/posts/:id',
       {
         schema: {
@@ -129,7 +92,11 @@ export default fp(async function postsPlugin(fastify: FastifyInstance) {
           summary: 'Obtener post por ID',
           params: PostParamsSchema,
           response: {
-            200: SuccessResponseSchema,
+            200: Type.Object({
+              success: Type.Literal(true),
+              data: PostDetailResponseSchema,
+              message: Type.Optional(Type.String()),
+            }),
             404: ErrorResponseSchema,
             500: ErrorResponseSchema,
           },
@@ -228,6 +195,31 @@ export default fp(async function postsPlugin(fastify: FastifyInstance) {
         },
       },
       postController.getPostsByUser.bind(postController)
+    )
+
+    publicRoutes.get(
+      '/posts/search',
+      {
+        schema: {
+          tags: ['posts'],
+          summary: 'Buscar posts por texto o hashtag',
+          querystring: {
+            type: 'object',
+            properties: {
+              q: { type: 'string' },
+              cursor: { type: 'string' },
+              limit: { type: 'number' },
+            },
+            required: ['q'],
+          },
+          response: {
+            200: SuccessResponseSchema,
+            400: ErrorResponseSchema,
+            500: ErrorResponseSchema,
+          },
+        },
+      },
+      postController.searchPosts.bind(postController)
     )
   })
 
@@ -385,6 +377,65 @@ export default fp(async function postsPlugin(fastify: FastifyInstance) {
         },
       },
       postController.deletePost.bind(postController)
+    )
+
+    // Búsquedas Recientes
+    privateRoutes.get(
+      '/posts/search/recent',
+      {
+        schema: {
+          tags: ['posts'],
+          summary: 'Obtener búsquedas recientes',
+          security: [{ bearerAuth: [] }],
+          response: {
+            200: SuccessResponseSchema,
+            401: ErrorResponseSchema,
+            500: ErrorResponseSchema,
+          },
+        },
+      },
+      postController.getRecentSearches.bind(postController)
+    )
+
+    privateRoutes.delete(
+      '/posts/search/recent/:id',
+      {
+        schema: {
+          tags: ['posts'],
+          summary: 'Eliminar una búsqueda reciente',
+          security: [{ bearerAuth: [] }],
+          params: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+            },
+            required: ['id'],
+          },
+          response: {
+            200: SuccessResponseSchema,
+            401: ErrorResponseSchema,
+            500: ErrorResponseSchema,
+          },
+        },
+      },
+      postController.deleteRecentSearch.bind(postController)
+    )
+
+    privateRoutes.delete(
+      '/posts/search/recent',
+      {
+        schema: {
+          tags: ['posts'],
+          summary: 'Limpiar todas las búsquedas recientes',
+          security: [{ bearerAuth: [] }],
+          response: {
+            200: SuccessResponseSchema,
+            401: ErrorResponseSchema,
+            500: ErrorResponseSchema,
+          },
+        },
+      },
+      postController.clearRecentSearches.bind(postController)
     )
   })
 })
