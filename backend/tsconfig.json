@@ -18,6 +18,8 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "rootDir": "..", 
     "rootDirs": ["src", "../shared"],
     "composite": true,

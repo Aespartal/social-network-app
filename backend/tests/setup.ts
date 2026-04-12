@@ -28,10 +28,13 @@ beforeAll(async () => {
 
 // Limpiar posts después de cada test pero dejar usuarios
 afterEach(async () => {
+  await prisma.notification.deleteMany({})
   await prisma.post.deleteMany({})
+  await prisma.mention.deleteMany({})
   await prisma.like.deleteMany({})
   await prisma.bookmark.deleteMany({})
   await prisma.profileVisit.deleteMany({})
+  await prisma.recentSearch.deleteMany({})
 })
 
 // Cerrar conexión después de todos los tests
@@ -41,6 +44,9 @@ afterAll(async () => {
 
 async function cleanDatabase() {
   const tables = [
+    'notifications',
+    'recent_searches',
+    'mentions',
     'sessions',
     'profile_visits',
     'bookmarks',

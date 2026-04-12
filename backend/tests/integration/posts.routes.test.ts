@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { buildServer } from '../../src/server'
 import type { FastifyInstance } from 'fastify'
+import FormData from 'form-data'
 
 describe('Posts API Integration Tests', () => {
   let app: FastifyInstance
@@ -120,37 +121,56 @@ describe('Posts API Integration Tests', () => {
     })
 
     it('debería crear un post con token válido', async () => {
+      const timestamp = Date.now()
+      const testEmail = `test-posts-${timestamp}@example.com`
+      const testUsername = `testposts_${timestamp}`
+      
+      // First, ensure the user exists (Register him)
+      await app.inject({
+        method: 'POST',
+        url: '/api/auth/register',
+        payload: {
+          email: testEmail,
+          username: testUsername,
+          name: 'Test Posts',
+          password: 'password123',
+        },
+      })
+
       const loginResponse = await app.inject({
         method: 'POST',
         url: '/api/auth/login',
         payload: {
-          email: 'test@example.com',
+          email: testEmail,
           password: 'password123',
         },
       })
 
       if (loginResponse.statusCode !== 200) {
-        console.log('Skipping: No test user available')
-        return
+          console.error('Login failed:', loginResponse.body)
       }
+      expect(loginResponse.statusCode).toBe(200)
 
-      const { token } = JSON.parse(loginResponse.body).data
+      const body = JSON.parse(loginResponse.body)
+      const token = body.data.tokens.accessToken
 
+      const form = new FormData()
+      form.append('content', 'Test post from integration test')
+      
       const response = await app.inject({
         method: 'POST',
         url: '/api/posts',
         headers: {
           authorization: `Bearer ${token}`,
+          ...form.getHeaders(),
         },
-        payload: {
-          content: 'Test post from integration test',
-        },
+        payload: form.getBuffer(),
       })
 
       expect(response.statusCode).toBe(201)
-      const body = JSON.parse(response.body)
-      expect(body.success).toBe(true)
-      expect(body.data).toHaveProperty('post')
+      const postBody = JSON.parse(response.body)
+      expect(postBody.success).toBe(true)
+      expect(postBody.data).toHaveProperty('post')
     })
   })
 
