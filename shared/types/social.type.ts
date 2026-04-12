@@ -1,5 +1,16 @@
 import { User } from "./auth.type";
 
+export interface ParentPost {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: {
+    username: string;
+    name: string;
+    avatar: string | null;
+  };
+}
+
 export interface Post {
   id: string;
   content: string;
@@ -12,7 +23,7 @@ export interface Post {
   author: User;
 
   parentId?: string | null;
-  parent?: Post | null;
+  parent?: ParentPost | null;
   replies?: Post[];
 
   isLiked?: boolean;
@@ -21,6 +32,9 @@ export interface Post {
   likesCount: number;
   repliesCount: number;
   bookmarksCount: number;
+  isAuthorReply?: boolean;
+  country?: string | null;
+  city?: string | null;
 }
 
 export interface CreatePostRequest {
@@ -28,6 +42,8 @@ export interface CreatePostRequest {
   imageFile?: File;
   tags?: string[];
   parentId?: string;
+  country?: string;
+  city?: string;
 }
 
 export interface UpdatePostRequest {
@@ -96,4 +112,27 @@ export interface UploadResponse {
   filename: string;
   size: number;
   mimetype: string;
+}
+
+export interface PostDetailResponse {
+  post: Post;
+  replies: PostResponse;
+}
+
+export interface Notification {
+  id: string
+  type: 'LIKE' | 'REPLY' | 'FOLLOW' | 'MENTION'
+  recipientId: string
+  issuerId: string
+  postId?: string
+  read: boolean
+  createdAt: string
+  issuer: {
+    username: string
+    name: string
+    avatar: string | null
+  }
+  post?: {
+    content: string
+  }
 }

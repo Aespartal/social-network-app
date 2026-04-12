@@ -1,8 +1,19 @@
-import { formatDistanceToNowStrict } from 'date-fns'
+import { formatDistanceToNowStrict, isValid } from 'date-fns'
 import { es } from 'date-fns/locale'
 
-export const formatTimeAgo = (date: string | Date) => {
-  return formatDistanceToNowStrict(new Date(date), {
+export const formatTimeAgo = (date: string | Date | undefined | null) => {
+  if (!date) {
+    return 'Fecha desconocida'
+  }
+
+  const parsedDate = new Date(date)
+
+  if (!isValid(parsedDate)) {
+    console.error('Invalid date received:', date)
+    return 'Fecha inválida'
+  }
+
+  return formatDistanceToNowStrict(parsedDate, {
     locale: es,
     addSuffix: false,
   })
