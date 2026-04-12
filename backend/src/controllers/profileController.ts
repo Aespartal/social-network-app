@@ -176,7 +176,8 @@ export const getSuggestedUsers = async (
 ) => {
   try {
     const userId = request.user!.id
-    const limit = Number((request.query as any)?.limit) || 5
+    const query = request.query as { limit?: string }
+    const limit = Number(query.limit) || 5
 
     const suggestedUsers = await prisma.user.findMany({
       where: {
@@ -269,7 +270,12 @@ export const updateProfile = async (
     }
 
     // Construir objeto de actualización solo con campos presentes
-    const updateData: any = {}
+    const updateData: {
+      username?: string
+      name?: string
+      bio?: string
+      avatar?: string
+    } = {}
     if (username !== undefined) updateData.username = username
     if (name !== undefined) updateData.name = name
     if (bio !== undefined) updateData.bio = bio

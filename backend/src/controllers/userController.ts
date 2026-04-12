@@ -180,12 +180,12 @@ export const googleLogin = async (
       })
     }
 
-    type GoogleUserPayload = {
+    interface GoogleUserPayload {
       sub: string
       email: string
       name?: string
       picture?: string
-      [key: string]: any
+      [key: string]: unknown
     }
 
     const payload = (await googleResponse.json()) as GoogleUserPayload
@@ -258,11 +258,15 @@ export const googleLogin = async (
         refreshToken,
       },
     } as ApiResponse)
-  } catch (error: any) {
+  } catch (error) {
     request.log.error(error)
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : 'Error en la autenticación con Google'
     return reply.status(500).send({
       success: false,
-      error: error.message || 'Error en la autenticación con Google',
+      error: errorMessage,
     })
   }
 }
