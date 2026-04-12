@@ -1,4 +1,11 @@
-import { IconButton, Typography, Box, SxProps, Theme } from '@mui/material'
+import {
+  IconButton,
+  Typography,
+  Box,
+  SxProps,
+  Theme,
+  alpha,
+} from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 
 interface PostHeaderProps {
@@ -17,21 +24,33 @@ export const PostHeader = ({
       sx={{
         display: 'flex',
         alignItems: 'center',
-        gap: 2,
-        mb: 2,
+        gap: 3,
+        px: 2,
+        py: 0.75,
+        minHeight: '53px',
         ...sx,
       }}
     >
       <IconButton
         onClick={onNavigateBack}
-        size='small'
+        size='medium'
         aria-label='Volver atrás'
+        sx={{
+          color: 'text.primary',
+          '&:hover': { bgcolor: t => alpha(t.palette.text.primary, 0.1) },
+        }}
       >
-        <ArrowBackIcon />
+        <ArrowBackIcon fontSize='small' />
       </IconButton>
-      <Typography variant='h6' fontWeight='bold'>
-        {title}
-      </Typography>
+      <Box>
+        <Typography
+          variant='subtitle1'
+          sx={{ fontWeight: 800, lineHeight: 1.2 }}
+        >
+          {title}
+        </Typography>
+        {/* Optional: could add post count or subtitle here */}
+      </Box>
     </Box>
   )
 }

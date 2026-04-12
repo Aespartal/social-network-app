@@ -7,13 +7,13 @@ import {
   TextField,
   Box,
   Typography,
-  Avatar,
   Divider,
   IconButton,
   useTheme,
   useMediaQuery,
   CircularProgress,
 } from '@mui/material'
+import { OptimizedAvatar } from '@/components/common'
 import PhotoIcon from '@mui/icons-material/AddPhotoAlternate'
 import CloseIcon from '@mui/icons-material/Close'
 import { Button } from '../../ui'
@@ -138,7 +138,7 @@ export const CreatePostDialog = ({
         {parentPost && <ParentPostContext post={parentPost} />}
 
         <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <Avatar src={user?.avatar || ''} sx={{ width: 48, height: 48 }} />
+          <OptimizedAvatar src={user?.avatar} alt={user?.name} size='lg' />
           <Box sx={{ flex: 1 }}>
             <TextField
               fullWidth
@@ -162,6 +162,7 @@ export const CreatePostDialog = ({
                 url={previewUrl}
                 onRemove={handleRemoveImage}
                 loading={loading}
+                theme={theme}
               />
             )}
           </Box>
@@ -210,7 +211,11 @@ export const CreatePostDialog = ({
             disabled={
               loading || (!content.trim() && !selectedFile) || isOverLimit
             }
-            sx={{ borderRadius: 8, px: 3, fontWeight: 700 }}
+            sx={{
+              borderRadius: theme.tokens.borderRadius.sm,
+              px: 3,
+              fontWeight: 700,
+            }}
           >
             {loading ? (
               <CircularProgress size={20} color='inherit' />
@@ -237,7 +242,11 @@ const ParentPostContext = ({ post }: { post: Post }) => (
     <Box
       sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
     >
-      <Avatar src={post.author.avatar || ''} sx={{ width: 48, height: 48 }} />
+      <OptimizedAvatar
+        src={post.author.avatar}
+        alt={post.author.name}
+        size='lg'
+      />
       <Box sx={{ width: 2, flex: 1, bgcolor: 'divider', my: 1 }} />
     </Box>
     <Box sx={{ pt: 0.5 }}>
@@ -255,16 +264,18 @@ const ImagePreview = ({
   url,
   onRemove,
   loading,
+  theme,
 }: {
   url: string
   onRemove: () => void
   loading: boolean
+  theme: { tokens: { borderRadius: { md: string } } }
 }) => (
   <Box
     sx={{
       mt: 2,
       position: 'relative',
-      borderRadius: 3,
+      borderRadius: theme.tokens.borderRadius.md,
       overflow: 'hidden',
       border: '1px solid',
       borderColor: 'divider',
@@ -285,10 +296,11 @@ const ImagePreview = ({
     >
       <CloseIcon fontSize='small' />
     </IconButton>
-    <img
+    <Box
+      component='img'
       src={url}
       alt='Preview'
-      style={{
+      sx={{
         width: '100%',
         maxHeight: 350,
         objectFit: 'cover',

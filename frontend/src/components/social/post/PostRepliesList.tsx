@@ -1,4 +1,4 @@
-import { Stack, Typography } from '@mui/material'
+import { Stack, Typography, Divider } from '@mui/material'
 import { Post } from 'social-network-app-shared/types/social.type'
 import { StyledPostCard } from './PostCard.styles'
 
@@ -24,15 +24,16 @@ export const PostRepliesList = ({
   }
 
   return (
-    <Stack spacing={0}>
-      {replies.map(reply => (
+    <Stack spacing={0} divider={<Divider sx={{ opacity: 0.6 }} />}>
+      {replies.map((reply, index) => (
         <StyledPostCard
           key={reply.id}
           post={reply}
+          isThreadChild={true}
+          isThreadParent={index < replies.length - 1}
           onLike={() => onLike(reply.id)}
           onBookmark={() => onBookmark(reply.id)}
           onReply={() => onReply(reply)}
-          sx={{ border: 'none' }}
         />
       ))}
     </Stack>

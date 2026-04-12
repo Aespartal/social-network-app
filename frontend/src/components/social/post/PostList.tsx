@@ -1,12 +1,12 @@
-import { Box, CircularProgress, Stack, Typography } from '@mui/material'
+import { Box, CircularProgress, Typography } from '@mui/material'
 import { Post } from 'social-network-app-shared/types/social.type'
-import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { Virtuoso } from 'react-virtuoso'
 import { StyledPostCard } from './PostCard.styles'
 
 interface PostListProps {
   posts: Post[]
-  onLike: (id: string) => Promise<void>
-  onBookmark: (id: string) => Promise<void>
+  onLike: (id: string) => void
+  onBookmark: (id: string) => void
   onReply: (post: Post) => void
   hasMore: boolean
   loadingMore: boolean
@@ -22,43 +22,63 @@ export const PostList = ({
   loadingMore,
   onLoadMore,
 }: PostListProps) => {
-  const { lastElementRef } = useInfiniteScroll({
-    hasMore,
-    isLoading: loadingMore,
-    onIntersect: onLoadMore,
-  })
-
-  if (posts.length === 0) {
+  if (posts.length === 0 && !loadingMore) {
     return (
-      <Box textAlign='center' py={10}>
-        <Typography color='text.secondary'>No hay publicaciones.</Typography>
+      <Box
+        textAlign='center'
+        py={12}
+        px={4}
+        display='flex'
+        flexDirection='column'
+        alignItems='center'
+        gap={2}
+      >
+        <Typography variant='h6' fontWeight={700}>
+          No hay nada que ver por aquí... todavía
+        </Typography>
       </Box>
     )
   }
 
   return (
-    <Stack spacing={2}>
-      {posts.map((post, index) => {
-        const isLastPost = posts.length === index + 1
+    <Virtuoso
+      useWindowScroll
+      data={posts}
+      endReached={() => {
+        if (hasMore && !loadingMore) {
+          onLoadMore()
+        }
+      }}
+      itemContent={(index, post) => {
+        const nextPost = posts[index + 1]
+        const prevPost = posts[index - 1]
+
+        const isThreadParent = nextPost && nextPost.parentId === post.id
+        const isThreadChild = prevPost && post.parentId === prevPost.id
 
         return (
-          <div key={post.id} ref={isLastPost ? lastElementRef : null}>
+          <Box sx={{ pb: 0 }}>
             <StyledPostCard
-              key={post.id}
               post={post}
+              isThreadParent={isThreadParent}
+              isThreadChild={isThreadChild}
               onLike={() => onLike(post.id)}
               onBookmark={() => onBookmark(post.id)}
               onReply={() => onReply(post)}
             />
-          </div>
+          </Box>
         )
-      })}
-
-      {loadingMore && (
-        <Box display='flex' justifyContent='center' py={2}>
-          <CircularProgress size={24} />
-        </Box>
-      )}
-    </Stack>
+      }}
+      components={{
+        Footer: () => {
+          if (!loadingMore) return null
+          return (
+            <Box display='flex' justifyContent='center' py={4}>
+              <CircularProgress size={24} />
+            </Box>
+          )
+        },
+      }}
+    />
   )
 }

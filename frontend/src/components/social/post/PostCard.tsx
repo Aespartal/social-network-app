@@ -1,213 +1,239 @@
+import { useState, memo } from 'react'
 import { Post } from 'social-network-app-shared/types/social.type'
 import { Link, useNavigate } from 'react-router-dom'
+import { Box, Typography, useTheme } from '@mui/material'
 
-import FavoriteIcon from '@mui/icons-material/FavoriteBorder'
-import FavoriteFilledIcon from '@mui/icons-material/Favorite'
-import CommentIcon from '@mui/icons-material/Comment'
-import BookmarkIcon from '@mui/icons-material/BookmarkBorder'
-import BookmarkFilledIcon from '@mui/icons-material/Bookmark'
-import {
-  Avatar,
-  Box,
-  CardActions,
-  IconButton,
-  Stack,
-  Typography,
-} from '@mui/material'
 import { Card, CardContent } from '@/components/ui'
+import { ImageModal } from '@/components/common/ImageModal'
+import { OptimizedImage } from '@/components/common/OptimizedImage'
+import { OptimizedAvatar } from '@/components/common/OptimizedAvatar'
 import { formatTimeAgo } from '@/utils/date'
+
+// Sub-piezas
+import { PostCardHeader } from './parts/PostCardHeader'
+import { PostCardActions } from './parts/PostCardActions'
+import { PostThreadLine } from './parts/PostThreadLine'
 
 export interface PostCardProps {
   post: Post
-  onLike: (postId: string) => Promise<void>
-  onBookmark: (postId: string) => Promise<void>
+  onLike: (postId: string) => void
+  onBookmark: (postId: string) => void
   onReply: (post: Post) => void
+  isThreadParent?: boolean
+  isThreadChild?: boolean
   className?: string
   sx?: object
 }
 
-export const PostCard = ({
-  post,
-  onLike,
-  onBookmark,
-  onReply,
-  className,
-  sx,
-}: PostCardProps) => {
-  const navigate = useNavigate()
+export const PostCard = memo(
+  ({
+    post,
+    onLike,
+    onBookmark,
+    onReply,
+    isThreadParent = false,
+    isThreadChild = false,
+    className,
+    sx,
+  }: PostCardProps) => {
+    const navigate = useNavigate()
+    const theme = useTheme()
+    const [imageModalOpen, setImageModalOpen] = useState(false)
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement
-    if (target.closest('button') || target.closest('a')) return
+    const handleCardClick = (e: React.MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (target.closest('button') || target.closest('a')) return
+      if (globalThis.location.pathname === `/post/${post.id}`) return
+      navigate(`/post/${post.id}`)
+    }
 
-    if (globalThis.location.pathname === `/post/${post.id}`) return
-
-    navigate(`/post/${post.id}`)
-  }
-
-  return (
-    <Box sx={{ position: 'relative', width: '100%' }}>
-      <Card
-        variant='outlined'
-        onClick={handleCardClick}
-        className={className}
-        sx={{ ...sx }}
-      >
-        <CardContent sx={{ pb: 0 }}>
-          {/* 1. INDICADOR DE RESPUESTA */}
-          {post.parentId && post.parent?.author && (
-            <Typography
-              variant='caption'
-              color='text.secondary'
-              sx={{ display: 'block', mb: 1, ml: 7 }}
+    return (
+      <Box sx={{ position: 'relative', width: '100%' }}>
+        <Card
+          variant='outlined'
+          onClick={handleCardClick}
+          className={className}
+          sx={{
+            ...sx,
+            border: 'none',
+            borderBottom: isThreadParent ? 'none' : '1px solid',
+            borderColor: 'divider',
+          }}
+        >
+          <CardContent
+            sx={{
+              pb: 0,
+              pt: isThreadChild ? 1 : 2,
+              px: 0,
+              '&:last-child': { pb: 0 },
+            }}
+          >
+            {/* Layout Principal (Avatar | Contenido) */}
+            <Box
+              sx={{ display: 'grid', gridTemplateColumns: '56px 1fr', gap: 0 }}
             >
-              Respondiendo a{' '}
-              <Link
-                to={`/profile/${post.parent.author.username}`}
-                style={{ color: '#1d9bf0', textDecoration: 'none' }}
+              {/* Carril de la línea de tiempo */}
+              <Box
+                sx={{
+                  position: 'relative',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  px: 1,
+                }}
               >
-                @{post.parent.author.username}
-              </Link>
-            </Typography>
-          )}
-          <Stack direction='row' spacing={2} alignItems='flex-start' mb={1.5}>
-            <Avatar
-              src={post.author?.avatar || ''}
-              component={Link}
-              to={`/profile/${post.author?.username}`}
-              sx={{
-                cursor: 'pointer',
-                width: 40,
-                height: 40,
-                zIndex: 3,
-                border: t => `2px solid ${t.palette.background.paper}`,
-              }}
-            />
+                <PostThreadLine
+                  isThreadParent={isThreadParent}
+                  isThreadChild={isThreadChild}
+                />
 
-            <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Stack direction='row' spacing={0.5} alignItems='center'>
-                <Typography
-                  variant='subtitle2'
+                <Box
                   component={Link}
                   to={`/profile/${post.author?.username}`}
                   sx={{
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    fontWeight: 'bold',
-                    '&:hover': { textDecoration: 'underline' },
+                    zIndex: 3,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    borderRadius: '50%',
                   }}
                 >
-                  {post.author?.name}
-                </Typography>
-                <Typography variant='caption' color='text.secondary'>
-                  @{post.author?.username}
-                </Typography>
-                <Typography variant='caption' color='text.secondary'>
-                  ·
-                </Typography>
-                <Typography
-                  variant='caption'
-                  color='text.secondary'
-                  sx={{ whiteSpace: 'nowrap' }}
-                >
-                  {' '}
-                  {formatTimeAgo(post.createdAt)}
-                </Typography>
-              </Stack>
-
-              <Typography
-                variant='body1'
-                sx={{ mt: 0.5, wordBreak: 'break-word' }}
-              >
-                {post.content}
-              </Typography>
-
-              {/* RENDERIZADO DE IMAGEN SI EXISTE */}
-              {post.image && (
-                <Box
-                  sx={{
-                    mt: 2,
-                    overflow: 'hidden',
-                    position: 'relative',
-                    cursor: 'zoom-in',
-                    maxWidth: '500px',
-                    width: '100%',
-                    transition: 'filter 0.2s ease-in-out',
-                    '&:hover': {
-                      filter: 'brightness(0.9)',
-                    },
-                  }}
-                  onClick={e => {
-                    e.stopPropagation()
-                  }}
-                >
-                  <Box
-                    component='img'
-                    src={post.image}
-                    alt='Contenido del post'
-                    loading='lazy'
+                  <OptimizedAvatar
+                    src={post.author?.avatar}
+                    alt={post.author?.name}
+                    size='md'
+                    lazy={true}
                     sx={{
-                      width: '100%',
-                      height: 'auto',
-                      maxHeight: '512px',
-                      objectFit: 'cover',
-                      display: 'block',
-                      aspectRatio: post.image.includes('portrait')
-                        ? '4/5'
-                        : 'auto',
+                      border: theme =>
+                        `2px solid ${theme.palette.background.paper}`,
                     }}
                   />
                 </Box>
-              )}
-            </Box>
-          </Stack>
-        </CardContent>
+              </Box>
 
-        <CardActions sx={{ px: 2, pb: 1, justifyContent: 'space-between' }}>
-          <Stack direction='row' spacing={2} alignItems='center'>
-            {/* LIKES */}
-            <Stack direction='row' alignItems='center'>
-              <IconButton
-                size='small'
-                onClick={() => onLike(post.id)}
-                color={post.isLiked ? 'error' : 'default'}
-              >
-                {post.isLiked ? (
-                  <FavoriteFilledIcon fontSize='small' />
-                ) : (
-                  <FavoriteIcon fontSize='small' />
+              {/* Columna de Contenido */}
+              <Box sx={{ minWidth: 0, pr: 2 }}>
+                {/* Contexto de respuesta - Post Padre */}
+                {post.parentId && post.parent?.author && !isThreadChild && (
+                  <Box
+                    sx={{
+                      mb: 1.5,
+                      p: 1.5,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: theme.tokens.borderRadius.sm,
+                      bgcolor: 'action.hover',
+                      cursor: 'pointer',
+                      transition: `all ${theme.tokens.transition.normal}`,
+                      '&:hover': {
+                        bgcolor: 'action.selected',
+                        borderColor: 'primary.main',
+                      },
+                    }}
+                    onClick={e => {
+                      e.stopPropagation()
+                      navigate(`/post/${post.parent!.id}`)
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        mb: 0.5,
+                      }}
+                    >
+                      <OptimizedAvatar
+                        src={post.parent.author.avatar}
+                        alt={post.parent.author.name}
+                        size='xs'
+                        lazy={true}
+                      />
+                      <Typography
+                        variant='caption'
+                        fontWeight='bold'
+                        color='text.primary'
+                      >
+                        {post.parent.author.name}
+                      </Typography>
+                      <Typography variant='caption' color='text.secondary'>
+                        @{post.parent.author.username}
+                      </Typography>
+                      {post.parent.createdAt && (
+                        <>
+                          <Typography variant='caption' color='text.secondary'>
+                            ·
+                          </Typography>
+                          <Typography variant='caption' color='text.secondary'>
+                            {formatTimeAgo(post.parent.createdAt)}
+                          </Typography>
+                        </>
+                      )}
+                    </Box>
+                    <Typography
+                      variant='body2'
+                      color='text.secondary'
+                      sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                      }}
+                    >
+                      {post.parent.content}
+                    </Typography>
+                  </Box>
                 )}
-              </IconButton>
-              <Typography variant='caption' color='text.secondary'>
-                {post.likesCount}
-              </Typography>
-            </Stack>
 
-            {/* RESPUESTAS */}
-            <Stack direction='row' alignItems='center'>
-              <IconButton size='small' onClick={() => onReply(post)}>
-                <CommentIcon fontSize='small' />
-              </IconButton>
-              <Typography variant='caption' color='text.secondary'>
-                {post.repliesCount}
-              </Typography>
-            </Stack>
-          </Stack>
+                <PostCardHeader post={post} />
 
-          {/* BOOKMARK */}
-          <IconButton
-            size='small'
-            onClick={() => onBookmark(post.id)}
-            color={post.isBookmarked ? 'primary' : 'default'}
-          >
-            {post.isBookmarked ? (
-              <BookmarkFilledIcon fontSize='small' />
-            ) : (
-              <BookmarkIcon fontSize='small' />
-            )}
-          </IconButton>
-        </CardActions>
-      </Card>
-    </Box>
-  )
-}
+                <Typography
+                  variant='body1'
+                  sx={{ mt: 0.5, wordBreak: 'break-word' }}
+                >
+                  {post.content}
+                </Typography>
+
+                {post.image && (
+                  <OptimizedImage
+                    src={post.image}
+                    alt='Post content'
+                    onClick={e => {
+                      e.stopPropagation()
+                      setImageModalOpen(true)
+                    }}
+                    maxHeight='512px'
+                    aspectRatio={
+                      post.image.includes('portrait') ? '4/5' : undefined
+                    }
+                    sx={{
+                      mt: 1.5,
+                      borderRadius: theme.tokens.borderRadius.md,
+                      border: (t: { palette: { divider: string } }) =>
+                        `1px solid ${t.palette.divider}`,
+                    }}
+                  />
+                )}
+
+                <PostCardActions
+                  post={post}
+                  onLike={onLike}
+                  onBookmark={onBookmark}
+                  onReply={onReply}
+                />
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+
+        {post.image && (
+          <ImageModal
+            open={imageModalOpen}
+            onClose={() => setImageModalOpen(false)}
+            imageUrl={post.image}
+            altText='Imagen del post'
+          />
+        )}
+      </Box>
+    )
+  }
+)
