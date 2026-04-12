@@ -1,6 +1,7 @@
 import { PostError } from '../errors'
+import { PostContent, PostTag } from '../value-objects'
 
-// Value Objects
+// Value Objects (Interfaces for relations)
 export interface PostAuthor {
   id: string
   username: string
@@ -12,15 +13,13 @@ export interface PostAuthor {
 export interface PostParent {
   id: string
   content: string
-  author: Pick<PostAuthor, 'username' | 'name' | 'avatar'>
+  createdAt: Date
+  author: Pick<PostAuthor, 'id' | 'username' | 'name' | 'avatar'>
 }
 
-// Domain Constants
+// Domain Constants (Now partially moved to VOs, but kept here for reference if needed)
 export const MAX_POST_CONTENT_LENGTH = 2000
 export const MAX_REPLY_CONTENT_LENGTH = 1000
-const MIN_CONTENT_LENGTH = 1
-const MAX_TAGS_COUNT = 10
-const MAX_TAG_LENGTH = 50
 
 // Props for Post reconstruction (from infrastructure)
 export interface PostProps {
@@ -38,6 +37,9 @@ export interface PostProps {
   updatedAt: Date
   deletedAt?: Date | null
   tags?: string[]
+  mentions?: string[]
+  country?: string | null
+  city?: string | null
 }
 
 // Props for creating new Post
@@ -47,6 +49,8 @@ export interface CreatePostProps {
   authorId: string
   parentId?: string | null
   tags?: string[]
+  country?: string | null
+  city?: string | null
 }
 
 /**
@@ -57,7 +61,7 @@ export interface CreatePostProps {
  */
 export class Post {
   private readonly _id: string
-  private _content: string
+  private _content: PostContent
   private _image: string | null
   private readonly _authorId: string
   private readonly _parentId: string | null
@@ -67,7 +71,10 @@ export class Post {
   private readonly _createdAt: Date
   private _updatedAt: Date
   private _deletedAt: Date | null
-  private _tags: string[]
+  private _tags: PostTag[]
+  private _mentions: string[]
+  private _country: string | null
+  private _city: string | null
 
   // Optional relations (loaded by repository when needed)
   private _author?: PostAuthor
@@ -75,7 +82,7 @@ export class Post {
 
   private constructor(props: PostProps) {
     this._id = props.id
-    this._content = props.content
+    this._content = PostContent.create(props.content, props.parentId !== null)
     this._image = props.image
     this._authorId = props.authorId
     this._parentId = props.parentId
@@ -85,7 +92,10 @@ export class Post {
     this._createdAt = props.createdAt
     this._updatedAt = props.updatedAt
     this._deletedAt = props.deletedAt ?? null
-    this._tags = props.tags ?? []
+    this._tags = props.tags?.map(t => PostTag.create(t)) ?? []
+    this._mentions = props.mentions ?? []
+    this._country = props.country ?? null
+    this._city = props.city ?? null
     this._author = props.author
     this._parent = props.parent
   }
@@ -95,37 +105,24 @@ export class Post {
    * Validates business rules before creation
    */
   public static create(props: CreatePostProps): Post {
+    const isReply = !!props.parentId
+
+    // Validate content OR image rule
     if (!props.content.trim() && !props.image) {
       throw PostError.emptyContent()
     }
 
-    const maxLength = props.parentId
-      ? MAX_REPLY_CONTENT_LENGTH
-      : MAX_POST_CONTENT_LENGTH
+    // VO handles length validation
+    PostContent.create(props.content, isReply)
 
-    if (props.content.length > maxLength) {
-      throw PostError.tooLong(maxLength)
+    if (props.tags && props.tags.length > PostTag.MAX_COUNT) {
+      throw new Error(`Maximum ${PostTag.MAX_COUNT} tags allowed`)
     }
 
-    if (props.content.length < MIN_CONTENT_LENGTH) {
-      throw PostError.tooShort(MIN_CONTENT_LENGTH)
-    }
+    // Validate tags via VO
+    props.tags?.forEach(tag => PostTag.create(tag))
 
-    if (props.tags && props.tags.length > MAX_TAGS_COUNT) {
-      throw new Error(`Maximum ${MAX_TAGS_COUNT} tags allowed`)
-    }
-
-    if (props.tags) {
-      props.tags.forEach(tag => {
-        if (tag.length > MAX_TAG_LENGTH) {
-          throw new Error(
-            `Tag "${tag}" exceeds maximum length of ${MAX_TAG_LENGTH}`
-          )
-        }
-      })
-    }
-
-    return new Post({
+    const post = new Post({
       id: '',
       content: props.content.trim(),
       image: props.image ?? null,
@@ -137,13 +134,28 @@ export class Post {
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
-      tags: props.tags?.map(t => t.toLowerCase().trim()) ?? [],
+      tags: props.tags ?? [],
+      mentions: [], // Will be added by application service after resolving usernames
+      country: props.country,
+      city: props.city,
     })
+
+    // Auto-extract tags if content exists
+    const extractedTags = post._content.extractHashtags()
+    if (extractedTags.length > 0) {
+      const currentTags = post.tags
+      extractedTags.forEach(tag => {
+        if (!currentTags.includes(tag.toLowerCase())) {
+          post._tags.push(PostTag.create(tag))
+        }
+      })
+    }
+
+    return post
   }
 
   /**
    * Factory Method - Reconstructs Post from persistence
-   * Used by repository when loading from database
    */
   public static reconstitute(props: PostProps): Post {
     return new Post(props)
@@ -151,34 +163,16 @@ export class Post {
 
   // ========== Business Methods ==========
 
-  /**
-   * Updates the post content
-   * Validates business rules
-   */
   public updateContent(newContent: string): void {
     if (this.isDeleted()) {
       throw PostError.alreadyDeleted()
     }
 
-    if (!newContent.trim()) {
-      throw PostError.emptyContent()
-    }
-
-    const maxLength = this.isReply()
-      ? MAX_REPLY_CONTENT_LENGTH
-      : MAX_POST_CONTENT_LENGTH
-
-    if (newContent.length > maxLength) {
-      throw PostError.tooLong(maxLength)
-    }
-
-    this._content = newContent.trim()
+    // VO handles the validation logic
+    this._content = PostContent.create(newContent, this.isReply())
     this._updatedAt = new Date()
   }
 
-  /**
-   * Updates the post image
-   */
   public updateImage(newImage: string | null): void {
     if (this.isDeleted()) {
       throw PostError.alreadyDeleted()
@@ -188,9 +182,6 @@ export class Post {
     this._updatedAt = new Date()
   }
 
-  /**
-   * Marks the post as deleted (soft delete)
-   */
   public markAsDeleted(): void {
     if (this.isDeleted()) {
       throw PostError.alreadyDeleted()
@@ -200,115 +191,75 @@ export class Post {
     this._updatedAt = new Date()
   }
 
-  /**
-   * Increments the likes count
-   * Note: The actual like relationship is managed externally
-   */
   public incrementLikes(): void {
     this._likesCount++
   }
 
-  /**
-   * Decrements the likes count
-   */
   public decrementLikes(): void {
     if (this._likesCount > 0) {
       this._likesCount--
     }
   }
 
-  /**
-   * Increments the replies count
-   */
   public incrementReplies(): void {
     this._repliesCount++
   }
 
-  /**
-   * Decrements the replies count
-   */
   public decrementReplies(): void {
     if (this._repliesCount > 0) {
       this._repliesCount--
     }
   }
 
-  /**
-   * Increments the bookmarks count
-   */
   public incrementBookmarks(): void {
     this._bookmarksCount++
   }
 
-  /**
-   * Decrements the bookmarks count
-   */
   public decrementBookmarks(): void {
     if (this._bookmarksCount > 0) {
       this._bookmarksCount--
     }
   }
 
-  /**
-   * Checks if the post belongs to a specific user
-   */
   public belongsTo(userId: string): boolean {
     return this._authorId === userId
   }
 
-  /**
-   * Checks if this is a reply to another post
-   */
   public isReply(): boolean {
     return this._parentId !== null
   }
 
-  /**
-   * Checks if the post has been deleted
-   */
   public isDeleted(): boolean {
     return this._deletedAt !== null
   }
 
-  /**
-   * Checks if the post has media attached
-   */
   public hasMedia(): boolean {
     return this._image !== null
   }
 
-  /**
-   * Sets author information (populated by repository)
-   */
   public setAuthor(author: PostAuthor): void {
     this._author = author
   }
 
-  /**
-   * Sets parent information (populated by repository)
-   */
   public setParent(parent: PostParent | null): void {
     this._parent = parent
   }
 
-  /**
-   * Sets the ID after persistence (used by repository)
-   */
   public setId(id: string): void {
     if (this._id) {
       throw new Error('Cannot change ID of an existing post')
     }
-    ;(this._id as any) = id
+    ;(this as unknown as { _id: string })._id = id
   }
 
-  // ========== Getters (Read-only access to state) ==========
+  // ========== Getters ==========
 
   get id(): string {
     return this._id
   }
 
   get content(): string {
-    return this._content
+    return this._content.value
   }
 
   get image(): string | null {
@@ -356,6 +307,26 @@ export class Post {
   }
 
   get tags(): string[] {
-    return [...this._tags] // Return copy to prevent external modification
+    return this._tags.map(t => t.value)
+  }
+
+  get mentions(): string[] {
+    return this._mentions
+  }
+
+  get country(): string | null {
+    return this._country
+  }
+
+  get city(): string | null {
+    return this._city
+  }
+
+  public setMentions(userIds: string[]): void {
+    this._mentions = userIds
+  }
+
+  public extractMentionedUsernames(): string[] {
+    return this._content.extractMentions()
   }
 }
