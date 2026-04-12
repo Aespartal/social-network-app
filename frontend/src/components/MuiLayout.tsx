@@ -4,6 +4,7 @@ import {
   Typography,
   IconButton,
   Drawer,
+  SwipeableDrawer,
   List,
   ListItem,
   ListItemIcon,
@@ -12,23 +13,31 @@ import {
   Box,
   useMediaQuery,
   useTheme as useMuiTheme,
-  Divider,
-  Avatar,
   Tooltip,
   alpha,
-  Container,
+  BottomNavigation,
+  BottomNavigationAction,
+  Paper,
+  Theme,
 } from '@mui/material'
+import { OptimizedAvatar } from '@/components/common'
 import {
   Menu as MenuIcon,
   Home as HomeIcon,
   Info as InfoIcon,
+  Search as SearchIcon,
   Brightness4,
   Brightness7,
   Logout,
   ChevronLeft as ChevronLeftIcon,
+  Explore as ExploreIcon,
+  Notifications as NotificationsIcon,
 } from '@mui/icons-material'
+import { Badge } from '@mui/material'
+import { useNotifications } from '@/context/NotificationContext'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useTheme } from '@/theme/ThemeProvider'
+import { useAppTheme } from '@/theme'
+import { tokens } from '@/theme/tokens'
 import { useAuth } from '@/hooks'
 
 interface LayoutProps {
@@ -41,22 +50,39 @@ const COLLAPSED_DRAWER_WIDTH = 70
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate()
   const location = useLocation()
-  const muiTheme = useMuiTheme()
-  const { isDark, toggleTheme } = useTheme()
+  const muiTheme = useMuiTheme() as Theme & { tokens: typeof tokens }
+  const { isDark, toggleTheme } = useAppTheme()
   const { user, isAuthenticated, logout } = useAuth()
+  const { unreadCount } = useNotifications()
 
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'))
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const menuItems = [
-    { text: 'Feed', icon: <HomeIcon />, path: '/', private: true },
+    { text: 'Inicio', icon: <HomeIcon />, path: '/', private: true },
+    {
+      text: 'Explorar',
+      icon: <ExploreIcon />,
+      path: '/explore',
+      private: false,
+    },
+    {
+      text: 'Notificaciones',
+      icon: (
+        <Badge badgeContent={unreadCount} color='error'>
+          <NotificationsIcon />
+        </Badge>
+      ),
+      path: '/notifications',
+      private: true,
+    },
     ...(user?.username
       ? [
           {
             text: 'Mi perfil',
             icon: (
-              <Avatar src={user.avatar || ''} sx={{ width: 24, height: 24 }} />
+              <OptimizedAvatar src={user.avatar} alt={user.name} size='sm' />
             ),
             path: `/profile/${user.username}`,
             private: true,
@@ -69,12 +95,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const filteredMenuItems = menuItems.filter(
     item => !item.private || isAuthenticated
   )
-
-  const currentDrawerWidth = isMobile
-    ? DRAWER_WIDTH
-    : isCollapsed
-      ? COLLAPSED_DRAWER_WIDTH
-      : DRAWER_WIDTH
 
   const handleLogout = () => {
     logout()
@@ -108,8 +128,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </IconButton>
         )}
       </Toolbar>
-
-      <Divider sx={{ mb: 1 }} />
 
       {/* 2. MENÚ PRINCIPAL */}
       <List sx={{ px: 1, flexGrow: 1 }}>
@@ -157,8 +175,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           )
         })}
       </List>
-
-      <Divider />
 
       {/* 3. SECCIÓN INFERIOR: AJUSTES Y PERFIL */}
       <List sx={{ px: 1, py: 2 }}>
@@ -236,65 +252,75 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   )
 
   return (
-    <Container maxWidth='lg'>
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        justifyContent: 'center',
+      }}
+    >
       <Box
         sx={{
           display: 'flex',
-          minHeight: '100vh',
-          bgcolor: 'background.default',
+          width: '100%',
+          maxWidth: '1250px',
+          position: 'relative',
         }}
       >
-        {/* Botón flotante para móvil (reemplaza al AppBar ausente) */}
-        {isMobile && !mobileOpen && (
-          <IconButton
-            onClick={() => setMobileOpen(true)}
-            sx={{
-              position: 'fixed',
-              top: 10,
-              left: 10,
-              zIndex: 1100,
-              bgcolor: 'background.paper',
-              boxShadow: 2,
-            }}
-          >
-            <MenuIcon />
-          </IconButton>
-        )}
-
+        {/* 1. NAVEGACIÓN IZQUIERDA (Menú fijo desktop / Swipeable móvil) */}
         <Box
           component='nav'
           sx={{
-            width: { sm: currentDrawerWidth },
-            flexShrink: { sm: 0 },
+            width: {
+              xs: 0,
+              sm: isCollapsed ? COLLAPSED_DRAWER_WIDTH : DRAWER_WIDTH,
+            },
+            flexShrink: 0,
             transition: 'width 0.3s',
+            position: 'sticky',
+            top: 0,
+            height: '100vh',
+            zIndex: 1000,
           }}
         >
-          <Drawer
-            variant='temporary'
+          {/* Menú lateral móvil con soporte de gestos (Swipe) */}
+          <SwipeableDrawer
+            anchor='left'
             open={mobileOpen}
+            onOpen={() => setMobileOpen(true)}
             onClose={() => setMobileOpen(false)}
+            disableBackdropTransition={!isMobile} // Optimización
+            disableDiscovery={!isMobile}
             sx={{
               display: { xs: 'block', sm: 'none' },
               '& .MuiDrawer-paper': {
                 width: DRAWER_WIDTH,
                 borderRight: '1px solid',
                 borderColor: 'divider',
+                bgcolor: 'background.default',
               },
             }}
           >
             {drawerContent}
-          </Drawer>
+          </SwipeableDrawer>
+
+          {/* Menú lateral escritorio fijo */}
           <Drawer
             variant='permanent'
             sx={{
               display: { xs: 'none', sm: 'block' },
+              height: '100%',
               '& .MuiDrawer-paper': {
-                width: currentDrawerWidth,
+                width: 'inherit',
                 transition: 'width 0.3s',
                 overflowX: 'hidden',
                 borderRight: '1px solid',
                 borderColor: 'divider',
                 boxShadow: 'none',
+                bgcolor: 'background.default',
+                position: 'relative',
+                height: '100%',
               },
             }}
           >
@@ -302,15 +328,128 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </Drawer>
         </Box>
 
+        {/* 2. ÁREA DE CONTENIDO */}
         <Box
           component='main'
-          sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, width: '100%' }}
+          sx={{
+            flexGrow: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            pb: isMobile ? '56px' : 0, // Espacio para el BottomNav en móvil
+          }}
         >
-          {/* Espaciador para móvil si el contenido choca con el botón flotante */}
-          {isMobile && <Box sx={{ height: 50 }} />}
-          {children}
+          {/* Header móvil simplificado para mostrar el avatar / abrir menú */}
+          {isMobile && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                px: 2,
+                py: 1,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                bgcolor: alpha(
+                  muiTheme.palette.background.paper,
+                  muiTheme.tokens.opacity.backdrop
+                ),
+                backdropFilter: 'blur(12px)',
+                position: 'sticky',
+                top: 0,
+                zIndex: 1100,
+              }}
+            >
+              <IconButton onClick={() => setMobileOpen(true)} sx={{ p: 0.5 }}>
+                <OptimizedAvatar
+                  src={user?.avatar}
+                  alt={user?.name}
+                  size={32}
+                />
+              </IconButton>
+              <Typography variant='h6' sx={{ ml: 2, fontWeight: 800 }}>
+                Inicio
+              </Typography>
+            </Box>
+          )}
+
+          <Box sx={{ width: '100%', height: '100%' }}>{children}</Box>
+
+          {/* MENÚ INFERIOR MÓVIL (Bottom Navigation) */}
+          {isMobile && (
+            <Paper
+              sx={{
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                zIndex: 1200,
+              }}
+              elevation={3}
+            >
+              <BottomNavigation
+                showLabels={false}
+                value={location.pathname}
+                onChange={(_, newValue) => navigate(newValue)}
+                sx={{
+                  height: 56,
+                  borderTop: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                }}
+              >
+                <BottomNavigationAction
+                  value='/'
+                  icon={
+                    <HomeIcon sx={{ fontSize: muiTheme.tokens.iconSize.lg }} />
+                  }
+                />
+                <BottomNavigationAction
+                  value='/explore'
+                  icon={
+                    <ExploreIcon
+                      sx={{ fontSize: muiTheme.tokens.iconSize.lg }}
+                    />
+                  }
+                />
+                <BottomNavigationAction
+                  value='/notifications'
+                  icon={
+                    <Badge badgeContent={unreadCount} color='error'>
+                      <NotificationsIcon
+                        sx={{ fontSize: muiTheme.tokens.iconSize.lg }}
+                      />
+                    </Badge>
+                  }
+                />
+                <BottomNavigationAction
+                  value='/search'
+                  icon={
+                    <SearchIcon
+                      sx={{ fontSize: muiTheme.tokens.iconSize.lg }}
+                    />
+                  }
+                />
+                <BottomNavigationAction
+                  value={user ? `/profile/${user.username}` : '/login'}
+                  icon={
+                    <OptimizedAvatar
+                      src={user?.avatar}
+                      alt={user?.name}
+                      size={28}
+                      sx={{
+                        border: location.pathname.includes('/profile')
+                          ? '2px solid'
+                          : 'none',
+                        borderColor: 'primary.main',
+                      }}
+                    />
+                  }
+                />
+              </BottomNavigation>
+            </Paper>
+          )}
         </Box>
       </Box>
-    </Container>
+    </Box>
   )
 }
