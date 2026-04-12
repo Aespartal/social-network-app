@@ -19,6 +19,8 @@ export const ROUTES = {
   ABOUT: '/about',
   PROFILE: (username: string) => `/profile/${username}`,
   POST_DETAIL: (id: string) => `/post/${id}`,
+  SEARCH: '/search',
+  EXPLORE: '/explore',
   ADMIN_DASHBOARD: '/admin/dashboard',
 } as const
 
@@ -33,19 +35,31 @@ export const API_ENDPOINTS = {
   },
   POSTS: {
     FEED: '/posts/feed',
+    FOLLOWING: '/posts/following',
     CREATE: '/posts',
     BY_ID: (id: string) => `/posts/${id}`,
     BY_USER: (username: string) => `/posts/user/${username}`,
     LIKE: (id: string) => `/posts/${id}/like`,
     BOOKMARK: (id: string) => `/posts/${id}/bookmark`,
+    SEARCH: '/posts/search',
+    RECENT_SEARCH: '/posts/search/recent',
+    DELETE_RECENT_SEARCH: (id: string) => `/posts/search/recent/${id}`,
+    CLEAR_RECENT_SEARCH: '/posts/search/recent',
+    TRENDING: '/posts/trending',
   },
   PROFILE: {
     ME: '/profile',
-    BY_USERNAME: (username: string) => `/users/${username}`,
+    BY_USERNAME: (username: string) => `/profile/${username}`,
     VISIT: (id: string) => `/profile/visit/${id}`,
     MY_VISITS: '/profile/my-visits',
     SUGGESTIONS: '/profile/suggestions',
     UPDATE: (id: string) => `/profile/${id}`,
+  },
+  NOTIFICATIONS: {
+    GET_ALL: '/notifications',
+    UNREAD_COUNT: '/notifications/unread-count',
+    MARK_READ: '/notifications/mark-read',
+    MARK_SINGLE_READ: (id: string) => `/notifications/${id}/mark-read`,
   },
 } as const
 
