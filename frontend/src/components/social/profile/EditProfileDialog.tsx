@@ -6,7 +6,6 @@ import {
   DialogTitle,
   TextField,
   Box,
-  Avatar,
   IconButton,
   Typography,
   useTheme,
@@ -14,6 +13,7 @@ import {
   Stack,
   Badge,
 } from '@mui/material'
+import { OptimizedAvatar } from '@/components/common'
 import {
   Close as CloseIcon,
   CameraAlt as CameraIcon,
@@ -224,11 +224,11 @@ export const EditProfileDialog = ({
                 </Stack>
               }
             >
-              <Avatar
+              <OptimizedAvatar
                 src={currentAvatar}
+                alt={user.name}
+                size={120}
                 sx={{
-                  width: 120,
-                  height: 120,
                   border: 4,
                   borderColor: 'background.paper',
                   boxShadow: 3,

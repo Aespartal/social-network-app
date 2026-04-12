@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { List, Typography, Paper, Box, Divider } from '@mui/material'
+import { List, Typography, Paper, Box, Divider, useTheme } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { User } from 'social-network-app-shared/types/auth.type'
 import { profileService } from '@/services'
@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { VisitorItem } from './VisitorItem'
 
 export const VisitorList = () => {
+  const theme = useTheme()
   const [visitors, setVisitors] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
@@ -34,7 +35,10 @@ export const VisitorList = () => {
   if (loading) return <VisitorListSkeleton />
 
   return (
-    <Paper variant='outlined' sx={{ borderRadius: 0, overflow: 'hidden' }}>
+    <Paper
+      variant='outlined'
+      sx={{ borderRadius: theme.tokens.borderRadius.none, overflow: 'hidden' }}
+    >
       <Box sx={{ p: 2, bgcolor: 'action.hover' }}>
         <Typography variant='subtitle2' fontWeight='bold'>
           Visitas recientes

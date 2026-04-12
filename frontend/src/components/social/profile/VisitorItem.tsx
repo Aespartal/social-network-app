@@ -2,11 +2,11 @@ import {
   ListItem,
   ListItemButton,
   ListItemAvatar,
-  Avatar,
   ListItemText,
   Typography,
   Divider,
 } from '@mui/material'
+import { OptimizedAvatar } from '@/components/common'
 import { User } from 'social-network-app-shared/types/auth.type'
 
 export interface VisitorItemProps {
@@ -29,10 +29,10 @@ export const VisitorItem = ({ visitor, isLast, onClick }: VisitorItemProps) => {
           }}
         >
           <ListItemAvatar sx={{ minWidth: 0 }}>
-            <Avatar
-              src={visitor.avatar || ''}
+            <OptimizedAvatar
+              src={visitor.avatar}
               alt={visitor.name}
-              sx={{ width: 40, height: 40 }}
+              size='md'
             />
           </ListItemAvatar>
 

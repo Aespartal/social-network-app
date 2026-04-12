@@ -5,18 +5,20 @@ import {
   List,
   ListItem,
   ListItemAvatar,
-  Avatar,
   ListItemText,
   Button,
   Box,
   Divider,
+  useTheme,
 } from '@mui/material'
+import { OptimizedAvatar } from '@/components/common'
 import { Link } from 'react-router-dom'
 import { profileService } from '@/services'
 import { User } from 'social-network-app-shared/types/auth.type'
 import { SuggestedUsersSkeleton } from '../skeleton/SuggestedUsersSkeleton'
 
 export const SuggestedUsers: React.FC = () => {
+  const theme = useTheme()
   const [suggestions, setSuggestions] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [followingIds, setFollowingIds] = useState<string[]>([])
@@ -57,7 +59,11 @@ export const SuggestedUsers: React.FC = () => {
   return (
     <Paper
       variant='outlined'
-      sx={{ borderRadius: 0, overflow: 'hidden', bgcolor: 'background.paper' }}
+      sx={{
+        borderRadius: theme.tokens.borderRadius.none,
+        overflow: 'hidden',
+        bgcolor: 'background.paper',
+      }}
     >
       <Box sx={{ p: 2, pb: 1 }}>
         <Typography variant='subtitle1' fontWeight='bold'>
@@ -81,16 +87,13 @@ export const SuggestedUsers: React.FC = () => {
                 }}
               >
                 <ListItemAvatar sx={{ minWidth: 0 }}>
-                  <Avatar
+                  <OptimizedAvatar
+                    src={user.avatar}
                     alt={user.name}
-                    src={user.avatar || ''}
-                    component={Link}
-                    to={`/profile/${user.username}`}
+                    size='md'
                     sx={{
-                      width: 40,
-                      height: 40,
                       textDecoration: 'none',
-                      transition: 'transform 0.2s',
+                      transition: `transform ${theme.tokens.transition.normal}`,
                       '&:hover': { transform: 'scale(1.05)' },
                     }}
                   />
@@ -136,7 +139,7 @@ export const SuggestedUsers: React.FC = () => {
                   disabled={isFollowing}
                   onClick={() => handleFollow(user.id)}
                   sx={{
-                    borderRadius: 20,
+                    borderRadius: theme.tokens.borderRadius.xl,
                     fontSize: '0.7rem',
                     fontWeight: 'bold',
                     flexShrink: 0,
