@@ -102,6 +102,14 @@ export interface PostQueryProvider {
   getFeed(filter: FeedFilter): Promise<PagedPosts>
 
   /**
+   * Gets the "Following Feed" (posts and replies from followed users)
+   * Includes threading context for visual visualization
+   * @param filter - Feed filter
+   * @returns Paginated posts with threading metadata
+   */
+  getFollowingFeed(filter: FeedFilter): Promise<PagedPosts>
+
+  /**
    * Gets all posts by a specific user
    * @param filter - User posts filter
    * @returns Paginated posts
@@ -138,11 +146,14 @@ export interface PostQueryProvider {
 
   /**
    * Gets trending posts (most liked recently)
-   * @param filter - Page request
+   * @param filter - Page request with location filters
    * @param userId - Optional user ID for flags
    * @returns Paginated trending posts
    */
-  getTrendingPosts(filter: PageRequest, userId?: string): Promise<PagedPosts>
+  getTrendingPosts(
+    filter: PageRequest & { country?: string; city?: string },
+    userId?: string
+  ): Promise<PagedPosts>
 
   /**
    * Gets replies for a specific post

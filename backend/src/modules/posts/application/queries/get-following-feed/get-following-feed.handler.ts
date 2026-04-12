@@ -3,17 +3,19 @@ import { TYPES } from '@/lib/di-types'
 import type { PostQueryProvider } from '../common/post-query.provider.interface'
 import { PostError } from '../../../domain/errors'
 import { PaginatedPostsResponseDTO } from '../../dto/post.dto'
-import type { GetFeedQuery } from './get-feed.query'
+import type { GetFollowingFeedQuery } from './get-following-feed.query'
 import { isInvalidPageLimit } from '@/modules/posts/infrastructure/helpers/prisma-query.helpers'
 
 @injectable()
-export class GetFeedHandler {
+export class GetFollowingFeedHandler {
   constructor(
     @inject(TYPES.PostQueryProvider)
     private readonly postQueryProvider: PostQueryProvider
   ) {}
 
-  async execute(query: GetFeedQuery): Promise<PaginatedPostsResponseDTO> {
+  async execute(
+    query: GetFollowingFeedQuery
+  ): Promise<PaginatedPostsResponseDTO> {
     const { limit = 20 } = query.page
 
     if (isInvalidPageLimit(limit)) {
@@ -21,9 +23,9 @@ export class GetFeedHandler {
     }
 
     try {
-      return await this.postQueryProvider.getFeed(query)
+      return await this.postQueryProvider.getFollowingFeed(query)
     } catch (error) {
-      console.error('Error fetching feed:', error)
+      console.error('Error fetching following feed:', error)
       throw PostError.unableToFetchFeed()
     }
   }

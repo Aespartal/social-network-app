@@ -1,3 +1,5 @@
+import { injectable, inject } from 'inversify'
+import { TYPES } from '@/lib/di-types'
 import type { PostQueryProvider } from '../common/post-query.provider.interface'
 import { PostError } from '../../../domain/errors'
 import { PaginatedPostsResponseDTO } from '../../dto/post.dto'
@@ -5,8 +7,12 @@ import type { GetUserPostsQuery } from './get-user-posts.query'
 import { prisma } from '@/lib/prisma'
 import { isInvalidPageLimit } from '@/modules/posts/infrastructure/helpers/prisma-query.helpers'
 
+@injectable()
 export class GetUserPostsHandler {
-  constructor(private readonly postQueryProvider: PostQueryProvider) {}
+  constructor(
+    @inject(TYPES.PostQueryProvider)
+    private readonly postQueryProvider: PostQueryProvider
+  ) {}
 
   async execute(query: GetUserPostsQuery): Promise<PaginatedPostsResponseDTO> {
     const { username, userId, page } = query

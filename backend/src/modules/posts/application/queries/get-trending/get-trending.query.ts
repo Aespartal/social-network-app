@@ -5,4 +5,6 @@ export interface GetTrendingPostsQuery {
     limit?: number
     since?: string
   }
+  country?: string
+  city?: string
 }

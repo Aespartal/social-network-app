@@ -1,11 +1,17 @@
+import { injectable, inject } from 'inversify'
+import { TYPES } from '@/lib/di-types'
 import type { PostQueryProvider } from '../common/post-query.provider.interface'
 import { PostError } from '../../../domain/errors'
 import { PaginatedPostsResponseDTO } from '../../dto/post.dto'
 import type { GetPostsByTagQuery } from './get-posts-by-tag.query'
 import { isInvalidPageLimit } from '@/modules/posts/infrastructure/helpers/prisma-query.helpers'
 
+@injectable()
 export class GetPostsByTagHandler {
-  constructor(private readonly postQueryProvider: PostQueryProvider) {}
+  constructor(
+    @inject(TYPES.PostQueryProvider)
+    private readonly postQueryProvider: PostQueryProvider
+  ) {}
 
   async execute(query: GetPostsByTagQuery): Promise<PaginatedPostsResponseDTO> {
     const { limit = 20 } = query.page
