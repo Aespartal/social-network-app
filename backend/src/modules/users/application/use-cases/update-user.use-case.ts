@@ -53,7 +53,7 @@ export class UpdateUserUseCase {
 
     if (input.password) {
       updateData.passwordHash = await bcrypt.hash(input.password, 10)
-      delete (updateData as any).password
+      delete (updateData as { password?: string }).password
     }
 
     try {

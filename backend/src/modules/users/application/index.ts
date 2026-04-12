@@ -1,2 +1,2 @@
-export * from './dto'
-export * from './use-cases'
+export * from './commands'
+export * from './queries'
