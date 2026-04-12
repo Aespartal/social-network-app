@@ -10,7 +10,7 @@ import { Post, PostResponse } from 'social-network-app-shared/types/social.type'
 import { useAuth } from './useAuth'
 import { FeedType, FEED_TABS_CONFIG } from '@/constants/feed'
 
-export const useFeed = (activeTab: number) => {
+export const useFeed = (activeTab = 0) => {
   const queryClient = useQueryClient()
   const { isAuthenticated } = useAuth()
 

@@ -1,6 +1,7 @@
 import axiosInstance from './axiosInstance'
 import { API_ENDPOINTS } from '@/constants'
 import { Notification } from 'social-network-app-shared/types/social.type'
+export type { Notification }
 
 export interface NotificationsResponse {
   success: boolean

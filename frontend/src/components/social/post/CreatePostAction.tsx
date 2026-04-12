@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react'
+import { useState, memo } from 'react'
 import { Fab } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import { CreatePostDialog } from './CreatePost'

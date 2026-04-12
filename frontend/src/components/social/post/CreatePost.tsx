@@ -269,7 +269,7 @@ const ImagePreview = ({
   url: string
   onRemove: () => void
   loading: boolean
-  theme: { tokens: { borderRadius: { md: string } } }
+  theme: { tokens: { borderRadius: { md: number } } }
 }) => (
   <Box
     sx={{
