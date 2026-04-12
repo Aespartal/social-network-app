@@ -7,9 +7,9 @@ import React, {
 } from 'react'
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles'
 import { CssBaseline } from '@mui/material'
-import { theme, darkTheme } from './theme'
+import { lightTheme, darkTheme } from './theme'
 
-interface ThemeContextType {
+export interface ThemeContextType {
   isDark: boolean
   toggleTheme: () => void
 }
@@ -45,7 +45,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   }, [])
 
   const toggleTheme = () => setIsDark(prev => !prev)
-  const currentTheme = isDark ? darkTheme : theme
+  const currentTheme = isDark ? darkTheme : lightTheme
 
   return (
     <ThemeContext.Provider value={{ isDark, toggleTheme }}>
@@ -64,3 +64,5 @@ export const useTheme = () => {
   }
   return context
 }
+
+export const useAppTheme = useTheme

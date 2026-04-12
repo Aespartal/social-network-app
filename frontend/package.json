@@ -22,15 +22,19 @@
     "@mui/material": "7.3.6",
     "@mui/x-date-pickers": "8.23.0",
     "@react-oauth/google": "^0.13.4",
+    "@tanstack/react-query": "^5.90.20",
     "axios": "^1.13.2",
     "clsx": "2.1.1",
     "date-fns": "^4.1.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router-dom": "7.11.0",
-    "social-network-app-shared": "*"
+    "react-virtuoso": "^4.18.1",
+    "social-network-app-shared": "*",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
+    "@tanstack/react-query-devtools": "^5.91.2",
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.1",
     "@typescript-eslint/eslint-plugin": "8.50.1",

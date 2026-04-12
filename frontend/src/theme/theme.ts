@@ -1,10 +1,18 @@
 import { createTheme, alpha, ThemeOptions } from '@mui/material/styles'
 import { esES } from '@mui/material/locale'
+import { tokens, themeColors, semanticColors } from './tokens'
 
 /**
- * 1. CONFIGURACIÓN COMPARTIDA
- * Definimos lo que no cambia entre luz y oscuridad para mantener DRY (Don't Repeat Yourself).
+ * Sistema de Temas - Arquitectura Centralizada
+ *
+ * Este archivo define los temas Light y Dark usando los tokens centralizados.
+ * Para cambiar el tema completo, solo modifica los tokens en './tokens.ts'
  */
+
+// ============================================================================
+// 1. CONFIGURACIÓN TIPOGRÁFICA COMPARTIDA
+// ============================================================================
+
 const baseTypography: ThemeOptions['typography'] = {
   fontFamily: [
     'Inter',
@@ -14,38 +22,100 @@ const baseTypography: ThemeOptions['typography'] = {
     'Roboto',
     'sans-serif',
   ].join(','),
-  h1: { fontSize: '2.5rem', fontWeight: 700, letterSpacing: '-0.02em' },
-  h2: { fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.02em' },
-  h3: { fontSize: '1.75rem', fontWeight: 600, letterSpacing: '-0.01em' },
-  h4: { fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.01em' },
-  h5: { fontSize: '1.25rem', fontWeight: 600 },
-  h6: { fontSize: '1rem', fontWeight: 600 },
-  body1: { fontSize: '1rem', lineHeight: 1.6 },
-  body2: { fontSize: '0.875rem', lineHeight: 1.57 },
-  button: { textTransform: 'none', fontWeight: 600 },
+  h1: {
+    fontSize: tokens.fontSize['4xl'],
+    fontWeight: tokens.fontWeight.bold,
+    letterSpacing: tokens.letterSpacing.tight,
+    lineHeight: tokens.lineHeight.tight,
+  },
+  h2: {
+    fontSize: tokens.fontSize['3xl'],
+    fontWeight: tokens.fontWeight.bold,
+    letterSpacing: tokens.letterSpacing.tight,
+    lineHeight: tokens.lineHeight.tight,
+  },
+  h3: {
+    fontSize: tokens.fontSize['2xl'],
+    fontWeight: tokens.fontWeight.semibold,
+    letterSpacing: tokens.letterSpacing.tight,
+  },
+  h4: {
+    fontSize: tokens.fontSize.xl,
+    fontWeight: tokens.fontWeight.semibold,
+    letterSpacing: tokens.letterSpacing.tight,
+  },
+  h5: {
+    fontSize: tokens.fontSize.lg,
+    fontWeight: tokens.fontWeight.semibold,
+  },
+  h6: {
+    fontSize: tokens.fontSize.base,
+    fontWeight: tokens.fontWeight.semibold,
+  },
+  body1: {
+    fontSize: tokens.fontSize.base,
+    lineHeight: tokens.lineHeight.relaxed,
+  },
+  body2: {
+    fontSize: tokens.fontSize.sm,
+    lineHeight: tokens.lineHeight.normal,
+  },
+  caption: {
+    fontSize: tokens.fontSize.xs,
+    lineHeight: tokens.lineHeight.normal,
+  },
+  button: {
+    textTransform: 'none',
+    fontWeight: tokens.fontWeight.semibold,
+    fontSize: tokens.fontSize.base,
+  },
+  overline: {
+    fontSize: tokens.fontSize.xs,
+    textTransform: 'uppercase',
+    letterSpacing: tokens.letterSpacing.wide,
+  },
 }
+
+// ============================================================================
+// 2. CONFIGURACIÓN DE COMPONENTES COMPARTIDA
+// ============================================================================
 
 const sharedComponents: ThemeOptions['components'] = {
   MuiButton: {
     styleOverrides: {
       root: {
-        borderRadius: 24, // Botones redondeados modernos
-        padding: '8px 20px',
-        transition: 'all 0.2s ease-in-out',
-        boxShadow: 'none',
+        borderRadius: tokens.borderRadius['2xl'],
+        padding: `${tokens.spacing.sm}px ${tokens.spacing.lg - 4}px`,
+        transition: `all ${tokens.transition.normal} ${tokens.transition.easing}`,
+        boxShadow: tokens.shadows.none,
         '&:hover': {
-          boxShadow: 'none',
+          boxShadow: tokens.shadows.none,
           transform: 'translateY(-1px)',
         },
-        '&:active': { transform: 'translateY(0)' },
+        '&:active': {
+          transform: 'translateY(0)',
+        },
       },
-      sizeLarge: { padding: '12px 28px' },
+      sizeLarge: {
+        padding: `${tokens.spacing.md - 4}px ${tokens.spacing.lg + 4}px`,
+      },
+      sizeSmall: {
+        padding: `${tokens.spacing.xs}px ${tokens.spacing.md}px`,
+        fontSize: tokens.fontSize.sm,
+      },
     },
   },
   MuiCard: {
     styleOverrides: {
       root: {
-        borderRadius: 16,
+        borderRadius: tokens.borderRadius.lg,
+        backgroundImage: 'none',
+      },
+    },
+  },
+  MuiPaper: {
+    styleOverrides: {
+      root: {
         backgroundImage: 'none',
       },
     },
@@ -54,43 +124,83 @@ const sharedComponents: ThemeOptions['components'] = {
     styleOverrides: {
       root: {
         '& .MuiOutlinedInput-root': {
-          borderRadius: 12,
+          borderRadius: tokens.borderRadius.md,
         },
       },
     },
   },
   MuiChip: {
     styleOverrides: {
-      root: { fontWeight: 600 },
+      root: {
+        fontWeight: tokens.fontWeight.semibold,
+        borderRadius: tokens.borderRadius.xl,
+      },
+    },
+  },
+  MuiAvatar: {
+    styleOverrides: {
+      root: {
+        border: `2px solid currentColor`,
+      },
     },
   },
 }
 
-/**
- * 2. TEMA CLARO
- */
-export const theme = createTheme(
+// ============================================================================
+// 3. TEMA CLARO
+// ============================================================================
+
+export const lightTheme = createTheme(
   {
     palette: {
       mode: 'light',
-      primary: { main: '#1d9bf0', contrastText: '#ffffff' }, // Azul estilo social moderno
-      secondary: { main: '#673ab7' },
-      background: { default: '#ffffff', paper: '#ffffff' },
-      text: { primary: '#0f1419', secondary: '#536471' },
-      divider: 'rgba(0, 0, 0, 0.08)',
+      primary: {
+        main: semanticColors.primary,
+        contrastText: '#ffffff',
+      },
+      secondary: {
+        main: '#673ab7',
+        contrastText: '#ffffff',
+      },
+      background: {
+        default: themeColors.light.background.default,
+        paper: themeColors.light.background.paper,
+      },
+      text: {
+        primary: themeColors.light.text.primary,
+        secondary: themeColors.light.text.secondary,
+      },
+      divider: themeColors.light.divider,
+      error: {
+        main: semanticColors.error,
+      },
+      warning: {
+        main: semanticColors.warning,
+      },
+      success: {
+        main: semanticColors.success,
+      },
+      info: {
+        main: semanticColors.info,
+      },
     },
     typography: baseTypography,
-    shape: { borderRadius: 12 },
+    shape: {
+      borderRadius: tokens.borderRadius.md,
+    },
     components: {
       ...sharedComponents,
       MuiAppBar: {
         styleOverrides: {
           root: {
-            backgroundColor: alpha('#ffffff', 0.8),
+            backgroundColor: alpha(
+              themeColors.light.background.default,
+              tokens.opacity.backdrop
+            ),
             backdropFilter: 'blur(12px)',
-            color: '#0f1419',
-            boxShadow: 'none',
-            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+            color: themeColors.light.text.primary,
+            boxShadow: tokens.shadows.none,
+            borderBottom: `1px solid ${themeColors.light.border}`,
           },
         },
       },
@@ -98,8 +208,15 @@ export const theme = createTheme(
         styleOverrides: {
           root: {
             ...(sharedComponents.MuiCard!.styleOverrides!.root as object),
-            border: '1px solid rgba(0, 0, 0, 0.08)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+            border: `1px solid ${themeColors.light.border}`,
+            boxShadow: tokens.shadows.card.light,
+          },
+        },
+      },
+      MuiDrawer: {
+        styleOverrides: {
+          paper: {
+            borderRight: `1px solid ${themeColors.light.border}`,
           },
         },
       },
@@ -108,46 +225,83 @@ export const theme = createTheme(
   esES
 )
 
-/**
- * 3. TEMA OSCURO
- * Mejorado con un tono "Lights Out" (negro profundo)
- */
+// ============================================================================
+// 4. TEMA OSCURO (Lights Out)
+// ============================================================================
+
 export const darkTheme = createTheme(
   {
     palette: {
       mode: 'dark',
-      primary: { main: '#1d9bf0', contrastText: '#ffffff' },
-      background: { default: '#000000', paper: '#16181c' },
-      text: { primary: '#e7e9ea', secondary: '#71767b' },
-      divider: '#2f3336',
+      primary: {
+        main: semanticColors.primary,
+        contrastText: '#ffffff',
+      },
+      secondary: {
+        main: '#673ab7',
+        contrastText: '#ffffff',
+      },
+      background: {
+        default: themeColors.dark.background.default,
+        paper: themeColors.dark.background.paper,
+      },
+      text: {
+        primary: themeColors.dark.text.primary,
+        secondary: themeColors.dark.text.secondary,
+      },
+      divider: themeColors.dark.divider,
+      error: {
+        main: semanticColors.error,
+      },
+      warning: {
+        main: semanticColors.warning,
+      },
+      success: {
+        main: semanticColors.success,
+      },
+      info: {
+        main: semanticColors.info,
+      },
     },
     typography: baseTypography,
-    shape: { borderRadius: 12 },
+    shape: {
+      borderRadius: tokens.borderRadius.md,
+    },
     components: {
       ...sharedComponents,
       MuiAppBar: {
         styleOverrides: {
           root: {
-            backgroundColor: alpha('#000000', 0.7),
+            backgroundColor: alpha(themeColors.dark.background.default, 0.7),
             backdropFilter: 'blur(12px)',
             backgroundImage: 'none',
-            boxShadow: 'none',
-            borderBottom: '1px solid #2f3336',
+            boxShadow: tokens.shadows.none,
+            borderBottom: `1px solid ${themeColors.dark.border}`,
           },
         },
       },
       MuiCard: {
         styleOverrides: {
           root: {
-            ...(sharedComponents?.MuiCard?.styleOverrides?.root as object),
-            border: '1px solid #2f3336',
-            boxShadow: 'none',
+            ...(sharedComponents.MuiCard!.styleOverrides!.root as object),
+            border: `1px solid ${themeColors.dark.border}`,
+            boxShadow: tokens.shadows.card.dark,
           },
         },
       },
       MuiPaper: {
         styleOverrides: {
-          root: { backgroundImage: 'none' },
+          root: {
+            backgroundImage: 'none',
+          },
+        },
+      },
+      MuiDrawer: {
+        styleOverrides: {
+          paper: {
+            borderRight: `1px solid ${themeColors.dark.border}`,
+            backgroundColor: themeColors.dark.background.default,
+          },
         },
       },
     },
@@ -155,4 +309,62 @@ export const darkTheme = createTheme(
   esES
 )
 
+// ============================================================================
+// 5. EXTENSIÓN DE TIPOS DE MUI
+// ============================================================================
+
+declare module '@mui/material/styles' {
+  interface Theme {
+    tokens: typeof tokens
+    themeMode: 'light' | 'dark'
+  }
+  interface ThemeOptions {
+    tokens?: typeof tokens
+    themeMode?: 'light' | 'dark'
+  }
+}
+
+// ============================================================================
+// 6. INYECCIÓN DE TOKENS EN TEMAS
+// ============================================================================
+
+// Añadir tokens y modo al tema claro
+;(
+  lightTheme as typeof lightTheme & {
+    tokens: typeof tokens
+    themeMode: 'light'
+  }
+).tokens = tokens
+;(
+  lightTheme as typeof lightTheme & {
+    tokens: typeof tokens
+    themeMode: 'light'
+  }
+).themeMode = 'light'
+
+// Añadir tokens y modo al tema oscuro
+;(
+  darkTheme as typeof darkTheme & { tokens: typeof tokens; themeMode: 'dark' }
+).tokens = tokens
+;(
+  darkTheme as typeof darkTheme & { tokens: typeof tokens; themeMode: 'dark' }
+).themeMode = 'dark'
+
+// ============================================================================
+// 7. EXPORTACIONES
+// ============================================================================
+
+/** Tema por defecto (claro) */
+export const theme = lightTheme
+
+/** Mapa de temas disponibles */
+export const themes = {
+  light: lightTheme,
+  dark: darkTheme,
+} as const
+
+/** Tipos de temas disponibles */
+export type ThemeType = keyof typeof themes
+
+// Exportación por defecto
 export default theme

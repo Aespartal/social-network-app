@@ -4,6 +4,7 @@ import { CircularProgress, Box } from '@mui/material'
 import { Layout } from '@/components/MuiLayout'
 import { ThemeProvider } from '@/theme/ThemeProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { NotificationProvider } from '@/context/NotificationContext'
 import { routes } from '@/routes'
 
 const LoadingFallback = () => (
@@ -23,9 +24,11 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Layout>
-          <Suspense fallback={<LoadingFallback />}>{element}</Suspense>
-        </Layout>
+        <NotificationProvider>
+          <Layout>
+            <Suspense fallback={<LoadingFallback />}>{element}</Suspense>
+          </Layout>
+        </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
   )
