@@ -18,7 +18,7 @@ export const AuthUserDTOSchema = Type.Object({
 
 export const AuthResponseDTOSchema = Type.Object({
   user: AuthUserDTOSchema,
-  tokens: AuthTokensSchema,
+  tokens: Type.Optional(AuthTokensSchema),
 })
 
 export type AuthResponseDTO = Static<typeof AuthResponseDTOSchema>
