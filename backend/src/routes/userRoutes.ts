@@ -24,7 +24,7 @@ export async function userRoutes(fastify: FastifyInstance) {
       max: 10,
       timeWindow: '15 minutes',
       keyGenerator: req => {
-        const body = (req.body as any) || {}
+        const body = (req.body as Record<string, unknown>) || {}
 
         const identifier = body.email || body.token || 'anonymous'
 

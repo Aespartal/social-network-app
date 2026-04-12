@@ -30,5 +30,11 @@ export const optionalAuth = async (
   request: FastifyRequest,
   _reply: FastifyReply
 ) => {
-  await request.jwtVerify()
+  try {
+    await request.jwtVerify()
+  } catch (err: unknown) {
+    request.log.error(err)
+    // Si falla la verificación, simplemente ignoramos el error
+    // para que la petición pueda continuar sin un usuario autenticado.
+  }
 }

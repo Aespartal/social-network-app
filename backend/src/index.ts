@@ -1,3 +1,4 @@
+import 'reflect-metadata'
 import { buildServer } from './server'
 import { config } from '@/config/env'
 

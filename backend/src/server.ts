@@ -11,6 +11,9 @@ import { profileRoutes } from '@/routes/profileRoutes'
 import postsPlugin from '@/modules/posts/infrastructure/posts.plugin'
 import authPlugin from '@/modules/auth/infrastructure/auth.plugin'
 import usersPlugin from '@/modules/users/infrastructure/users.plugin'
+import notificationsPlugin from '@/modules/notifications/infrastructure/notifications.plugin'
+import socketPlugin from '@/plugins/socket'
+import notificationListenerPlugin from '@/modules/notifications/infrastructure/notification-listener.plugin'
 
 export async function buildServer(): Promise<FastifyInstance> {
   const server = fastify({
@@ -22,6 +25,13 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerRoutes(server)
 
   return server
+}
+
+interface ValidationError {
+  instancePath?: string
+  params?: { missingProperty?: string }
+  keyword?: string
+  message?: string
 }
 
 async function registerPlugins(server: FastifyInstance) {
@@ -44,7 +54,7 @@ async function registerPlugins(server: FastifyInstance) {
   // Custom error handler for validation errors
   server.setErrorHandler((error: FastifyError, request, reply) => {
     if (error.validation) {
-      const validationErrors = error.validation.map((err: any) => {
+      const validationErrors = error.validation.map((err: ValidationError) => {
         const field =
           err.instancePath?.replace(/^\//, '') || err.params?.missingProperty
 
@@ -116,6 +126,10 @@ async function registerPlugins(server: FastifyInstance) {
     crossOriginResourcePolicy: false,
   })
 
+  // Socket.io for Real-Time
+  await server.register(socketPlugin)
+  await server.register(notificationListenerPlugin)
+
   // Disable rate limiting in test environment
   if (process.env.NODE_ENV !== 'test') {
     await server.register(rateLimit, {
@@ -142,6 +156,7 @@ async function registerRoutes(server: FastifyInstance) {
       api.register(usersPlugin)
       api.register(authPlugin)
       api.register(postsPlugin)
+      api.register(notificationsPlugin)
 
       api.get('/test', async () => ({
         message: 'API OK',
