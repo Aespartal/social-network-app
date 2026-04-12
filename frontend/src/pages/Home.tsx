@@ -1,30 +1,39 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import {
   Box,
   Alert,
   CircularProgress,
-  Grid,
   Stack,
-  useTheme,
-  useMediaQuery,
+  Divider,
+  Button,
 } from '@mui/material'
+
+// Styles
+import { HomeContainer, MainColumn, SidebarContainer } from './Home.styles'
 
 // Hooks
 import { useAuth, useFeed } from '@/hooks'
+import { FEED_TABS_CONFIG } from '@/constants/feed'
 
 // Componentes Sociales
-import { FeedSkeleton } from '@/components/social/skeleton/FeedSkeleton'
-import { PostList } from '@/components/social/post/PostList'
 import { CreatePostAction } from '@/components/social/post/CreatePostAction'
 import { AuthPlaceholder } from '@/components/social/AuthPlaceholder'
 import { HomeSidebar } from '@/components/social/home/HomeSidebar'
+import { HomeHeader } from '@/components/social/home/HomeHeader'
+import { HomeFeed } from '@/components/social/home/HomeFeed'
 import { Post } from 'social-network-app-shared/types/social.type'
 
 export const Home: React.FC = () => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const { isAuthenticated, loading: authLoading } = useAuth()
   const [replyToPost, setReplyToPost] = useState<Post | null>(null)
+  const [activeTab, setActiveTab] = useState(0)
+
+  const handleTabChange = useCallback(
+    (_: React.SyntheticEvent, newValue: number) => {
+      setActiveTab(newValue)
+    },
+    []
+  )
 
   const {
     posts,
@@ -37,24 +46,14 @@ export const Home: React.FC = () => {
     handleToggleBookmark,
     handleCreatePost,
     isCreating,
-  } = useFeed()
+  } = useFeed(activeTab)
 
-  // Carga inicial solo una vez al autenticarse
-  useEffect(() => {
-    if (isAuthenticated && posts.length === 0) {
-      loadFeed(true)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated])
-
-  // Memoizar la función de carga para evitar recreaciones
   const handleLoadMore = useCallback(() => {
     if (!loadingMore) {
       loadFeed(false)
     }
   }, [loadFeed, loadingMore])
 
-  // 1. Pantalla de carga global de Auth
   if (authLoading) {
     return (
       <Box
@@ -68,13 +67,19 @@ export const Home: React.FC = () => {
     )
   }
 
-  // 2. Estado para usuarios no logueados
   if (!isAuthenticated) return <AuthPlaceholder />
 
   return (
-    <Grid container spacing={4}>
-      {/* COLUMNA PRINCIPAL (Feed) */}
-      <Grid size={{ xs: 12, md: 8 }}>
+    <HomeContainer>
+      {/* 1. COLUMNA PRINCIPAL (Feed) - Centrada y con ancho controlado */}
+      <MainColumn>
+        {/* Header de Home (Tabs) */}
+        <HomeHeader
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          tabsConfig={FEED_TABS_CONFIG}
+        />
+
         <Stack>
           <CreatePostAction
             onSave={handleCreatePost}
@@ -83,35 +88,47 @@ export const Home: React.FC = () => {
             onCloseReply={() => setReplyToPost(null)}
           />
 
+          <Divider sx={{ opacity: 0.5 }} />
+
           {error && (
-            <Alert severity='error' variant='outlined' sx={{ borderRadius: 3 }}>
-              {error}
-            </Alert>
+            <Box sx={{ p: 2 }}>
+              <Alert
+                severity='error'
+                variant='outlined'
+                sx={{ borderRadius: 3 }}
+                action={
+                  <Button
+                    color='inherit'
+                    size='small'
+                    onClick={() => loadFeed(true)}
+                  >
+                    Reintentar
+                  </Button>
+                }
+              >
+                {error}
+              </Alert>
+            </Box>
           )}
 
-          {loading && posts.length === 0 ? (
-            <FeedSkeleton />
-          ) : (
-            <PostList
-              posts={posts}
-              onLike={handleToggleLike}
-              hasMore={hasMorePosts}
-              loadingMore={loadingMore}
-              onLoadMore={handleLoadMore}
-              onBookmark={handleToggleBookmark}
-              onReply={post => setReplyToPost(post)}
-            />
-          )}
+          <HomeFeed
+            loading={loading}
+            posts={posts}
+            onLike={handleToggleLike}
+            onBookmark={handleToggleBookmark}
+            onReply={setReplyToPost}
+            hasMore={hasMorePosts}
+            loadingMore={loadingMore}
+            onLoadMore={handleLoadMore}
+          />
         </Stack>
-      </Grid>
+      </MainColumn>
 
-      {/* COLUMNA LATERAL (Sugerencias) */}
-      {!isMobile && (
-        <Grid size={{ md: 4 }}>
-          <HomeSidebar />
-        </Grid>
-      )}
-    </Grid>
+      {/* 2. COLUMNA LATERAL (Sugerencias) - Solo en desktop */}
+      <SidebarContainer>
+        <HomeSidebar />
+      </SidebarContainer>
+    </HomeContainer>
   )
 }
 

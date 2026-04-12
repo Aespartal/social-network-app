@@ -1,7 +1,10 @@
 // Hooks exports
 export { useAuth } from './useAuth'
-export { useFeed } from './useFeed'
+export * from './useFeed'
 export { useForm } from './useForm'
 export { useInfiniteScroll } from './useInfiniteScroll'
 export { usePostDetail } from './usePostDetail'
 export { useApi } from './useApi'
+export { useSearch } from './useSearch'
+export { useRecentSearches } from './useRecentSearches'
+export { useExplore } from './useExplore'

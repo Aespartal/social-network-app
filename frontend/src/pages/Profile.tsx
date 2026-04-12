@@ -1,8 +1,16 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { Paper, Grid, Stack } from '@mui/material'
+import {
+  Stack,
+  Tabs,
+  Tab,
+  Box,
+  useTheme,
+  useMediaQuery,
+  Typography,
+} from '@mui/material'
 
-import { profileService, postService } from '@/services'
+import { profileService, postService, followService } from '@/services'
 import { User } from 'social-network-app-shared/types/auth.type'
 import { useAuth } from '@/hooks'
 import { Post } from 'social-network-app-shared/types/social.type'
@@ -15,10 +23,14 @@ import { ProfileSkeleton } from '@/components/social/skeleton/ProfileSkeleton'
 import { PostSkeleton } from '@/components/social/skeleton/PostSkeleton'
 import { CreatePostAction } from '@/components/social/post/CreatePostAction'
 import { EditProfileDialog } from '@/components/social/profile/EditProfileDialog'
+import { UserList } from '@/components/social/profile/UserList'
+import { Follower } from '@/services/follow.service'
 
 export const Profile = () => {
   const { username } = useParams<{ username: string }>()
   const { user: currentUser } = useAuth()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
   // Ref para evitar llamadas duplicadas
   const visitRegisteredRef = useRef<string | null>(null)
@@ -30,11 +42,19 @@ export const Profile = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [updating, setUpdating] = useState(false)
 
+  // Estados de navegación
+  const [activeTab, setActiveTab] = useState(0) // 0: Posts, 1: Followers, 2: Following
+
   // Estados de posts
   const [posts, setPosts] = useState<Post[]>([])
   const [loadingPosts, setLoadingPosts] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
+
+  // Estados de followers/following
+  const [followers, setFollowers] = useState<Follower[]>([])
+  const [following, setFollowing] = useState<Follower[]>([])
+  const [loadingSocial, setLoadingSocial] = useState(false)
 
   const [replyToPost, setReplyToPost] = useState<Post | null>(null)
   const [isCreating, setIsCreating] = useState(false)
@@ -86,6 +106,9 @@ export const Profile = () => {
     setHasMore(true)
     setNextCursor(null)
     setLoading(true)
+    setActiveTab(0)
+    setFollowers([])
+    setFollowing([])
     visitRegisteredRef.current = null
     profileLoadingRef.current = false
   }, [username])
@@ -120,31 +143,55 @@ export const Profile = () => {
     loadProfile()
   }, [username, currentUser?.id])
 
-  // Carga inicial de posts del usuario
+  // Carga de posts
   useEffect(() => {
     const fetchPosts = async () => {
-      if (!username) return
+      if (!username || activeTab !== 0) return
       setLoadingPosts(true)
       try {
-        // Primera carga de posts para este usuario
         const response = await postService.getUserPosts(username, {
           limit: 10,
         })
-
         setPosts(response.posts ?? [])
-
-        // Guardar el cursor para la siguiente página
         setNextCursor(response.meta?.nextCursor ?? null)
         setHasMore(response.meta?.hasMore ?? false)
       } catch (err) {
         console.error('Error al cargar posts:', err)
-        setPosts([])
       } finally {
         setLoadingPosts(false)
       }
     }
     fetchPosts()
-  }, [username])
+  }, [username, activeTab])
+
+  // Carga de followers/following
+  useEffect(() => {
+    const fetchSocial = async () => {
+      if (!userProfile) return
+      if (activeTab === 1) {
+        setLoadingSocial(true)
+        try {
+          const data = await followService.getFollowers(userProfile.id)
+          setFollowers(data)
+        } catch (err) {
+          console.error('Error al cargar seguidores:', err)
+        } finally {
+          setLoadingSocial(false)
+        }
+      } else if (activeTab === 2) {
+        setLoadingSocial(true)
+        try {
+          const data = await followService.getFollowing(userProfile.id)
+          setFollowing(data)
+        } catch (err) {
+          console.error('Error al cargar seguidos:', err)
+        } finally {
+          setLoadingSocial(false)
+        }
+      }
+    }
+    fetchSocial()
+  }, [activeTab])
 
   // Función para cargar más posts
   const loadMorePosts = async () => {
@@ -169,7 +216,7 @@ export const Profile = () => {
 
   const handleLike = async (postId: string) => {
     setPosts(prev =>
-      prev.map(p =>
+      prev.map((p: Post) =>
         p.id === postId
           ? {
               ...p,
@@ -184,7 +231,7 @@ export const Profile = () => {
 
   const handleBookmark = async (postId: string) => {
     setPosts(prev =>
-      prev.map(p =>
+      prev.map((p: Post) =>
         p.id === postId ? { ...p, isBookmarked: !p.isBookmarked } : p
       )
     )
@@ -197,7 +244,7 @@ export const Profile = () => {
     try {
       await postService.createPost({ content, parentId: replyToPost.id })
       setPosts(prev =>
-        prev.map(p =>
+        prev.map((p: Post) =>
           p.id === replyToPost.id
             ? { ...p, repliesCount: p.repliesCount + 1 }
             : p
@@ -216,54 +263,130 @@ export const Profile = () => {
   if (loading) return <ProfileSkeleton />
 
   return (
-    <>
-      <Paper variant='outlined' sx={{ borderRadius: 0, overflow: 'hidden' }}>
-        <ProfileHeader
-          user={userProfile}
-          isOwnProfile={isOwnProfile}
-          onEditClick={() => setEditDialogOpen(true)}
-        />
-        <ProfileBio user={userProfile} />
-      </Paper>
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+      }}
+    >
+      {/* 1. SECCIÓN PRINCIPAL (Perfil) - Columna centrada */}
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: '600px',
+          borderRight: '1px solid',
+          borderColor: 'divider',
+          minHeight: '100vh',
+          position: 'relative',
+        }}
+      >
+        <Box sx={{ bgcolor: 'background.paper' }}>
+          <ProfileHeader
+            user={userProfile}
+            isOwnProfile={isOwnProfile}
+            onEditClick={() => setEditDialogOpen(true)}
+          />
+          <ProfileBio user={userProfile} />
 
-      {/* Dialog de edición de perfil */}
-      {isOwnProfile && userProfile && (
-        <EditProfileDialog
-          open={editDialogOpen}
-          onClose={() => setEditDialogOpen(false)}
-          user={userProfile}
-          onSave={handleUpdateProfile}
-          loading={updating}
-        />
-      )}
+          <Tabs
+            value={activeTab}
+            onChange={(_, val) => setActiveTab(val)}
+            variant='fullWidth'
+            indicatorColor='primary'
+            textColor='primary'
+            sx={{
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              '& .MuiTab-root': {
+                fontWeight: 700,
+                textTransform: 'none',
+                fontSize: '0.95rem',
+              },
+            }}
+          >
+            <Tab label='Posts' />
+            <Tab label='Seguidores' />
+            <Tab label='Siguiendo' />
+          </Tabs>
+        </Box>
 
-      {/* Dialog de creación de respuesta */}
+        {/* CONTENIDO DE TABS */}
+        <Box>
+          {activeTab === 0 && (
+            <Box>
+              {loadingPosts && posts.length === 0 ? (
+                <>
+                  <PostSkeleton />
+                  <PostSkeleton />
+                </>
+              ) : (
+                <PostList
+                  posts={posts}
+                  onLike={handleLike}
+                  onBookmark={handleBookmark}
+                  onReply={post => setReplyToPost(post)}
+                  hasMore={hasMore}
+                  loadingMore={loadingPosts}
+                  onLoadMore={loadMorePosts}
+                />
+              )}
+            </Box>
+          )}
 
-      <Grid container spacing={3} sx={{ mt: 2 }}>
-        {/* Sección Principal de Posts */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Stack spacing={2}>
-            {loadingPosts && posts.length === 0 ? (
-              <>
-                <PostSkeleton />
-                <PostSkeleton />
-              </>
-            ) : (
-              <PostList
-                posts={posts}
-                onLike={handleLike}
-                onBookmark={handleBookmark}
-                onReply={post => setReplyToPost(post)}
-                hasMore={hasMore}
-                loadingMore={loadingPosts}
-                onLoadMore={loadMorePosts}
-              />
-            )}
-          </Stack>
-        </Grid>
+          {activeTab === 1 && (
+            <Box>
+              {loadingSocial ? (
+                <Box p={4} textAlign='center'>
+                  Cargando seguidores...
+                </Box>
+              ) : (
+                <UserList
+                  users={followers}
+                  emptyMessage='Este usuario aún no tiene seguidores.'
+                />
+              )}
+            </Box>
+          )}
 
-        {/* Sección Lateral */}
-        <Grid size={{ xs: 12, md: 4 }}>
+          {activeTab === 2 && (
+            <Box>
+              {loadingSocial ? (
+                <Box p={4} textAlign='center'>
+                  Cargando...
+                </Box>
+              ) : (
+                <UserList
+                  users={following}
+                  emptyMessage='Este usuario no sigue a nadie todavía.'
+                />
+              )}
+            </Box>
+          )}
+        </Box>
+
+        {/* Dialog de edición de perfil */}
+        {isOwnProfile && userProfile && (
+          <EditProfileDialog
+            open={editDialogOpen}
+            onClose={() => setEditDialogOpen(false)}
+            user={userProfile}
+            onSave={handleUpdateProfile}
+            loading={updating}
+          />
+        )}
+      </Box>
+
+      {/* 2. SECCIÓN LATERAL (Sugerencias/Visitas) - Desktop */}
+      {!isMobile && (
+        <Box
+          sx={{
+            width: '350px',
+            p: 2,
+            display: { xs: 'none', lg: 'block' },
+            flexShrink: 0,
+          }}
+        >
           <Stack
             spacing={3}
             sx={{
@@ -273,9 +396,15 @@ export const Profile = () => {
             }}
           >
             {isOwnProfile ? <VisitorList /> : <SuggestedUsers />}
+
+            <Box sx={{ opacity: 0.6, px: 1 }}>
+              <Typography variant='caption' display='block'>
+                © 2026 SocialNet Pro
+              </Typography>
+            </Box>
           </Stack>
-        </Grid>
-      </Grid>
+        </Box>
+      )}
 
       {/* Acción de Respuesta (Diálogo) */}
       <CreatePostAction
@@ -284,6 +413,6 @@ export const Profile = () => {
         replyToPost={replyToPost}
         onCloseReply={() => setReplyToPost(null)}
       />
-    </>
+    </Box>
   )
 }

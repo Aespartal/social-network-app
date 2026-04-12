@@ -1,26 +1,33 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Box,
-  Stack,
   CircularProgress,
   Typography,
   Button,
-  Container,
   Fade,
+  alpha,
 } from '@mui/material'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import { CreatePostAction } from '@/components/social/post/CreatePostAction'
 import { PostHeader } from '@/components/social/post/PostHeader'
 import { usePostDetail } from '@/hooks'
 import { PostRepliesList } from '@/components/social/post/PostRepliesList'
-import { StyledPostCard } from '@/components/social/post/PostCard.styles'
+import { PostHeroCard } from '@/components/social/post/PostHeroCard'
+import { HomeSidebar } from '@/components/social/home/HomeSidebar'
+import { useTheme, useMediaQuery } from '@mui/material'
 
 export const PostDetail = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const {
     post,
+    replies,
     loading,
+    loadingMore,
+    hasMore,
+    loadMoreReplies,
     replyToPost,
     setReplyToPost,
     handleLike,
@@ -29,7 +36,6 @@ export const PostDetail = () => {
     handleSaveReply,
   } = usePostDetail(id)
 
-  // Estado de carga más limpio
   if (loading)
     return (
       <Box
@@ -46,7 +52,6 @@ export const PostDetail = () => {
       </Box>
     )
 
-  // Estado de error mejorado
   if (!post)
     return (
       <Box textAlign='center' py={10} px={2}>
@@ -65,50 +70,108 @@ export const PostDetail = () => {
 
   return (
     <Fade in={!loading}>
-      <Box sx={{ pb: 10 }}>
-        {' '}
-        {/* Padding bottom para que el CreatePostAction no tape nada */}
-        {/* Header Sticky */}
+      <Box
+        sx={{
+          display: 'flex',
+          minHeight: '100vh',
+          bgcolor: 'background.default',
+        }}
+      >
+        {/* COLUMNA PRINCIPAL */}
         <Box
           sx={{
-            borderBottom: '1px solid',
+            width: '100%',
+            maxWidth: '600px',
+            borderLeft: 'none', // El Nav ya tiene el borde de división
+            borderRight: '1px solid',
             borderColor: 'divider',
+            position: 'relative',
+            pb: 10,
           }}
         >
-          <PostHeader onNavigateBack={() => navigate(-1)} title='Post' />
-        </Box>
-        <Container maxWidth='lg' disableGutters>
-          <Stack spacing={1}>
-            {/* EL PROTAGONISTA */}
-            <StyledPostCard
-              post={post}
-              onLike={() => handleLike(post.id)}
-              onBookmark={() => handleBookmark(post.id)}
-              onReply={() => handleReply(post)}
-              sx={{
-                '& .MuiTypography-body1': {
-                  fontSize: '1.25rem',
-                  lineHeight: 1.4,
-                  py: 1,
-                },
-              }}
-            />
+          {/* Header Sticky con efecto blur premium */}
+          <Box
+            sx={{
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              position: 'sticky',
+              top: 0,
+              bgcolor: alpha(theme.palette.background.paper, 0.85),
+              backdropFilter: 'blur(12px)',
+              zIndex: 1100,
+            }}
+          >
+            <PostHeader onNavigateBack={() => navigate(-1)} title='Post' />
+          </Box>
 
-            <PostRepliesList
-              replies={post.replies || []}
-              onLike={handleLike}
-              onBookmark={handleBookmark}
-              onReply={handleReply}
+          {/* SI EL POST ES UNA RESPUESTA, MOSTRAR EL PADRE ARRIBA */}
+          {/* TODO: Implementar componente específico para mostrar ParentPost
+          {post.parent && (
+            <StyledPostCard
+              post={post.parent}
+              onLike={() => handleLike(post.parent!.id)}
+              onBookmark={() => handleBookmark(post.parent!.id)}
+              onReply={() => handleReply(post.parent!)}
+              isThreadParent={true}
             />
-          </Stack>
-        </Container>
-        {/* Action Button / Input */}
-        <CreatePostAction
-          onSave={handleSaveReply}
-          loading={false}
-          replyToPost={replyToPost}
-          onCloseReply={() => setReplyToPost(null)}
-        />
+          )}
+          */}
+
+          {/* EL POST DETALLADO (HERO) */}
+          <PostHeroCard
+            post={post}
+            onLike={handleLike}
+            onBookmark={handleBookmark}
+            onReply={handleReply}
+          />
+
+          {/* LISTA DE RESPUESTAS */}
+          <PostRepliesList
+            replies={replies}
+            onLike={handleLike}
+            onBookmark={handleBookmark}
+            onReply={handleReply}
+          />
+
+          {hasMore && (
+            <Box sx={{ p: 2, textAlign: 'center' }}>
+              <Button
+                onClick={loadMoreReplies}
+                disabled={loadingMore}
+                variant='text'
+                size='small'
+                sx={{ fontWeight: 600 }}
+              >
+                {loadingMore ? (
+                  <CircularProgress size={16} />
+                ) : (
+                  'Mostrar más respuestas'
+                )}
+              </Button>
+            </Box>
+          )}
+
+          {/* Action Button / Input */}
+          <CreatePostAction
+            onSave={handleSaveReply}
+            loading={false}
+            replyToPost={replyToPost}
+            onCloseReply={() => setReplyToPost(null)}
+          />
+        </Box>
+
+        {/* COLUMNA LATERAL (Opcional en Detail, para consistencia) */}
+        {!isMobile && (
+          <Box
+            sx={{
+              width: '350px',
+              p: 2,
+              display: { xs: 'none', lg: 'block' },
+            }}
+          >
+            <HomeSidebar />
+          </Box>
+        )}
       </Box>
     </Fade>
   )

@@ -1,146 +1,213 @@
+import { useEffect } from 'react'
 import { postService } from '@/services'
-import { useCallback, useState } from 'react'
-import { Post } from 'social-network-app-shared/types/social.type'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+  InfiniteData,
+} from '@tanstack/react-query'
+import { Post, PostResponse } from 'social-network-app-shared/types/social.type'
+import { useAuth } from './useAuth'
+import { FeedType, FEED_TABS_CONFIG } from '@/constants/feed'
 
-interface ApiError {
-  response?: {
-    data?: {
-      error?: string
+export const useFeed = (activeTab: number) => {
+  const queryClient = useQueryClient()
+  const { isAuthenticated } = useAuth()
+
+  const feedType = FEED_TABS_CONFIG[activeTab]?.type || FeedType.ALL
+
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    error,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ['posts', feedType],
+    queryFn: async ({ pageParam }) => {
+      const response =
+        feedType === 'following'
+          ? await postService.getFollowingFeed({
+              cursor: pageParam as string,
+              limit: 10,
+            })
+          : await postService.getFeed({
+              cursor: pageParam as string,
+              limit: 10,
+            })
+      return response
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: lastPage => lastPage.meta?.nextCursor ?? undefined,
+    enabled: isAuthenticated,
+  })
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      refetch()
     }
-  }
-}
+  }, [isAuthenticated, activeTab, refetch])
 
-export const useFeed = () => {
-  const [posts, setPosts] = useState<Post[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
-  const [loadingMore, setLoadingMore] = useState<boolean>(false)
-  const [error, setError] = useState<string>('')
-  const [hasMorePosts, setHasMorePosts] = useState<boolean>(true)
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
-  const [isCreating, setIsCreating] = useState<boolean>(false)
+  const posts = data?.pages.flatMap(page => page.posts) || []
 
-  const loadFeed = useCallback(
-    async (isInitial = true) => {
-      // Evitar peticiones concurrentes
-      if (loading || loadingMore) return
-
-      let timeoutId: ReturnType<typeof setTimeout> | undefined
-
-      try {
-        if (isInitial) {
-          timeoutId = setTimeout(() => setLoading(true), 250)
-        } else {
-          setLoadingMore(true)
-        }
-
-        const cursor = isInitial ? undefined : nextCursor || undefined
-
-        const response = await postService.getFeed({ cursor, limit: 10 })
-
-        if (timeoutId) clearTimeout(timeoutId)
-
-        const newPosts = response.posts || []
-        setPosts(prev => (isInitial ? newPosts : [...prev, ...newPosts]))
-        setNextCursor(response.meta?.nextCursor ?? null)
-        setHasMorePosts(response.meta?.hasMore ?? false)
-      } catch {
-        setError('Error al cargar el feed')
-      } finally {
-        if (timeoutId) clearTimeout(timeoutId)
-        setLoading(false)
-        setLoadingMore(false)
+  const { mutateAsync: handleCreatePost, isPending: isCreating } = useMutation({
+    mutationFn: async (args: {
+      content: string
+      parentId?: string
+      imageFile?: File
+    }) => {
+      return postService.createPost({
+        content: args.content,
+        parentId: args.parentId,
+        imageFile: args.imageFile,
+        tags: [],
+      })
+    },
+    onSuccess: (newPost, variables) => {
+      if (variables.parentId) {
+        queryClient.invalidateQueries({
+          queryKey: ['post', variables.parentId],
+        })
+        queryClient.setQueryData(
+          ['posts', feedType],
+          (oldData: InfiniteData<PostResponse> | undefined) => {
+            if (!oldData) return oldData
+            return {
+              ...oldData,
+              pages: oldData.pages.map(page => ({
+                ...page,
+                posts: page.posts.map((p: Post) =>
+                  p.id === variables.parentId
+                    ? { ...p, repliesCount: (p.repliesCount || 0) + 1 }
+                    : p
+                ),
+              })),
+            }
+          }
+        )
+      } else {
+        queryClient.setQueryData(
+          ['posts', feedType],
+          (oldData: InfiniteData<PostResponse> | undefined) => {
+            if (!oldData) return oldData
+            return {
+              ...oldData,
+              pages: oldData.pages.map((page, index: number) =>
+                index === 0
+                  ? { ...page, posts: [newPost, ...page.posts] }
+                  : page
+              ),
+            }
+          }
+        )
       }
     },
-    [nextCursor, loading, loadingMore]
-  )
+  })
 
-  const handleToggleLike = async (postId: string) => {
-    setPosts(prev =>
-      prev.map(p => {
-        if (p.id === postId) {
-          const isLiked = !p.isLiked
+  const { mutate: handleToggleLike } = useMutation({
+    mutationFn: (postId: string) => postService.toggleLike(postId),
+    onMutate: async postId => {
+      await queryClient.cancelQueries({ queryKey: ['posts', feedType] })
+      const previousData = queryClient.getQueryData(['posts', feedType])
+
+      queryClient.setQueryData(
+        ['posts', feedType],
+        (oldData: InfiniteData<PostResponse> | undefined) => {
+          if (!oldData) return oldData
           return {
-            ...p,
-            isLiked,
-            likesCount: isLiked ? p.likesCount + 1 : p.likesCount - 1,
+            ...oldData,
+            pages: oldData.pages.map(page => ({
+              ...page,
+              posts: page.posts.map((p: Post) => {
+                if (p.id === postId) {
+                  const isLiked = !p.isLiked
+                  return {
+                    ...p,
+                    isLiked,
+                    likesCount: isLiked ? p.likesCount + 1 : p.likesCount - 1,
+                  }
+                }
+                return p
+              }),
+            })),
           }
         }
-        return p
-      })
-    )
-    try {
-      await postService.toggleLike(postId)
-    } catch {
-      loadFeed(true)
-    }
-  }
+      )
 
-  const handleToggleBookmark = async (postId: string) => {
-    setPosts(prev =>
-      prev.map(p => {
-        if (p.id === postId) {
-          return { ...p, isBookmarked: !p.isBookmarked }
+      return { previousData }
+    },
+    onError: (_err, _postId, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['posts', feedType], context.previousData)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts', feedType] })
+    },
+  })
+
+  const { mutate: handleToggleBookmark } = useMutation({
+    mutationFn: (postId: string) => postService.toggleBookmark(postId),
+    onMutate: async postId => {
+      await queryClient.cancelQueries({ queryKey: ['posts', feedType] })
+      const previousData = queryClient.getQueryData(['posts', feedType])
+
+      queryClient.setQueryData(
+        ['posts', feedType],
+        (oldData: InfiniteData<PostResponse> | undefined) => {
+          if (!oldData) return oldData
+          return {
+            ...oldData,
+            pages: oldData.pages.map(page => ({
+              ...page,
+              posts: page.posts.map((p: Post) =>
+                p.id === postId ? { ...p, isBookmarked: !p.isBookmarked } : p
+              ),
+            })),
+          }
         }
-        return p
-      })
-    )
-    try {
-      await postService.toggleBookmark(postId)
-    } catch {
-      // Error silencioso o revertir localmente
-    }
-  }
+      )
 
-  const handleCreatePost = async (
+      return { previousData }
+    },
+    onError: (_err, _postId, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['posts', feedType], context.previousData)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts', feedType] })
+    },
+  })
+
+  const wrappedCreatePost = async (
     content: string,
     parentId?: string,
     imageFile?: File
   ) => {
     try {
-      setIsCreating(true)
-      setError('')
-
-      const newPost = await postService.createPost({
-        content,
-        parentId,
-        imageFile,
-        tags: [],
-      })
-
-      if (parentId) {
-        setPosts(prev =>
-          prev.map(p => {
-            if (p.id === parentId) {
-              return { ...p, repliesCount: (p.repliesCount || 0) + 1 }
-            }
-            return p
-          })
-        )
-      } else {
-        setPosts(prev => [newPost, ...prev])
-      }
-
+      await handleCreatePost({ content, parentId, imageFile })
       return { success: true }
     } catch (err: unknown) {
-      const axiosError = err as ApiError
-      const msg = axiosError.response?.data?.error || 'Error al publicar'
-      setError(msg)
-      return { success: false, error: msg }
-    } finally {
-      setIsCreating(false)
+      const errorMsg =
+        (err as { response?: { data?: { error?: string } } }).response?.data
+          ?.error || 'Error al publicar'
+      return { success: false, error: errorMsg }
     }
   }
 
   return {
     posts,
-    loading,
-    loadingMore,
+    loading: isLoading,
+    loadingMore: isFetchingNextPage,
     isCreating,
-    error,
-    hasMorePosts,
-    loadFeed,
-    handleToggleLike,
-    handleToggleBookmark,
-    handleCreatePost,
+    error: error ? 'Error al cargar el feed' : '',
+    hasMorePosts: !!hasNextPage,
+    loadFeed: (isInitial: boolean) => (isInitial ? refetch() : fetchNextPage()),
+    handleToggleLike: (postId: string) => handleToggleLike(postId),
+    handleToggleBookmark: (postId: string) => handleToggleBookmark(postId),
+    handleCreatePost: wrappedCreatePost,
   }
 }
