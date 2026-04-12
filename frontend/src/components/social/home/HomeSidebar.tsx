@@ -1,5 +1,6 @@
 import React from 'react'
 import { Box, Typography, Stack } from '@mui/material'
+import { SearchBar } from './SearchBar'
 import { SuggestedUsers } from '@/components/social/profile/SuggestedUsers'
 
 /**
@@ -10,10 +11,11 @@ export const HomeSidebar: React.FC = () => (
     spacing={3}
     sx={{
       position: 'sticky',
-      top: 24,
+      top: 12,
       height: 'fit-content',
     }}
   >
+    <SearchBar />
     <SuggestedUsers />
 
     <Box sx={{ px: 2 }}>
