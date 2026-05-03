@@ -4,10 +4,16 @@ import {
   TypographyProps as MuiTypographyProps,
 } from '@mui/material'
 
+import { tokens, type FontSizeToken } from '@/theme/tokens'
+
 export interface TextProps extends MuiTypographyProps {
   children?: React.ReactNode
   component?: React.ElementType
   to?: string
+  /** Tamaño de fuente - usa tokens.fontSize (opcional, sobreescribe fontSize) */
+  size?: FontSizeToken
+  /** Peso de fuente - usa tokens.fontWeight (opcional, sobreescribe fontWeight) */
+  weight?: keyof typeof tokens.fontWeight
 }
 
 /**
@@ -15,9 +21,15 @@ export interface TextProps extends MuiTypographyProps {
  * Abstrae el Typography de MUI para facilitar futuros cambios de diseño.
  */
 export const Text = React.forwardRef<HTMLElement, TextProps>(
-  ({ children, ...props }, ref) => {
+  ({ children, size, weight, sx, ...props }, ref) => {
+    const customSx = {
+      ...(size && { fontSize: tokens.fontSize[size] }),
+      ...(weight && { fontWeight: tokens.fontWeight[weight] }),
+      ...sx,
+    }
+
     return (
-      <MuiTypography ref={ref} {...props}>
+      <MuiTypography ref={ref} sx={customSx} {...props}>
         {children}
       </MuiTypography>
     )
