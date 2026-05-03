@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, Text as Typography, Button, Chip } from '@/components/ui'
+import { Box, Text as Typography, Button } from '@/components/ui'
 import { alpha, useTheme } from '@mui/material'
 
 const TRENDS = [

@@ -6,7 +6,6 @@ import {
   FeedSelectorItem,
   AuraDot,
 } from '../../../pages/Home.styles'
-import { SearchBar } from './SearchBar'
 
 interface HomeHeaderProps {
   activeTab: number

@@ -117,7 +117,6 @@ export const PostDetail = () => {
             <PostHeader
               onNavigateBack={() => navigate(-1)}
               title='Respuestas'
-              count={post.repliesCount}
             />
           </Box>
         </Box>

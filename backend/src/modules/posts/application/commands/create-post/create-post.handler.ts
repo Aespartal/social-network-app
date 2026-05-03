@@ -67,7 +67,7 @@ export class CreatePostCommandHandler {
         )
         const validUserIds = mentionedUsers
           .filter(u => u !== null)
-          .map(u => u!.id)
+          .map(u => u.id)
         post.setMentions(validUserIds)
       }
 
@@ -79,7 +79,9 @@ export class CreatePostCommandHandler {
         `[CreatePostCommandHandler] Post saved successfully: ${savedPost.id}`
       )
 
-      const events = [new PostCreatedEvent(savedPost.id, authorId)]
+      const events: Array<
+        PostCreatedEvent | ReplyCreatedEvent | UserMentionedEvent
+      > = [new PostCreatedEvent(savedPost.id, authorId)]
 
       // Notify parent post author if it's a reply
       if (parentId) {

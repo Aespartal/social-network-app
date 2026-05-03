@@ -141,7 +141,6 @@ export const ProfileAchievements = ({
     getAchievementsByCategory,
     totalXP,
     level,
-    levelTitle,
     progressToNextLevel,
   } = useAchievements(userId)
 

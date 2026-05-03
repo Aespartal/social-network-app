@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import {
   Box,
   Text as Typography,
@@ -7,25 +7,21 @@ import {
   Alert,
   Avatar,
   Chip,
-  Button,
 } from '@/components/ui'
 import {
   useTheme,
-  Fade,
   LinearProgress,
   useMediaQuery,
-  alpha,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
 } from '@mui/material'
 import { Verified as VerifiedIcon } from '@mui/icons-material'
-import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Hooks
-import { useSearch, useAuth } from '@/hooks'
+import { useSearch } from '@/hooks'
 
 // Components
 import { PostList } from '@/components/social/post/PostList'
@@ -57,7 +53,6 @@ export const Search: React.FC = () => {
   const query = searchParams.get('q') || ''
   const typeParam = searchParams.get('type') || 'all'
   const theme = useTheme()
-  const { isAuthenticated, user: currentUser } = useAuth()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const navigate = useNavigate()
 

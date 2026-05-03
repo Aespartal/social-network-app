@@ -1,6 +1,6 @@
 import React from 'react'
 import { Box, Text as Typography, Stack } from '@/components/ui'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { SearchBar } from '../home/SearchBar'
 import { NodeList } from '../home/NodeList'
 import { SuggestedUsers } from '../profile/SuggestedUsers'
@@ -11,13 +11,9 @@ import { Button, alpha, useTheme } from '@mui/material'
  * Componente unificado para la columna lateral derecha (Descubrimiento y Contexto)
  */
 export const AuraSidebar: React.FC = () => {
-  const location = useLocation()
   const navigate = useNavigate()
   const theme = useTheme()
   const { isAuthenticated } = useAuth()
-
-  // En Aura, siempre queremos el buscador en el sidebar lateral
-  // a menos que estemos en una vista móvil muy específica (handled via CSS/MUI)
 
   return (
     <Stack
