@@ -1,16 +1,3 @@
-enum Role {
-  USER
-  MODERATOR
-  ADMIN
-}
-
-enum NotificationType {
-  LIKE
-  REPLY
-  FOLLOW
-  MENTION
-}
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -21,37 +8,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- USUARIOS ---
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  username  String   @unique
-  name      String
-  googleId  String?  @unique
-  avatar    String?
-  bio       String?
-  verified  Boolean  @default(false)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  password  String?
-
-  // Relaciones
-  posts          Post[] // Incluye posts originales y respuestas (comentarios)
-  likes          Like[]
-  bookmarks      Bookmark[]
-  following      Follow[]       @relation("UserFollowing")
-  followers      Follow[]       @relation("UserFollowers")
-  sessions       Session[]
-  visitsMade     ProfileVisit[] @relation("VisitorRelation")
-  visitsReceived ProfileVisit[] @relation("VisitedRelation")
-  mentions       Mention[]
-  recentSearches RecentSearch[]
-  
-  notificationsReceived Notification[] @relation("NotificationRecipient")
-  notificationsIssued   Notification[] @relation("NotificationIssuer")
-
-  role Role @default(USER)
+  id                    String            @id @default(cuid())
+  email                 String            @unique
+  username              String            @unique
+  name                  String
+  avatar                String?
+  bio                   String?
+  verified              Boolean           @default(false)
+  active                Boolean           @default(true)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  password              String?
+  googleId              String?           @unique
+  role                  Role              @default(USER)
+  currentLevel          Int               @default(1)
+  totalXP               Int               @default(0)
+  bookmarks             Bookmark[]
+  following             Follow[]          @relation("UserFollowing")
+  followers             Follow[]          @relation("UserFollowers")
+  likes                 Like[]
+  mentions              Mention[]
+  notificationsIssued   Notification[]    @relation("NotificationIssuer")
+  notificationsReceived Notification[]    @relation("NotificationRecipient")
+  posts                 Post[]
+  visitsReceived        ProfileVisit[]    @relation("VisitedRelation")
+  visitsMade            ProfileVisit[]    @relation("VisitorRelation")
+  recentSearches        RecentSearch[]
+  sessions              Session[]
+  achievements          UserAchievement[]
+  streaks               UserStreak[]
 
   @@map("users")
 }
@@ -60,52 +46,42 @@ model Session {
   id        String   @id @default(cuid())
   token     String   @unique
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userAgent String?
   ipAddress String?
   createdAt DateTime @default(now())
   expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
 
-// --- CONTENIDO ---
 model Post {
-  id             String  @id @default(cuid())
-  content        String  @db.Text
+  id             String                   @id @default(cuid())
+  content        String
   image          String?
   authorId       String
-  likesCount     Int     @default(0)
-  repliesCount   Int     @default(0)
-  bookmarksCount Int     @default(0)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  parentId       String?
+  deletedAt      DateTime?
+  bookmarksCount Int                      @default(0)
+  likesCount     Int                      @default(0)
+  repliesCount   Int                      @default(0)
+  readingTime    Int                      @default(1)
+  city           String?
+  country        String?
+  searchVector   Unsupported("tsvector")? @map("search_vector")
+  bookmarks      Bookmark[]
+  likes          Like[]
+  mentions       Mention[]
+  notifications  Notification[]
+  tags           PostTag[]
+  author         User                     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent         Post?                    @relation("Thread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        Post[]                   @relation("Thread")
 
-  // Relación recursiva para Hilos/Comentarios
-  parentId String?
-  parent   Post?   @relation("Thread", fields: [parentId], references: [id], onDelete: Cascade)
-  replies  Post[]  @relation("Thread")
-
-  // Relaciones
-  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  likes     Like[]
-  bookmarks Bookmark[]
-  tags      PostTag[]
-  mentions  Mention[]
-  notifications Notification[]
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  country   String?
-  city      String?
-
-  // searchVector Unsupported("tsvector")? @map("search_vector")
-
-  // Índices existentes
   @@index([parentId])
   @@index([authorId])
-
-  // Nuevos índices compuestos para optimización
   @@index([authorId, createdAt, deletedAt])
   @@index([deletedAt, createdAt])
   @@index([deletedAt, parentId, createdAt])
@@ -115,15 +91,13 @@ model Post {
   @@map("posts")
 }
 
-// --- INTERACCIONES ---
 model Like {
   id        String   @id @default(cuid())
   userId    String
   postId    String
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
   @@index([userId])
@@ -138,9 +112,8 @@ model Bookmark {
   userId    String
   postId    String
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
   @@index([userId])
@@ -155,20 +128,18 @@ model Follow {
   followerId  String
   followingId String
   createdAt   DateTime @default(now())
-
-  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
-  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
   @@map("follows")
 }
 
-// --- TAXONOMÍA (HASHTAGS) ---
 model Tag {
   id        String    @id @default(cuid())
   name      String    @unique
-  posts     PostTag[]
   createdAt DateTime  @default(now())
+  posts     PostTag[]
 
   @@map("tags")
 }
@@ -177,9 +148,8 @@ model PostTag {
   id     String @id @default(cuid())
   postId String
   tagId  String
-
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([postId, tagId])
   @@map("post_tags")
@@ -190,23 +160,20 @@ model Mention {
   postId    String
   userId    String
   createdAt DateTime @default(now())
-
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
   @@map("mentions")
 }
 
-// --- SOCIAL / MÉTRICAS ---
 model ProfileVisit {
   id        String   @id @default(uuid())
   visitorId String
   visitedId String
   createdAt DateTime @default(now())
-
-  visitor User @relation("VisitorRelation", fields: [visitorId], references: [id], onDelete: Cascade)
-  visited User @relation("VisitedRelation", fields: [visitedId], references: [id], onDelete: Cascade)
+  visited   User     @relation("VisitedRelation", fields: [visitedId], references: [id], onDelete: Cascade)
+  visitor   User     @relation("VisitorRelation", fields: [visitorId], references: [id], onDelete: Cascade)
 
   @@unique([visitorId, visitedId])
   @@index([visitedId])
@@ -219,8 +186,7 @@ model RecentSearch {
   userId    String
   query     String
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, createdAt])
@@ -230,18 +196,150 @@ model RecentSearch {
 model Notification {
   id          String           @id @default(cuid())
   type        NotificationType
-  recipientId String           // Usuario que recibe la notificación
-  issuerId    String           // Usuario que provocó la notificación
-  postId      String?          // Post relacionado (opcional)
+  recipientId String
+  issuerId    String
+  postId      String?
   read        Boolean          @default(false)
+  metadata    Json?
   createdAt   DateTime         @default(now())
-
-  recipient User  @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
-  issuer    User  @relation("NotificationIssuer", fields: [issuerId], references: [id], onDelete: Cascade)
-  post      Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
+  issuer      User             @relation("NotificationIssuer", fields: [issuerId], references: [id], onDelete: Cascade)
+  post        Post?            @relation(fields: [postId], references: [id])
+  recipient   User             @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
 
   @@index([recipientId])
   @@index([recipientId, read])
   @@index([createdAt])
   @@map("notifications")
+}
+
+model Achievement {
+  id               String              @id @default(cuid())
+  name             String
+  description      String?
+  slug             String              @unique
+  category         AchievementCategory
+  triggerEvent     String
+  tierType         AchievementTierType
+  iconEmoji        String?
+  isHidden         Boolean             @default(false)
+  announced        Boolean             @default(true)
+  xpReward         Int                 @default(0)
+  badgeSlug        String?
+  profileFrameSlug String?
+  createdAt        DateTime            @default(now())
+  tiers            AchievementTier[]
+  userProgress     UserAchievement[]
+
+  @@map("achievements")
+}
+
+model AchievementTier {
+  id               String      @id @default(cuid())
+  achievementId    String
+  tier             String
+  threshold        Int
+  xpReward         Int         @default(0)
+  badgeSlug        String?
+  profileFrameSlug String?
+  requiresTier     String?
+  achievement      Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([achievementId, tier])
+  @@map("achievement_tiers")
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  achievementId String
+  tierAchieved  String?
+  progress      Int         @default(0)
+  completedAt   DateTime?
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId, tierAchieved])
+  @@index([userId])
+  @@map("user_achievements")
+}
+
+model UserStreak {
+  id               String     @id @default(cuid())
+  userId           String
+  streakType       StreakType
+  currentCount     Int        @default(0)
+  longestCount     Int        @default(0)
+  lastActivityAt   DateTime   @default(now())
+  freezeTokens     Int        @default(1)
+  streakShieldUsed Boolean    @default(false)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, streakType])
+  @@index([userId])
+  @@map("user_streaks")
+}
+
+model Badge {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  slug        String      @unique
+  iconUrl     String?
+  rarity      BadgeRarity @default(common)
+
+  @@map("badges")
+}
+
+model ProfileFrame {
+  id                    String      @id @default(cuid())
+  name                  String
+  slug                  String      @unique
+  imageUrl              String
+  rarity                BadgeRarity @default(common)
+  requiresAchievementId String?
+
+  @@map("profile_frames")
+}
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum NotificationType {
+  LIKE
+  REPLY
+  FOLLOW
+  MENTION
+  ACHIEVEMENT
+}
+
+enum AchievementCategory {
+  onboarding
+  engagement
+  content
+  exploration
+}
+
+enum AchievementTierType {
+  binary
+  milestone
+  progressive
+  streak
+}
+
+enum StreakType {
+  login
+  post
+  engagement
+}
+
+enum BadgeRarity {
+  common
+  rare
+  epic
+  legendary
 }
