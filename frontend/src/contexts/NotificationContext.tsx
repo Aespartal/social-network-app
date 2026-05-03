@@ -5,7 +5,8 @@ import React, {
   useState,
   useCallback,
 } from 'react'
-import { io, Socket } from 'socket.io-client'
+import { Snackbar, Alert, AlertTitle } from '@mui/material'
+import { io } from 'socket.io-client'
 import {
   notificationService,
   Notification,
@@ -34,10 +35,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(false)
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
-  const [, setSocket] = useState<Socket | null>(null)
+  const [achievementShow, setAchievementShow] = useState(false)
+  const [currentAchievement, setCurrentAchievement] = useState<{
+    name: string
+    xp: number
+  } | null>(null)
 
-  console.log('Next cursor for notifications:', nextCursor)
+  const { user } = useAuth()
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -58,7 +62,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         setNotifications(data.notifications)
       }
       setHasMore(data.meta.hasMore)
-      setNextCursor(data.meta.nextCursor)
     } catch (error) {
       console.error('Error fetching notifications:', error)
     } finally {
@@ -88,48 +91,58 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }
 
-  const { user } = useAuth()
-
   useEffect(() => {
-    if (!user) return
+    if (!user?.id) return
 
-    // Usar la URL base de la API pero para el socket (quitando /api)
     const socketUrl = API_CONFIG.BASE_URL.replace('/api', '')
-
-    const newSocket = io(socketUrl, {
+    const socket = io(socketUrl, {
       query: { userId: user.id },
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
     })
 
-    newSocket.on('connect', () => {
-      console.log('✅ Socket conectado con ID:', newSocket.id)
+    socket.on('connect', () => {
+      console.log(`✅ Socket conectado [user:${user.id}] ID: ${socket.id}`)
     })
 
-    newSocket.on('connect_error', error => {
+    socket.on('connect_error', error => {
       console.error('❌ Error de conexión Socket:', error)
     })
 
-    newSocket.on('notification', data => {
+    socket.on('notification', data => {
       console.log('🔔 Nueva notificación recibida:', data)
       setUnreadCount(prev => prev + 1)
 
-      // Si la data trae la notificación completa, la prependeamos
+      if (data.type === 'ACHIEVEMENT') {
+        const achievementName =
+          data.metadata?.achievementName ||
+          data.achievementName ||
+          '¡Nuevo Logro!'
+        const xp = data.metadata?.xpEarned || data.xpEarned || 0
+
+        console.log(`🏆 LOGRO DESBLOQUEADO: ${achievementName} (+${xp} XP)`)
+
+        setCurrentAchievement({ name: achievementName, xp })
+        setAchievementShow(true)
+      }
+
       if (data.id) {
         setNotifications(prev => [data, ...prev])
       } else {
-        // Si es solo un aviso, refrescamos el contador
         fetchUnreadCount()
       }
     })
 
-    setSocket(newSocket)
     fetchUnreadCount()
 
+    // Cleanup: desconectar cuando cambie el usuario o se desmonte
     return () => {
-      console.log('🔌 Desconectando socket...')
-      newSocket.disconnect()
+      console.log(`🔌 Desconectando socket de user:${user.id}`)
+      socket.disconnect()
     }
-  }, [user, fetchUnreadCount])
+  }, [user?.id, fetchUnreadCount])
 
   return (
     <NotificationContext.Provider
@@ -144,6 +157,50 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       }}
     >
       {children}
+
+      {/* 🏆 Toast discreto de Logro */}
+      <Snackbar
+        open={achievementShow}
+        autoHideDuration={4000}
+        onClose={() => setAchievementShow(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          severity='success'
+          variant='filled'
+          onClose={() => setAchievementShow(false)}
+          icon={<span style={{ fontSize: 18 }}>🏆</span>}
+          sx={{
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            border: '1px solid',
+            borderColor: 'warning.main',
+            borderRadius: 2,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            '& .MuiAlert-icon': { alignItems: 'center' },
+            '& .MuiAlert-action': { alignItems: 'center' },
+          }}
+        >
+          <AlertTitle
+            sx={{
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              mb: 0.2,
+              color: 'warning.main',
+            }}
+          >
+            ¡Logro desbloqueado!
+          </AlertTitle>
+          <span style={{ fontSize: '0.8rem' }}>
+            {currentAchievement?.name}
+            {currentAchievement?.xp ? (
+              <strong style={{ marginLeft: 4, color: '#FFA500' }}>
+                +{currentAchievement.xp} XP
+              </strong>
+            ) : null}
+          </span>
+        </Alert>
+      </Snackbar>
     </NotificationContext.Provider>
   )
 }

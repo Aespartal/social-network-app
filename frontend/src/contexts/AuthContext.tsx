@@ -26,6 +26,7 @@ interface AuthContextType {
   register: (userData: CreateUserRequest) => Promise<void>
   loginWithGoogle: (idToken: string) => Promise<void>
   logout: () => void
+  updateUser: (user: User) => void
   isAuthenticated: boolean
 }
 
@@ -162,6 +163,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [clearAuthData])
 
+  const updateUser = useCallback((updatedUser: User) => {
+    setUser(updatedUser)
+    localStorage.setItem('user_data', JSON.stringify(updatedUser))
+  }, [])
+
   const authContextValue = useMemo(
     () => ({
       user,
@@ -170,9 +176,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       register,
       loginWithGoogle,
       logout,
+      updateUser,
       isAuthenticated: !!user,
     }),
-    [user, loading, login, register, loginWithGoogle, logout]
+    [user, loading, login, register, loginWithGoogle, logout, updateUser]
   )
 
   return (

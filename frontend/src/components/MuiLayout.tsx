@@ -31,7 +31,7 @@ import {
   Explore as ExploreIcon,
   Notifications as NotificationsIcon,
 } from '@mui/icons-material'
-import { useNotifications } from '@/context/NotificationContext'
+import { useNotifications } from '@/contexts/NotificationContext'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppTheme } from '@/theme'
 import { tokens } from '@/theme/tokens'
