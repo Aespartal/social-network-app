@@ -26,7 +26,7 @@ export interface AuthRepository {
   emailExists(email: string): Promise<boolean>
   usernameExists(username: string): Promise<boolean>
 
-  // Security adapters (can also be split into a separate AuthService if preferred)
+  // Security adapters
   verifyPassword(password: string, hash: string): Promise<boolean>
 
   // Session management

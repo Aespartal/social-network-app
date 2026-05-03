@@ -16,6 +16,7 @@ export class AuthMapper {
       avatar: entity.avatar ?? null,
       verified: entity.verified,
       bio: entity.bio ?? null,
+      role: entity.role,
     }
   }
 
@@ -30,18 +31,24 @@ export class AuthMapper {
   }
 
   static toDomain(raw: PrismaUser): AuthUser {
+    if (!raw) {
+      throw new Error('No se puede mapear un usuario nulo')
+    }
+
     return AuthUser.reconstitute({
       id: raw.id,
       email: raw.email,
       username: raw.username,
       name: raw.name,
-      password: raw.password,
-      googleId: raw.googleId,
-      avatar: raw.avatar,
-      bio: raw.bio,
-      verified: raw.verified,
-      active: raw.active,
+      password: raw.password ?? null,
+      googleId: raw.googleId ?? null,
+      avatar: raw.avatar ?? null,
+      bio: raw.bio ?? null,
+      verified: raw.verified ?? false,
+      active: raw.active ?? true,
       role: raw.role,
+      totalXP: raw.totalXP ?? 0,
+      currentLevel: raw.currentLevel ?? 1,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
     })

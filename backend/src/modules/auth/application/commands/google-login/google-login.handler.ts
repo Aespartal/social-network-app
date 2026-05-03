@@ -25,6 +25,11 @@ export class GoogleLoginCommandHandler {
 
   async execute(command: GoogleLoginCommand): Promise<AuthResponseDTO> {
     const { token } = command
+
+    if (!token) {
+      throw AuthError.googleError('Token de Google no proporcionado')
+    }
+
     const googleUser = await this.googleService.fetchUserInfo(token)
 
     if (!googleUser || !googleUser.email) {
@@ -37,7 +42,6 @@ export class GoogleLoginCommandHandler {
       user = await this.authRepository.findByEmail(googleUser.email)
 
       if (user && !user.googleId) {
-        // Enlace de cuenta: Actualizamos el usuario existente con el googleId
         let avatarUrl = user.avatar
         if (!avatarUrl && googleUser.avatar) {
           avatarUrl = await this.imageService.uploadFromUrl(
@@ -58,6 +62,8 @@ export class GoogleLoginCommandHandler {
           verified: user.verified,
           active: user.active,
           role: user.role,
+          totalXP: user.totalXP,
+          currentLevel: user.currentLevel,
           createdAt: user.createdAt,
           updatedAt: new Date(),
         }

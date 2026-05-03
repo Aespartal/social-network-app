@@ -27,8 +27,26 @@ export class PrismaAuthRepository implements AuthRepository {
   }
 
   async findByGoogleId(googleId: string): Promise<AuthUser | null> {
+    console.log('googleId', googleId)
     const user = await this.prisma.user.findUnique({
       where: { googleId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        googleId: true,
+        avatar: true,
+        bio: true,
+        password: true,
+        verified: true,
+        active: true,
+        role: true,
+        totalXP: true,
+        currentLevel: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     })
 
     if (!user) return null

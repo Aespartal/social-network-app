@@ -12,6 +12,8 @@ export interface AuthUserProps {
   verified: boolean
   active: boolean
   role: string
+  totalXP: number
+  currentLevel: number
   createdAt: Date
   updatedAt: Date
 }
@@ -25,6 +27,8 @@ export interface CreateAuthUserProps {
   avatar?: string | null
   bio?: string | null
   role?: string
+  totalXP?: number
+  currentLevel?: number
 }
 
 /**
@@ -44,6 +48,8 @@ export class AuthUser {
   private _verified: boolean
   private _active: boolean
   private _role: string
+  private _totalXP: number
+  private _currentLevel: number
   private readonly _createdAt: Date
   private _updatedAt: Date
 
@@ -59,12 +65,13 @@ export class AuthUser {
     this._verified = props.verified
     this._active = props.active
     this._role = props.role
+    this._totalXP = props.totalXP
+    this._currentLevel = props.currentLevel
     this._createdAt = props.createdAt
     this._updatedAt = props.updatedAt
   }
 
   public static create(props: CreateAuthUserProps): AuthUser {
-    // Validate email using Value Object
     Email.create(props.email)
 
     if (!props.username.trim()) {
@@ -76,7 +83,7 @@ export class AuthUser {
     }
 
     return new AuthUser({
-      id: '', // Will be set by repository
+      id: '',
       email: props.email.toLowerCase().trim(),
       username: props.username.trim(),
       name: props.name.trim(),
@@ -87,6 +94,8 @@ export class AuthUser {
       verified: false,
       active: true,
       role: props.role ?? 'USER',
+      totalXP: props.totalXP ?? 0,
+      currentLevel: props.currentLevel ?? 1,
       createdAt: new Date(),
       updatedAt: new Date(),
     })
@@ -177,6 +186,14 @@ export class AuthUser {
     return this._role
   }
 
+  get totalXP(): number {
+    return this._totalXP
+  }
+
+  get currentLevel(): number {
+    return this._currentLevel
+  }
+
   get createdAt(): Date {
     return this._createdAt
   }
@@ -186,8 +203,6 @@ export class AuthUser {
   }
 }
 
-// Keep inputs for backward compatibility during refactor if needed,
-// but eventually they should move to DTOs or be replaced by Command interfaces.
 export interface LoginInput {
   email: string
   password: string

@@ -14,6 +14,7 @@ export const AuthUserDTOSchema = Type.Object({
   avatar: Type.Union([Type.String(), Type.Null()]),
   verified: Type.Boolean(),
   bio: Type.Union([Type.String(), Type.Null()]),
+  role: Type.String(),
 })
 
 export const AuthResponseDTOSchema = Type.Object({
