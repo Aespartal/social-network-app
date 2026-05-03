@@ -75,7 +75,7 @@ export const SuggestedUsers: React.FC = () => {
       </Box>
 
       <Box sx={styles.list}>
-        <AnimatePresence>
+        <AnimatePresence mode='wait'>
           {suggestions.map((user, index) => (
             <motion.div
               key={user.id}

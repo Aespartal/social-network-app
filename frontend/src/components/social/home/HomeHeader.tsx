@@ -54,19 +54,6 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           })}
         </FeedSelectorContainer>
       </Box>
-
-      {/* 3. Derecha: SearchBar */}
-      <Box
-        sx={{
-          flex: 1,
-          display: { xs: 'none', md: 'flex' },
-          justifyContent: 'flex-end',
-        }}
-      >
-        <Box sx={{ width: '100%', maxWidth: '180px' }}>
-          <SearchBar placeholder='Buscar...' />
-        </Box>
-      </Box>
     </StickyHeader>
   )
 }

@@ -27,16 +27,19 @@ export const useSearch = () => {
     async (
       query: string,
       isInitial: boolean = true,
-      type: 'all' | 'posts' | 'users' | 'tags' = 'all'
+      type: 'all' | 'posts' | 'users' | 'tags' = 'all',
+      clearExisting: boolean = true
     ) => {
       if (!query.trim()) return
 
       try {
         if (isInitial) {
           setLoading(true)
-          setPosts([])
-          setUsers([])
-          setTags([])
+          if (clearExisting) {
+            setPosts([])
+            setUsers([])
+            setTags([])
+          }
         } else {
           setLoadingMore(true)
         }

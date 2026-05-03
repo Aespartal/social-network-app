@@ -1,15 +1,14 @@
 import React, { useCallback } from 'react'
 import { Box, Alert, Text as Typography, Loading, Stack } from '@/components/ui'
-import { useTheme, Fade } from '@mui/material'
+import { useTheme, Fade, LinearProgress } from '@mui/material'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Hooks
 import { useExplore, useAuth } from '@/hooks'
+import { AuraSidebar } from '@/components/social/common/AuraSidebar'
 
 // Componentes Sociales
 import { PostList } from '@/components/social/post/PostList'
-import { SuggestedUsers } from '@/components/social/profile/SuggestedUsers'
-import { GlobalTrends } from '@/components/social/home/GlobalTrends'
 import { Post } from 'social-network-app-shared/types/social.type'
 import { CreatePostAction } from '@/components/social/post/CreatePostAction'
 import { HomeHeader } from '@/components/social/home/HomeHeader'
@@ -17,8 +16,6 @@ import { HomeHeader } from '@/components/social/home/HomeHeader'
 // Estilos Zen
 import {
   ExploreContainer,
-  ResonanceGrid,
-  ResonanceNode,
   DiscoveryMosaic,
   ContentWrapper,
   MainColumn,
@@ -56,86 +53,42 @@ export const Explore: React.FC = () => {
     { id: 1, label: 'Recientes', type: 'recent' },
   ] as const
 
-  // Datos mock para Nodos de Resonancia
-  const resonanceThemes = [
-    {
-      tag: '#DiseñoÉtico',
-      resonance: 'Alta',
-      color: theme.palette.primary.main,
-    },
-    { tag: '#FilosofíaZen', resonance: 'En aumento', color: '#88B04B' },
-    { tag: '#AuraMapping', resonance: 'Novedad', color: '#5F4B8B' },
-    { tag: '#SlowReading', resonance: 'Constante', color: '#EFC050' },
-    { tag: '#Biofílica', resonance: 'Muy Alta', color: '#92A8D1' },
-  ]
-
   return (
     <ExploreContainer>
       <Fade in={true} timeout={800}>
         <ContentWrapper>
           <MainColumn>
             {/* Cabecera idéntica estructuralmente a Home */}
-            <HomeHeader
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              tabsConfig={EXPLORE_TABS}
-            />
+            <Box sx={{ position: 'relative' }}>
+              <HomeHeader
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                tabsConfig={EXPLORE_TABS}
+              />
+              {/* Indicador de carga integrado */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 2,
+                  zIndex: 5,
+                }}
+              >
+                {loading && <LinearProgress sx={{ height: 2, opacity: 0.5 }} />}
+              </Box>
+            </Box>
 
             <Stack>
-              {/* 2. Mapa de Resonancia (Trending) */}
-              <Box sx={{ mt: 4 }}>
-                <Box sx={{ px: 4 }}>
-                  <Typography
-                    variant='h4'
-                    sx={{
-                      fontWeight: 800,
-                      fontFamily: theme.typography.h1.fontFamily,
-                      color: '#ffffff',
-                    }}
-                  >
-                    Resonando ahora
-                  </Typography>
-                  <Typography
-                    variant='body1'
-                    color='text.secondary'
-                    sx={{ opacity: 0.7 }}
-                  >
-                    Temas que están expandiendo el lienzo colectivo.
-                  </Typography>
-                </Box>
-
-                <ResonanceGrid>
-                  {resonanceThemes.map(node => (
-                    <ResonanceNode key={node.tag}>
-                      <Typography
-                        variant='h6'
-                        sx={{ color: node.color, fontWeight: 700 }}
-                      >
-                        {node.tag}
-                      </Typography>
-                      <Typography
-                        variant='caption'
-                        sx={{
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.1em',
-                          opacity: 0.6,
-                        }}
-                      >
-                        Resonancia: {node.resonance}
-                      </Typography>
-                    </ResonanceNode>
-                  ))}
-                </ResonanceGrid>
-              </Box>
-
-              {/* 4. Mosaico Global de Descubrimiento */}
+              {/* Mosaico Global de Descubrimiento */}
               <AnimatePresence mode='wait'>
                 <motion.div
                   key={activeTab}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
                 >
                   <DiscoveryMosaic>
                     <Box sx={{ px: 2, mb: 4 }}>
@@ -187,8 +140,7 @@ export const Explore: React.FC = () => {
           </MainColumn>
 
           <SidebarContainer>
-            <SuggestedUsers />
-            <GlobalTrends />
+            <AuraSidebar />
           </SidebarContainer>
         </ContentWrapper>
       </Fade>

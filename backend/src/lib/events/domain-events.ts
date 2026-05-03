@@ -11,6 +11,26 @@ export class PostLikedEvent implements DomainEvent {
   ) {}
 }
 
+export class PostCreatedEvent implements DomainEvent {
+  readonly eventName = 'post.created'
+  readonly occurredOn = new Date()
+
+  constructor(
+    readonly postId: string,
+    readonly authorId: string
+  ) {}
+}
+
+export class PostBookmarkedEvent implements DomainEvent {
+  readonly eventName = 'post.bookmarked'
+  readonly occurredOn = new Date()
+
+  constructor(
+    readonly postId: string,
+    readonly userId: string
+  ) {}
+}
+
 export class ReplyCreatedEvent implements DomainEvent {
   readonly eventName = 'reply.created'
   readonly occurredOn = new Date()

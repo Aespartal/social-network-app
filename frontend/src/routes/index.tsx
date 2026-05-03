@@ -40,6 +40,10 @@ const Forbidden = lazy(() =>
   import('@/pages/Forbidden').then(m => ({ default: m.Forbidden }))
 )
 
+const NodePage = lazy(() =>
+  import('@/pages/NodePage').then(m => ({ default: m.NodePage }))
+)
+
 // Guards
 import { RoleGuard } from '@/guards/RoleGuard'
 import { Role } from '@/enums/role.enum'
@@ -68,6 +72,10 @@ export const routes: RouteObject[] = [
   {
     path: '/post/:id',
     element: <PostDetail />,
+  },
+  {
+    path: '/nodes/:slug',
+    element: <NodePage />,
   },
   {
     path: '/search',

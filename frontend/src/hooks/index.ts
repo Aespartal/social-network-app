@@ -1,5 +1,7 @@
 // Hooks exports
 export { useAuth } from './useAuth'
+export * from './useUserLevel'
+export * from './useAuraNodes'
 export * from './useFeed'
 export { useForm } from './useForm'
 export { useInfiniteScroll } from './useInfiniteScroll'

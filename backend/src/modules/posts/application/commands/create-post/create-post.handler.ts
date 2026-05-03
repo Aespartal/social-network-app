@@ -20,6 +20,7 @@ import type { CreatePostCommand } from './create-post.command'
 import {
   ReplyCreatedEvent,
   UserMentionedEvent,
+  PostCreatedEvent,
 } from '@/lib/events/domain-events'
 import type { EventBus } from '@/lib/events/event-bus.interface'
 import type { UserRepository } from '@/modules/users/domain/repositories/user.repository.interface'
@@ -78,7 +79,7 @@ export class CreatePostCommandHandler {
         `[CreatePostCommandHandler] Post saved successfully: ${savedPost.id}`
       )
 
-      const events = []
+      const events = [new PostCreatedEvent(savedPost.id, authorId)]
 
       // Notify parent post author if it's a reply
       if (parentId) {

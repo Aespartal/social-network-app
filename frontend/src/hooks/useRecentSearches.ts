@@ -19,6 +19,7 @@ export const useRecentSearches = () => {
       setLoading(true)
       const data = await postService.getRecentSearches()
       setRecentSearches(data)
+      console.log('Recent searches fetched:', data.length)
     } catch (err) {
       console.error('Error fetching recent searches:', err)
     } finally {

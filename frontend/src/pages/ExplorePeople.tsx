@@ -24,11 +24,15 @@ import { useNavigate } from 'react-router-dom'
 import { profileService } from '@/services'
 import { User } from 'social-network-app-shared/types/auth.type'
 import { FeedSkeleton } from '@/components/social/skeleton/FeedSkeleton'
-import { HomeSidebar } from '@/components/social/home/HomeSidebar'
+
+import { useAuth } from '@/hooks'
+import { AuraSidebar } from '@/components/social/common/AuraSidebar'
+import { SidebarContainer } from './Home.styles'
 
 export const ExplorePeople: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -158,15 +162,19 @@ export const ExplorePeople: React.FC = () => {
                   <Button
                     variant='outline'
                     size='small'
+                    disabled={!isAuthenticated}
                     sx={{
                       borderRadius: 20,
                       fontWeight: 'bold',
                       textTransform: 'none',
                       minWidth: 80,
+                      opacity: isAuthenticated ? 1 : 0.5,
                     }}
                     onClick={e => {
                       e.stopPropagation()
-                      // Logic for following would go here
+                      if (isAuthenticated) {
+                        // Logic for following would go here
+                      }
                     }}
                   >
                     Seguir
@@ -180,16 +188,9 @@ export const ExplorePeople: React.FC = () => {
 
       {/* 2. COLUMNA LATERAL */}
       {!isMobile && (
-        <Box
-          sx={{
-            width: '350px',
-            p: 2,
-            display: { xs: 'none', lg: 'block' },
-            flexShrink: 0,
-          }}
-        >
-          <HomeSidebar />
-        </Box>
+        <SidebarContainer>
+          <AuraSidebar />
+        </SidebarContainer>
       )}
     </Box>
   )

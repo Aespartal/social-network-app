@@ -39,7 +39,7 @@ export const PostCard = memo(
     const getAuraEffect = () => {
       const impact = post.likesCount || 0
       if (impact === 0) return 'none'
-      const intensity = Math.min(impact * 0.02, 0.2) // Un poco más vibrante en el nuevo diseño
+      const intensity = Math.min(impact * 0.02, 0.2)
       const accentColor = '#E0FF4F'
       const hexIntensity = Math.floor(intensity * 255)
         .toString(16)
@@ -70,10 +70,10 @@ export const PostCard = memo(
           className={className}
           sx={styles.card(sx)}
         >
-          {/* 1. Cabecera Zen (Contexto y Tiempo de Lectura) */}
+          {/* 1. Cabecera */}
           <PostCardHeader post={post} styles={styles} />
 
-          {/* 2. Cuerpo (Título, Texto con degradado, Media) */}
+          {/* 2. Cuerpo */}
           <PostCardContent
             post={post}
             styles={styles}
@@ -83,7 +83,7 @@ export const PostCard = memo(
             }}
           />
 
-          {/* 3. Pie de Tarjeta (Autor Minimalista y Acciones) */}
+          {/* 3. Pie de Tarjeta */}
           <PostCardFooter
             post={post}
             styles={styles}

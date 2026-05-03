@@ -25,6 +25,12 @@ export const TYPES = {
   DeleteRecentSearchHandler: Symbol.for('DeleteRecentSearchHandler'),
   ClearRecentSearchesHandler: Symbol.for('ClearRecentSearchesHandler'),
   PostController: Symbol.for('PostController'),
+  AuraNodeController: Symbol.for('AuraNodeController'),
+  NodeActivityService: Symbol.for('NodeActivityService'),
+  AuraNodeRepository: Symbol.for('AuraNodeRepository'),
+  GetTrendingNodesHandler: Symbol.for('GetTrendingNodesHandler'),
+  GetNodeBySlugHandler: Symbol.for('GetNodeBySlugHandler'),
+  TuneIntoNodeHandler: Symbol.for('TuneIntoNodeHandler'),
 
   // Auth
   AuthRepository: Symbol.for('AuthRepository'),
@@ -83,5 +89,6 @@ export const TYPES = {
   AchievementNotificationSubscriber: Symbol.for(
     'AchievementNotificationSubscriber'
   ),
+  NodeActivitySubscriber: Symbol.for('NodeActivitySubscriber'),
   AdminController: Symbol.for('AdminController'),
 }

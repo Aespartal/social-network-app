@@ -112,10 +112,9 @@ const AchievementModal = ({
                 </Typography>
                 <Typography
                   variant='caption'
-                  fontWeight={700}
-                  color='primary.main'
+                  sx={{ color: 'primary.main', fontWeight: 600 }}
                 >
-                  +{achievement.xpEarned} Resonancia
+                  +{achievement.xpEarned} XP
                 </Typography>
               </Stack>
             </Box>
@@ -199,8 +198,11 @@ export const ProfileAchievements = ({
                 </Typography>
               </Box>
               <Box sx={{ textAlign: 'right' }}>
-                <Typography variant='h6' sx={{ fontWeight: 700, opacity: 0.9 }}>
-                  {levelTitle}
+                <Typography
+                  variant='h6'
+                  sx={{ color: 'primary.main', fontWeight: 700 }}
+                >
+                  {totalXP} XP
                 </Typography>
                 <Typography
                   variant='caption'

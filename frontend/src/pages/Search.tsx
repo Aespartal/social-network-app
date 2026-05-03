@@ -7,13 +7,14 @@ import {
   Alert,
   Avatar,
   Chip,
+  Button,
 } from '@/components/ui'
 import {
   useTheme,
+  Fade,
+  LinearProgress,
   useMediaQuery,
   alpha,
-  Tabs,
-  Tab,
   List,
   ListItem,
   ListItemAvatar,
@@ -21,25 +22,47 @@ import {
 } from '@mui/material'
 import { Verified as VerifiedIcon } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // Hooks
-import { useSearch } from '@/hooks/useSearch'
+import { useSearch, useAuth } from '@/hooks'
 
 // Components
 import { PostList } from '@/components/social/post/PostList'
 import { FeedSkeleton } from '@/components/social/skeleton/FeedSkeleton'
-import { HomeSidebar } from '@/components/social/home/HomeSidebar'
+import { AuraSidebar } from '@/components/social/common/AuraSidebar'
 import { SearchBar } from '@/components/social/home/SearchBar'
+
+// Estilos
+import {
+  SearchContainer,
+  ContentWrapper,
+  MainColumn,
+  SidebarContainer,
+  StickyHeader,
+  FeedSelectorContainer,
+  FeedSelectorItem,
+  AuraDot,
+} from './Search.styles'
+
+const SEARCH_TABS = [
+  { id: 'all', label: 'Todo' },
+  { id: 'posts', label: 'Posts' },
+  { id: 'users', label: 'Usuarios' },
+  { id: 'tags', label: 'Tags' },
+] as const
 
 export const Search: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const query = searchParams.get('q') || ''
   const typeParam = searchParams.get('type') || 'all'
   const theme = useTheme()
+  const { isAuthenticated, user: currentUser } = useAuth()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const navigate = useNavigate()
 
   const [activeTab, setActiveTab] = useState(typeParam)
+  const lastQueryRef = React.useRef(query)
 
   const {
     posts,
@@ -60,7 +83,14 @@ export const Search: React.FC = () => {
 
   useEffect(() => {
     if (query) {
-      search(query, true, activeTab as 'all' | 'posts' | 'users' | 'tags')
+      const isNewQuery = query !== lastQueryRef.current
+      search(
+        query,
+        true,
+        activeTab as 'all' | 'posts' | 'users' | 'tags',
+        isNewQuery
+      )
+      lastQueryRef.current = query
     }
   }, [query, activeTab, search])
 
@@ -78,7 +108,12 @@ export const Search: React.FC = () => {
   }
 
   const renderContent = () => {
-    if (loading && posts.length === 0 && users.length === 0) {
+    if (
+      loading &&
+      posts.length === 0 &&
+      users.length === 0 &&
+      tags.length === 0
+    ) {
       return <FeedSkeleton />
     }
 
@@ -110,147 +145,147 @@ export const Search: React.FC = () => {
     }
 
     return (
-      <>
-        {/* Posts */}
-        {(activeTab === 'all' || activeTab === 'posts') && hasPosts && (
-          <PostList
-            posts={posts}
-            onLike={handleToggleLike}
-            onBookmark={handleToggleBookmark}
-            hasMore={hasMore && activeTab === 'posts'}
-            loadingMore={loadingMore}
-            onLoadMore={() => search(query, false, 'posts')}
-            onReply={() => {}}
-          />
-        )}
+      <AnimatePresence mode='wait'>
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -10 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+        >
+          {/* Posts */}
+          {(activeTab === 'all' || activeTab === 'posts') && hasPosts && (
+            <PostList
+              posts={posts}
+              onLike={handleToggleLike}
+              onBookmark={handleToggleBookmark}
+              hasMore={hasMore && activeTab === 'posts'}
+              loadingMore={loadingMore}
+              onLoadMore={() => search(query, false, 'posts')}
+              onReply={() => {}}
+            />
+          )}
 
-        {/* Users */}
-        {(activeTab === 'all' || activeTab === 'users') && hasUsers && (
-          <List sx={{ py: 2 }}>
-            {users.map(user => (
-              <ListItem
-                key={user.id}
-                sx={{ cursor: 'pointer' }}
-                onClick={() => handleUserClick(user.username)}
-              >
-                <ListItemAvatar>
-                  <Avatar src={user.avatar || undefined} alt={user.name}>
-                    {user.name?.charAt(0)}
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={
-                    <Stack direction='row' alignItems='center' spacing={0.5}>
-                      <Typography fontWeight={600}>{user.name}</Typography>
-                      {user.verified && (
-                        <VerifiedIcon color='primary' fontSize='small' />
-                      )}
-                    </Stack>
-                  }
-                  secondary={`@${user.username}`}
-                />
-              </ListItem>
-            ))}
-          </List>
-        )}
-
-        {/* Tags */}
-        {(activeTab === 'all' || activeTab === 'tags') && hasTags && (
-          <Box sx={{ p: 2 }}>
-            <Stack direction='row' flexWrap='wrap' gap={1}>
-              {tags.map(tag => (
-                <Chip
-                  key={tag}
-                  label={`#${tag}`}
-                  onClick={() => handleTagClick(tag)}
+          {/* Users */}
+          {(activeTab === 'all' || activeTab === 'users') && hasUsers && (
+            <List sx={{ py: 2 }}>
+              {users.map(user => (
+                <ListItem
+                  key={user.id}
                   sx={{ cursor: 'pointer' }}
-                />
+                  onClick={() => handleUserClick(user.username)}
+                >
+                  <ListItemAvatar>
+                    <Avatar src={user.avatar || undefined} alt={user.name}>
+                      {user.name?.charAt(0)}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
+                      <Stack direction='row' alignItems='center' spacing={0.5}>
+                        <Typography fontWeight={600}>{user.name}</Typography>
+                        {user.verified && (
+                          <VerifiedIcon color='primary' fontSize='small' />
+                        )}
+                      </Stack>
+                    }
+                    secondary={`@${user.username}`}
+                  />
+                </ListItem>
               ))}
-            </Stack>
-          </Box>
-        )}
-      </>
+            </List>
+          )}
+
+          {/* Tags */}
+          {(activeTab === 'all' || activeTab === 'tags') && hasTags && (
+            <Box sx={{ p: 2 }}>
+              <Stack direction='row' flexWrap='wrap' gap={1}>
+                {tags.map(tag => (
+                  <Chip
+                    key={tag}
+                    label={`#${tag}`}
+                    onClick={() => handleTagClick(tag)}
+                    sx={{ cursor: 'pointer' }}
+                  />
+                ))}
+              </Stack>
+            </Box>
+          )}
+        </motion.div>
+      </AnimatePresence>
     )
   }
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        minHeight: '100vh',
-        bgcolor: 'background.default',
-        width: '100%',
-      }}
-    >
-      {/* 1. COLUMNA PRINCIPAL */}
-      <Box
-        sx={{
-          flexGrow: 1,
-          maxWidth: '600px',
-          borderRight: '1px solid',
-          borderColor: 'divider',
-          minHeight: '100vh',
-          position: 'relative',
-        }}
-      >
-        {/* Header de Búsqueda */}
-        <Box
-          sx={{
-            position: 'sticky',
-            top: 0,
-            bgcolor: alpha(theme.palette.background.paper, 0.85),
-            backdropFilter: 'blur(12px)',
-            zIndex: 10,
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          <Box sx={{ p: 2 }}>
-            {isMobile ? (
-              <SearchBar initialValue={query} />
-            ) : (
-              <Typography variant='h6' fontWeight={800}>
-                Resultados para "{query}"
-              </Typography>
-            )}
-          </Box>
+    <SearchContainer>
+      <ContentWrapper>
+        {/* 1. COLUMNA PRINCIPAL */}
+        <MainColumn>
+          {/* Header de Búsqueda */}
+          <StickyHeader>
+            <Box sx={{ px: 2 }}>
+              {isMobile ? (
+                <SearchBar initialValue={query} />
+              ) : (
+                <Typography variant='h6' fontWeight={800}>
+                  Resultados para "{query}"
+                </Typography>
+              )}
+            </Box>
 
-          {/* Tabs */}
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            variant='fullWidth'
-            sx={{
-              '& .MuiTab-root': {
-                textTransform: 'none',
-                fontWeight: 600,
-              },
-            }}
-          >
-            <Tab label='Todo' value='all' />
-            <Tab label='Posts' value='posts' />
-            <Tab label='Usuarios' value='users' />
-            <Tab label='Tags' value='tags' />
-          </Tabs>
-        </Box>
+            {/* Tabs Orgánicos */}
+            <Box
+              sx={{ mt: 1, px: 2, display: 'flex', justifyContent: 'center' }}
+            >
+              <FeedSelectorContainer>
+                {SEARCH_TABS.map(tab => {
+                  const isActive = activeTab === tab.id
+                  return (
+                    <FeedSelectorItem
+                      key={tab.id}
+                      active={isActive}
+                      onClick={() => handleTabChange(null as any, tab.id)}
+                    >
+                      <span>{tab.label}</span>
+                      {isActive && (
+                        <AuraDot
+                          layoutId='searchTab'
+                          transition={{
+                            type: 'spring',
+                            stiffness: 380,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                    </FeedSelectorItem>
+                  )
+                })}
+              </FeedSelectorContainer>
+            </Box>
 
-        <Stack>{renderContent()}</Stack>
-      </Box>
+            {/* Indicador de carga integrado al final del header */}
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 2,
+              }}
+            >
+              {loading && <LinearProgress sx={{ height: 2, opacity: 0.5 }} />}
+            </Box>
+          </StickyHeader>
 
-      {/* 2. COLUMNA LATERAL */}
-      {!isMobile && (
-        <Box
-          sx={{
-            width: '350px',
-            p: 2,
-            display: { xs: 'none', lg: 'block' },
-            flexShrink: 0,
-          }}
-        >
-          <HomeSidebar />
-        </Box>
-      )}
-    </Box>
+          <Stack sx={{ position: 'relative' }}>{renderContent()}</Stack>
+        </MainColumn>
+
+        {/* 2. COLUMNA LATERAL */}
+        <SidebarContainer>
+          <AuraSidebar />
+        </SidebarContainer>
+      </ContentWrapper>
+    </SearchContainer>
   )
 }
 

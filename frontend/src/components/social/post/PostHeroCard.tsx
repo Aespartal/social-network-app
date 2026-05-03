@@ -10,6 +10,7 @@ import {
   alpha,
 } from '@mui/material'
 import { OptimizedAvatar } from '@/components/common'
+import { useAuth } from '@/hooks'
 import {
   FavoriteBorder as FavoriteIcon,
   Favorite as FavoriteFilledIcon,
@@ -43,6 +44,17 @@ export const PostHeroCard = ({
 }: PostHeroCardProps) => {
   const [imageModalOpen, setImageModalOpen] = useState(false)
   const theme = useTheme()
+  const { isAuthenticated } = useAuth()
+
+  const handleAction = (callback: (id: string) => void, id: string) => {
+    if (!isAuthenticated) return
+    callback(id)
+  }
+
+  const handleReplyAction = (post: Post) => {
+    if (!isAuthenticated) return
+    onReply(post)
+  }
 
   const dateObject = new Date(post.createdAt)
   const formattedTime = format(dateObject, 'h:mm a', { locale: es })
@@ -72,7 +84,7 @@ export const PostHeroCard = ({
       )}
 
       <Box sx={styles.card}>
-        {/* 0. Cabecera Contextual (Tag + Tiempo) */}
+        {/* 0. Cabecera */}
         <Box
           sx={{
             display: 'flex',
@@ -94,22 +106,12 @@ export const PostHeroCard = ({
           >
             #{post.tags?.[0]?.tag?.name || 'Reflexión'}
           </Box>
-          <Typography
-            sx={{
-              fontSize: '0.8rem',
-              color: 'text.secondary',
-              opacity: 0.7,
-              fontStyle: 'italic',
-            }}
-          >
-            {post.readingTime || 1} min de lectura
-          </Typography>
         </Box>
 
-        {/* 1. El Pensamiento (Cuerpo principal) */}
+        {/* 1. Cuerpo */}
         <Typography sx={styles.content}>{post.content}</Typography>
 
-        {/* 2. Media Orgánica */}
+        {/* 2. Media */}
         {post.image && (
           <Box
             onClick={() => setImageModalOpen(true)}
@@ -119,7 +121,7 @@ export const PostHeroCard = ({
           </Box>
         )}
 
-        {/* 3. Meta Información (Timestamp) */}
+        {/* 3. Meta */}
         <Box sx={styles.meta}>
           <Typography variant='body2'>
             {formattedTime} · {formattedDate}
@@ -141,7 +143,7 @@ export const PostHeroCard = ({
           </Typography>
         </Box>
 
-        {/* 4. Pie: Autor y Acciones Minimalistas */}
+        {/* 4. Pie */}
         <Box sx={styles.footer}>
           <Box
             component={Link}
@@ -163,25 +165,31 @@ export const PostHeroCard = ({
             </Stack>
           </Box>
 
-          <Box sx={styles.actions}>
-            <IconButton onClick={() => onReply(post)} sx={styles.actionIcon()}>
+          <Box sx={{ ...styles.actions, opacity: isAuthenticated ? 1 : 0.5 }}>
+            <IconButton
+              onClick={() => handleReplyAction(post)}
+              sx={styles.actionIcon()}
+              disabled={!isAuthenticated}
+            >
               <CommentIcon />
             </IconButton>
 
             <IconButton
-              onClick={() => onLike(post.id)}
+              onClick={() => handleAction(onLike, post.id)}
               sx={styles.actionIcon(
                 post.isLiked ? theme.palette.error.main : undefined
               )}
+              disabled={!isAuthenticated}
             >
               {post.isLiked ? <FavoriteFilledIcon /> : <FavoriteIcon />}
             </IconButton>
 
             <IconButton
-              onClick={() => onBookmark(post.id)}
+              onClick={() => handleAction(onBookmark, post.id)}
               sx={styles.actionIcon(
                 post.isBookmarked ? theme.palette.primary.main : undefined
               )}
+              disabled={!isAuthenticated}
             >
               {post.isBookmarked ? <BookmarkFilledIcon /> : <BookmarkIcon />}
             </IconButton>

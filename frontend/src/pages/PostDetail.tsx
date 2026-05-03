@@ -4,7 +4,7 @@ import { Fade, alpha, useTheme } from '@mui/material'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import { CreatePostAction } from '@/components/social/post/CreatePostAction'
 import { PostHeader } from '@/components/social/post/PostHeader'
-import { usePostDetail } from '@/hooks'
+import { usePostDetail, useAuth } from '@/hooks'
 import { PostRepliesList } from '@/components/social/post/PostRepliesList'
 import { PostHeroCard } from '@/components/social/post/PostHeroCard'
 
@@ -12,6 +12,7 @@ export const PostDetail = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const theme = useTheme()
+  const { isAuthenticated } = useAuth()
   const {
     post,
     replies,
@@ -115,7 +116,8 @@ export const PostDetail = () => {
           <Box sx={{ maxWidth: '800px', mx: 'auto', width: '100%' }}>
             <PostHeader
               onNavigateBack={() => navigate(-1)}
-              title='Hilo de Resonancia'
+              title='Respuestas'
+              count={post.repliesCount}
             />
           </Box>
         </Box>
@@ -182,13 +184,15 @@ export const PostDetail = () => {
           )}
         </Box>
 
-        {/* Action Modal (Aura Composer) */}
-        <CreatePostAction
-          onSave={handleSaveReply}
-          loading={false}
-          replyToPost={replyToPost}
-          onCloseReply={() => setReplyToPost(null)}
-        />
+        {/* Action Modal (Aura Composer - Solo para autenticados) */}
+        {isAuthenticated && (
+          <CreatePostAction
+            onSave={handleSaveReply}
+            loading={false}
+            replyToPost={replyToPost}
+            onCloseReply={() => setReplyToPost(null)}
+          />
+        )}
       </Box>
     </Fade>
   )

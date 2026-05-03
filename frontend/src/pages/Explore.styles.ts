@@ -43,7 +43,7 @@ export const SidebarContainer = styled(Box)(({ theme }) => ({
 export const StickyHeader = styled(Box)(({ theme }) => ({
   position: 'sticky',
   top: 0,
-  // backgroundColor: alpha(theme.palette.background.default, 0.8),
+  bgcolor: alpha(theme.palette.background.default, 0.8),
   backdropFilter: 'blur(20px)',
   zIndex: theme.zIndex.appBar - 1,
   display: 'flex',

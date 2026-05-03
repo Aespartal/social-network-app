@@ -40,6 +40,7 @@ export const CreatePostAction = memo(
         {/* Ocultamos el botón flotante si ya hay un diálogo de respuesta abierto */}
         {!replyToPost && (
           <Fab
+            id='create-post-fab'
             color='primary'
             sx={{ position: 'fixed', bottom: { xs: 80, sm: 20 }, right: 20 }}
             onClick={() => setOpen(true)}

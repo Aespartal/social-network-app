@@ -35,7 +35,7 @@ export const getSearchBarStyles = (theme: Theme, isFocused: boolean) => ({
     left: 0,
     right: 0,
     mt: 1.5,
-    zIndex: 10,
+    zIndex: 100,
     maxHeight: '400px',
     overflowY: 'auto',
     borderRadius: theme.tokens.borderRadius.md,

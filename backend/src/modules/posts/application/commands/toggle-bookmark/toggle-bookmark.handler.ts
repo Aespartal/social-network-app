@@ -4,6 +4,9 @@ import { PostError } from '../../../domain/errors'
 import type { PostRepository } from '../../../domain/repositories/post.repository.interface'
 import type { ToggleBookmarkCommand } from './toggle-bookmark.command'
 
+import { PostBookmarkedEvent } from '@/lib/events/domain-events'
+import type { EventBus } from '@/lib/events/event-bus.interface'
+
 /**
  * ToggleBookmarkCommandHandler - CQRS Command Handler
  *
@@ -26,7 +29,8 @@ import type { ToggleBookmarkCommand } from './toggle-bookmark.command'
 export class ToggleBookmarkCommandHandler {
   constructor(
     @inject(TYPES.PostRepository)
-    private readonly postRepository: PostRepository
+    private readonly postRepository: PostRepository,
+    @inject(TYPES.EventBus) private readonly eventBus: EventBus
   ) {}
 
   async execute(
@@ -46,12 +50,9 @@ export class ToggleBookmarkCommandHandler {
     // - Update bookmarksCount accordingly
     const result = await this.postRepository.toggleBookmark(postId, userId)
 
-    // TODO: Dispatch domain event
-    // if (result.isBookmarked) {
-    //   await this.eventBus.publish(new PostBookmarkedEvent(postId, userId))
-    // } else {
-    //   await this.eventBus.publish(new PostUnbookmarkedEvent(postId, userId))
-    // }
+    if (result.isBookmarked) {
+      await this.eventBus.publish([new PostBookmarkedEvent(postId, userId)])
+    }
 
     return result
   }

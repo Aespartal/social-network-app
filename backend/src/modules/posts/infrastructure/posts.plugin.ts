@@ -3,7 +3,7 @@ import { FastifyInstance } from 'fastify'
 import { Type } from '@sinclair/typebox'
 import { container } from '@/lib/di-container'
 import { TYPES } from '@/lib/di-types'
-import { PostController } from './controllers'
+import { PostController, AuraNodeController } from './controllers'
 import {
   PostParamsSchema,
   GetFeedQuerySchema,
@@ -45,9 +45,51 @@ export default fp(async function postsPlugin(fastify: FastifyInstance) {
   // Resolve PostController from the DI container (InversifyJS)
   // This automatically resolves the repository and all 15 handlers
   const postController = container.get<PostController>(TYPES.PostController)
+  const auraNodeController = container.get<AuraNodeController>(
+    TYPES.AuraNodeController
+  )
+
+  // Initialize subscribers so they start listening to events
+  container.get(TYPES.NodeActivitySubscriber)
 
   fastify.register(async function (publicRoutes) {
     publicRoutes.addHook('preHandler', optionalAuth)
+
+    // Nodos Aura
+    publicRoutes.get(
+      '/nodes/trending',
+      {
+        schema: {
+          tags: ['nodes'],
+          summary: 'Obtener nodos con mayor vibración',
+          querystring: {
+            type: 'object',
+            properties: {
+              limit: { type: 'number' },
+            },
+          },
+        },
+      },
+      auraNodeController.getTrending.bind(auraNodeController)
+    )
+
+    publicRoutes.get(
+      '/nodes/:slug',
+      {
+        schema: {
+          tags: ['nodes'],
+          summary: 'Obtener detalle de un nodo por slug',
+          params: {
+            type: 'object',
+            properties: {
+              slug: { type: 'string' },
+            },
+            required: ['slug'],
+          },
+        },
+      },
+      auraNodeController.getBySlug.bind(auraNodeController)
+    )
 
     publicRoutes.get(
       '/posts/feed',
@@ -226,6 +268,26 @@ export default fp(async function postsPlugin(fastify: FastifyInstance) {
 
   fastify.register(async function (privateRoutes) {
     privateRoutes.addHook('preHandler', authenticateToken)
+
+    // Nodos Aura (Acciones autenticadas)
+    privateRoutes.post(
+      '/nodes/:slug/tune',
+      {
+        schema: {
+          tags: ['nodes'],
+          summary: 'Sintonizar o dejar de sintonizar un nodo',
+          security: [{ bearerAuth: [] }],
+          params: {
+            type: 'object',
+            properties: {
+              slug: { type: 'string' },
+            },
+            required: ['slug'],
+          },
+        },
+      },
+      auraNodeController.tuneIntoNode.bind(auraNodeController)
+    )
 
     privateRoutes.post(
       '/posts',

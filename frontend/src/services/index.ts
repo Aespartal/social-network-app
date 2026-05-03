@@ -2,6 +2,7 @@
 export { authService } from './auth.service'
 export { postService } from './post.service'
 export { profileService } from './profile.service'
+export { nodeService } from './node.service'
 export { followService } from './follow.service'
 export { adminService } from './admin.service'
 export { default as axiosInstance } from './axiosInstance'

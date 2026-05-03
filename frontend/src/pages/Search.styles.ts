@@ -1,7 +1,7 @@
-import { Box, styled, alpha } from '@mui/material'
+import { styled, Box, alpha } from '@mui/material'
 import { motion } from 'framer-motion'
 
-export const HomeContainer = styled(Box)(() => ({
+export const SearchContainer = styled(Box)(() => ({
   display: 'flex',
   minHeight: '100vh',
   width: '100%',
@@ -12,6 +12,8 @@ export const ContentWrapper = styled(Box)(({ theme }) => ({
   justifyContent: 'center',
   alignItems: 'flex-start',
   width: '100%',
+  maxWidth: '1200px',
+  margin: '0 auto',
   padding: theme.spacing(0, 2),
   gap: theme.spacing(4),
 }))
@@ -42,14 +44,10 @@ export const SidebarContainer = styled(Box)(({ theme }) => ({
 export const StickyHeader = styled(Box)(({ theme }) => ({
   position: 'sticky',
   top: 0,
-  bgcolor: alpha(theme.palette.background.default, 0.8),
-  backdropFilter: 'blur(20px)',
-  zIndex: theme.zIndex.appBar - 1,
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  width: '100%',
-  padding: theme.spacing(2, 4),
+  bgcolor: alpha(theme.palette.background.paper, 0.85),
+  backdropFilter: 'blur(12px)',
+  zIndex: 10,
+  padding: theme.spacing(2, 0),
 }))
 
 export const FeedSelectorContainer = styled(Box)(({ theme }) => ({
@@ -67,7 +65,7 @@ export const FeedSelectorItem = styled(Box, {
   transition: 'all 0.3s ease',
   '& span': {
     fontFamily: 'Montserrat, sans-serif',
-    fontSize: '1rem',
+    fontSize: '0.95rem',
     fontWeight: active ? 800 : 400,
     color: active ? theme.palette.text.primary : theme.palette.text.secondary,
     opacity: active ? 1 : 0.6,
@@ -84,9 +82,9 @@ export const AuraDot = styled(motion.div)(() => ({
   bottom: 0,
   left: '10%',
   right: '15%',
-  height: '4px',
+  height: '3px',
   borderRadius: '4px 4px 0 0',
-  backgroundColor: '#E0FF4F',
-  boxShadow: `0 0 20px ${alpha('#E0FF4F', 0.8)}, 0 0 10px ${alpha('#E0FF4F', 0.4)}`,
+  backgroundColor: '#88B04B',
+  boxShadow: `0 0 15px ${alpha('#88B04B', 0.6)}`,
   zIndex: 1,
 }))

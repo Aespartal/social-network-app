@@ -8,6 +8,7 @@ import { ImageModal } from '@/components/common/ImageModal'
 import { OptimizedAvatar } from '@/components/common/OptimizedAvatar'
 import { LevelBadge } from '@/components/common/LevelBadge'
 import { useUserLevel } from '@/hooks/useUserLevel'
+import { useAuth } from '@/hooks'
 import { getLevelColor } from '@/constants/levels'
 
 interface ProfileHeaderProps {
@@ -22,6 +23,7 @@ export const ProfileHeader = ({
   onEditClick,
 }: ProfileHeaderProps) => {
   const theme = useTheme()
+  const { isAuthenticated } = useAuth()
   const [imageModalOpen, setImageModalOpen] = useState(false)
   const { levelInfo, loading } = useUserLevel(user?.id)
 
@@ -148,12 +150,19 @@ export const ProfileHeader = ({
           ) : (
             <Stack direction='row' spacing={2}>
               <FollowButton userId={user?.id || ''} />
-              <Button
-                variant='outline'
-                sx={{ borderRadius: '50px', px: 4, py: 1, fontWeight: 700 }}
-              >
-                Conectar
-              </Button>
+              {isAuthenticated && user && !isOwnProfile && (
+                <Button
+                  variant='outline'
+                  sx={{
+                    borderRadius: '50px',
+                    px: 4,
+                    py: 1,
+                    fontWeight: 700,
+                  }}
+                >
+                  Conectar
+                </Button>
+              )}
             </Stack>
           )}
         </Box>

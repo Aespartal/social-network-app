@@ -21,8 +21,7 @@ import { AuthPlaceholder } from '@/components/social/AuthPlaceholder'
 import { HomeHeader } from '@/components/social/home/HomeHeader'
 import { HomeFeed } from '@/components/social/home/HomeFeed'
 import { Post } from 'social-network-app-shared/types/social.type'
-import { SuggestedUsers } from '@/components/social/profile/SuggestedUsers'
-import { GlobalTrends } from '@/components/social/home/GlobalTrends'
+import { AuraSidebar } from '@/components/social/common/AuraSidebar'
 
 export const Home: React.FC = () => {
   const { isAuthenticated, loading: authLoading } = useAuth()
@@ -116,10 +115,10 @@ export const Home: React.FC = () => {
               <AnimatePresence mode='wait'>
                 <motion.div
                   key={activeTab}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0, x: 10, y: 0 }}
+                  animate={{ opacity: 1, x: 0, y: 0 }}
+                  exit={{ opacity: 0, x: -10, y: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
                 >
                   <HomeFeed
                     loading={loading}
@@ -137,8 +136,7 @@ export const Home: React.FC = () => {
           </MainColumn>
 
           <SidebarContainer>
-            <SuggestedUsers />
-            <GlobalTrends />
+            <AuraSidebar />
           </SidebarContainer>
         </ContentWrapper>
       </Fade>

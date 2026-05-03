@@ -10,7 +10,10 @@ import { EventBus } from './events/event-bus.interface'
 import { PrismaPostRepository } from '../modules/posts/infrastructure/repositories/prisma-post.repository'
 import { PrismaPostQueryProvider } from '../modules/posts/infrastructure/services/prisma-post-query.service'
 import { PrismaRecentSearchRepository } from '../modules/posts/infrastructure/repositories/prisma-recent-search.repository'
+import { PrismaAuraNodeRepository } from '../modules/posts/infrastructure/repositories/prisma-aura-node.repository'
 import { PostController } from '../modules/posts/infrastructure/controllers/post.controller'
+import { AuraNodeController } from '../modules/posts/infrastructure/controllers/aura-node.controller'
+import { NodeActivityService } from '../modules/posts/application/services/node-activity.service'
 import {
   CreatePostCommandHandler,
   DeletePostCommandHandler,
@@ -100,6 +103,11 @@ container
   .bind(TYPES.NotificationListener)
   .to(NotificationListener)
   .inSingletonScope()
+import { NodeActivitySubscriber } from '../modules/posts/infrastructure/subscribers/node-activity.subscriber'
+container
+  .bind(TYPES.NodeActivitySubscriber)
+  .to(NodeActivitySubscriber)
+  .inSingletonScope()
 
 // --- POSTS BINDINGS ---
 container.bind(TYPES.PostRepository).to(PrismaPostRepository).inSingletonScope()
@@ -110,6 +118,14 @@ container
 container
   .bind(TYPES.RecentSearchRepository)
   .to(PrismaRecentSearchRepository)
+  .inSingletonScope()
+container
+  .bind(TYPES.AuraNodeRepository)
+  .to(PrismaAuraNodeRepository)
+  .inSingletonScope()
+container
+  .bind(TYPES.NodeActivityService)
+  .to(NodeActivityService)
   .inSingletonScope()
 container.bind(TYPES.CreatePostCommandHandler).to(CreatePostCommandHandler)
 container.bind(TYPES.DeletePostCommandHandler).to(DeletePostCommandHandler)
@@ -125,9 +141,12 @@ container.bind(TYPES.GetRecentSearchesHandler).to(GetRecentSearchesHandler)
 container
   .bind(TYPES.DeleteRecentSearchHandler)
   .to(DeleteRecentSearchCommandHandler)
+import { TuneIntoNodeHandler } from '../modules/posts/application/commands/tune-into-node/tune-into-node.handler'
+
 container
   .bind(TYPES.ClearRecentSearchesHandler)
   .to(ClearRecentSearchesCommandHandler)
+container.bind(TYPES.TuneIntoNodeHandler).to(TuneIntoNodeHandler)
 container.bind(TYPES.GetFeedHandler).to(GetFeedHandler)
 container.bind(TYPES.GetFollowingFeedHandler).to(GetFollowingFeedHandler)
 container.bind(TYPES.GetPostDetailHandler).to(GetPostDetailHandler)
@@ -140,6 +159,9 @@ container.bind(TYPES.GetPostsWithMediaHandler).to(GetPostsWithMediaHandler)
 container.bind(TYPES.GetUserPostsHandler).to(GetUserPostsHandler)
 container.bind(TYPES.SearchPostsHandler).to(SearchPostsQueryHandler)
 container.bind<PostController>(TYPES.PostController).to(PostController)
+container
+  .bind<AuraNodeController>(TYPES.AuraNodeController)
+  .to(AuraNodeController)
 
 // --- AUTH BINDINGS ---
 container.bind(TYPES.AuthRepository).to(PrismaAuthRepository).inSingletonScope()

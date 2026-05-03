@@ -36,6 +36,7 @@ model User {
   visitsMade            ProfileVisit[]    @relation("VisitorRelation")
   recentSearches        RecentSearch[]
   sessions              Session[]
+  userNodes             UserNode[]
   achievements          UserAchievement[]
   streaks               UserStreak[]
 
@@ -140,8 +141,42 @@ model Tag {
   name      String    @unique
   createdAt DateTime  @default(now())
   posts     PostTag[]
+  auraNode  AuraNode?
 
   @@map("tags")
+}
+
+model AuraNode {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  description String?
+  icon        String?
+  color       String?
+  vibration   Float      @default(0)
+  pulse       Float      @default(0)
+  category    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  lastPulseAt DateTime   @default(now())
+  tagId       String?    @unique
+  tag         Tag?       @relation(fields: [tagId], references: [id])
+  followers   UserNode[]
+
+  @@index([vibration])
+  @@index([pulse])
+  @@map("aura_nodes")
+}
+
+model UserNode {
+  userId    String
+  nodeId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  node      AuraNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, nodeId])
+  @@map("user_nodes")
 }
 
 model PostTag {
