@@ -36,8 +36,8 @@ export class UnfollowUserHandler {
     await this.userRepository.unfollow(followerId, followedId)
 
     await Promise.all([
-      this.userRepository.update(follower),
-      this.userRepository.update(followed),
+      this.userRepository.save(follower),
+      this.userRepository.save(followed),
     ])
   }
 }

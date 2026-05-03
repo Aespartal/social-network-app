@@ -1,9 +1,15 @@
+import { injectable, inject } from 'inversify'
+import { TYPES } from '@/lib/di-types'
 import type { UserRepository } from '../../domain/repositories/user.repository.interface'
 import { UserError } from '../../domain/errors'
 import { Role } from '@/enums/role.enum'
 
+@injectable()
 export class DeleteUserUseCase {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    @inject(TYPES.UserRepository)
+    private readonly userRepository: UserRepository
+  ) {}
 
   async execute(
     id: string,

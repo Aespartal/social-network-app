@@ -1,16 +1,23 @@
+import { injectable, inject } from 'inversify'
+import { TYPES } from '@/lib/di-types'
 import type { UpdateUserInput } from '../../domain/entities/user.entity'
 import type {
   UserRepository,
   UserRepository as UR,
 } from '../../domain/repositories/user.repository.interface'
 import { UserError } from '../../domain/errors'
-import bcrypt from 'bcryptjs'
+import type { HashService } from '../../../auth/domain/services/hash.service.interface'
 import { UserResponseDTO } from '../dto'
 import { Role } from '@/enums/role.enum'
 import { UserMapper } from '../../infrastructure/mappers/user.mapper'
 
+@injectable()
 export class UpdateUserUseCase {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    @inject(TYPES.UserRepository)
+    private readonly userRepository: UserRepository,
+    @inject(TYPES.HashService) private readonly hashService: HashService
+  ) {}
 
   async execute(
     id: string,
@@ -52,7 +59,7 @@ export class UpdateUserUseCase {
     const updateData: UR.UpdateInput = { ...input }
 
     if (input.password) {
-      updateData.passwordHash = await bcrypt.hash(input.password, 10)
+      updateData.passwordHash = await this.hashService.hash(input.password)
       delete (updateData as { password?: string }).password
     }
 

@@ -23,6 +23,10 @@ export default fp(async function usersPlugin(fastify: FastifyInstance) {
       '/users/:id/is-following',
       userController.isFollowing.bind(userController)
     )
+    publicRoutes.get(
+      '/users/:id/level',
+      userController.getUserLevel.bind(userController)
+    )
   })
 
   fastify.register(async function (privateRoutes) {

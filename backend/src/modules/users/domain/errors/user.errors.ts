@@ -39,4 +39,40 @@ export class UserError extends Error {
       400
     )
   }
+
+  static emailTaken(email: string) {
+    return new UserError(
+      `Email ${email} is already in use`,
+      'EMAIL_ALREADY_EXISTS',
+      409
+    )
+  }
+
+  static usernameTaken(username: string) {
+    return new UserError(
+      `Username ${username} is already in use`,
+      'USERNAME_ALREADY_EXISTS',
+      409
+    )
+  }
+
+  static forbidden() {
+    return new UserError(
+      'You do not have permission to perform this action',
+      'FORBIDDEN',
+      403
+    )
+  }
+
+  static creationFailed() {
+    return new UserError('Failed to create user', 'USER_CREATION_FAILED', 500)
+  }
+
+  static updateFailed() {
+    return new UserError('Failed to update user', 'USER_UPDATE_FAILED', 500)
+  }
+
+  static deleteFailed() {
+    return new UserError('Failed to delete user', 'USER_DELETE_FAILED', 500)
+  }
 }

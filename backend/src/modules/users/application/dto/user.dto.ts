@@ -10,7 +10,19 @@ export const UserResponseSchema = Type.Object({
   role: Type.String(),
   verified: Type.Boolean(),
   createdAt: Type.String(),
+  updatedAt: Type.Optional(Type.String()),
   googleId: Type.Optional(Type.String({ format: 'google-id' })),
+  active: Type.Boolean(),
+  _count: Type.Optional(
+    Type.Object({
+      posts: Type.Number(),
+      followers: Type.Number(),
+      following: Type.Number(),
+      visitsReceived: Type.Number(),
+    })
+  ),
+  totalXP: Type.Number(),
+  currentLevel: Type.Number(),
 })
 
 export type UserResponseDTO = Static<typeof UserResponseSchema>
