@@ -2,14 +2,13 @@ import React, { useState } from 'react'
 import {
   Container,
   Paper,
-  TextField,
+  Input as TextField,
   Button,
-  Typography,
+  Text as Typography,
   Box,
   Alert,
-  Link,
-  Divider,
-} from '@mui/material'
+} from '@/components/ui'
+import { Link, Divider } from '@mui/material'
 import { useAuth, useForm } from '@/hooks'
 import {
   Link as RouterLink,

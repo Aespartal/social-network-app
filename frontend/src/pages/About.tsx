@@ -3,16 +3,18 @@ import {
   Box,
   Card,
   CardContent,
-  Typography,
+  Text as Typography,
+  Alert,
+  Container,
+  Chip,
+  Grid,
+} from '@/components/ui'
+import {
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Alert,
-  Container,
-  Chip,
   Divider,
-  Grid,
 } from '@mui/material'
 import {
   Code as CodeIcon,
@@ -57,12 +59,12 @@ export const About: React.FC = () => {
             color='text.primary'
             mb={3}
           >
-            Acerca de SocialNetworkApp
+            Acerca de Aura
           </Typography>
 
           <Typography variant='body1' color='text.secondary' mb={4}>
-            SocialNetworkApp es una aplicación full-stack moderna construida con
-            las últimas tecnologías:
+            Aura es una aplicación full-stack moderna construida con las últimas
+            tecnologías:
           </Typography>
 
           <Grid container spacing={3} mb={4}>

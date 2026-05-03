@@ -80,7 +80,7 @@ const getSpacingValue = (
 
 const getBorderRadiusValue = (
   value: BorderRadiusToken | number | undefined
-): number | undefined => {
+): string | number | undefined => {
   if (value === undefined) return undefined
   if (typeof value === 'number') return value
   return tokens.borderRadius[value]

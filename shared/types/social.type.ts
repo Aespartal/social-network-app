@@ -9,6 +9,7 @@ export interface ParentPost {
     name: string;
     avatar: string | null;
   };
+  readingTime?: number;
 }
 
 export interface Post {
@@ -35,6 +36,7 @@ export interface Post {
   isAuthorReply?: boolean;
   country?: string | null;
   city?: string | null;
+  readingTime: number;
 }
 
 export interface CreatePostRequest {
@@ -121,7 +123,7 @@ export interface PostDetailResponse {
 
 export interface Notification {
   id: string
-  type: 'LIKE' | 'REPLY' | 'FOLLOW' | 'MENTION'
+  type: 'LIKE' | 'REPLY' | 'FOLLOW' | 'MENTION' | 'ACHIEVEMENT'
   recipientId: string
   issuerId: string
   postId?: string
@@ -134,5 +136,11 @@ export interface Notification {
   }
   post?: {
     content: string
+  }
+  metadata?: {
+    achievementName?: string
+    tier?: string
+    xpEarned?: number
+    badgeSlug?: string
   }
 }

@@ -1,15 +1,15 @@
-import React, { useCallback, useState } from 'react'
-import {
-  Box,
-  Alert,
-  CircularProgress,
-  Stack,
-  Divider,
-  Button,
-} from '@mui/material'
+import React, { useState, useCallback } from 'react'
+import { Box, Stack, Button, Alert, Loading } from '@/components/ui'
+import { Fade } from '@mui/material'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // Styles
-import { HomeContainer, MainColumn, SidebarContainer } from './Home.styles'
+import {
+  HomeContainer,
+  MainColumn,
+  SidebarContainer,
+  ContentWrapper,
+} from './Home.styles'
 
 // Hooks
 import { useAuth, useFeed } from '@/hooks'
@@ -18,22 +18,20 @@ import { FEED_TABS_CONFIG } from '@/constants/feed'
 // Componentes Sociales
 import { CreatePostAction } from '@/components/social/post/CreatePostAction'
 import { AuthPlaceholder } from '@/components/social/AuthPlaceholder'
-import { HomeSidebar } from '@/components/social/home/HomeSidebar'
 import { HomeHeader } from '@/components/social/home/HomeHeader'
 import { HomeFeed } from '@/components/social/home/HomeFeed'
 import { Post } from 'social-network-app-shared/types/social.type'
+import { SuggestedUsers } from '@/components/social/profile/SuggestedUsers'
+import { GlobalTrends } from '@/components/social/home/GlobalTrends'
 
 export const Home: React.FC = () => {
   const { isAuthenticated, loading: authLoading } = useAuth()
   const [replyToPost, setReplyToPost] = useState<Post | null>(null)
   const [activeTab, setActiveTab] = useState(0)
 
-  const handleTabChange = useCallback(
-    (_: React.SyntheticEvent, newValue: number) => {
-      setActiveTab(newValue)
-    },
-    []
-  )
+  const handleTabChange = (newValue: number) => {
+    setActiveTab(newValue)
+  }
 
   const {
     posts,
@@ -60,9 +58,10 @@ export const Home: React.FC = () => {
         display='flex'
         justifyContent='center'
         alignItems='center'
-        minHeight='80vh'
+        minHeight='100vh'
+        // sx={{ bgcolor: 'background.default' }}
       >
-        <CircularProgress />
+        <Loading text='Sintonizando con el Aura...' size='lg' />
       </Box>
     )
   }
@@ -71,65 +70,79 @@ export const Home: React.FC = () => {
 
   return (
     <HomeContainer>
-      {/* 1. COLUMNA PRINCIPAL (Feed) - Centrada y con ancho controlado */}
-      <MainColumn>
-        {/* Header de Home (Tabs) */}
-        <HomeHeader
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          tabsConfig={FEED_TABS_CONFIG}
-        />
+      <Fade in={!authLoading} timeout={800}>
+        <ContentWrapper>
+          <MainColumn>
+            {/* Header Orgánico Centrado */}
+            <HomeHeader
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              tabsConfig={FEED_TABS_CONFIG}
+            />
 
-        <Stack>
-          <CreatePostAction
-            onSave={handleCreatePost}
-            loading={isCreating}
-            replyToPost={replyToPost}
-            onCloseReply={() => setReplyToPost(null)}
-          />
+            <Stack>
+              {/* Acciones Rápidas (Zen style) */}
+              <Box sx={{ width: '100%', mt: 2 }}>
+                <CreatePostAction
+                  onSave={handleCreatePost}
+                  loading={isCreating}
+                  replyToPost={replyToPost}
+                  onCloseReply={() => setReplyToPost(null)}
+                />
+              </Box>
 
-          <Divider sx={{ opacity: 0.5 }} />
-
-          {error && (
-            <Box sx={{ p: 2 }}>
-              <Alert
-                severity='error'
-                variant='outlined'
-                sx={{ borderRadius: 3 }}
-                action={
-                  <Button
-                    color='inherit'
-                    size='small'
-                    onClick={() => loadFeed(true)}
+              {error && (
+                <Box sx={{ p: 2 }}>
+                  <Alert
+                    severity='error'
+                    variant='outlined'
+                    sx={{ borderRadius: 3 }}
+                    action={
+                      <Button
+                        color='inherit'
+                        size='small'
+                        onClick={() => loadFeed(true)}
+                      >
+                        Reintentar
+                      </Button>
+                    }
                   >
-                    Reintentar
-                  </Button>
-                }
-              >
-                {error}
-              </Alert>
-            </Box>
-          )}
+                    {error}
+                  </Alert>
+                </Box>
+              )}
 
-          <HomeFeed
-            loading={loading}
-            posts={posts}
-            onLike={handleToggleLike}
-            onBookmark={handleToggleBookmark}
-            onReply={setReplyToPost}
-            hasMore={hasMorePosts}
-            loadingMore={loadingMore}
-            onLoadMore={handleLoadMore}
-          />
-        </Stack>
-      </MainColumn>
+              {/* El Feed Infinito con Skeletons Zen */}
+              <AnimatePresence mode='wait'>
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <HomeFeed
+                    loading={loading}
+                    posts={posts}
+                    onLike={handleToggleLike}
+                    onBookmark={handleToggleBookmark}
+                    onReply={setReplyToPost}
+                    hasMore={hasMorePosts}
+                    loadingMore={loadingMore}
+                    onLoadMore={handleLoadMore}
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </Stack>
+          </MainColumn>
 
-      {/* 2. COLUMNA LATERAL (Sugerencias) - Solo en desktop */}
-      <SidebarContainer>
-        <HomeSidebar />
-      </SidebarContainer>
+          <SidebarContainer>
+            <SuggestedUsers />
+            <GlobalTrends />
+          </SidebarContainer>
+        </ContentWrapper>
+      </Fade>
     </HomeContainer>
   )
 }
-
 export default Home

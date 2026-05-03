@@ -146,7 +146,7 @@ export const postService = {
 
   async searchPosts(
     query: string,
-    params: { cursor?: string | null; limit?: number } = {}
+    params: { cursor?: string | null; limit?: number; type?: string } = {}
   ): Promise<PostResponse> {
     const cleanParams = Object.entries(params).reduce(
       (acc, [key, value]) => {
@@ -162,6 +162,48 @@ export const postService = {
       API_ENDPOINTS.POSTS.SEARCH,
       { params: cleanParams }
     )
+    return data.data!
+  },
+
+  async search(
+    query: string,
+    params: { type?: string; limit?: number } = {}
+  ): Promise<{
+    posts?: Post[]
+    users?: Array<{
+      id: string
+      username: string
+      name: string
+      avatar: string | null
+      verified: boolean
+      isFollowing?: boolean
+    }>
+    tags?: string[]
+  }> {
+    const cleanParams = Object.entries(params).reduce(
+      (acc, [key, value]) => {
+        if (value !== null && value !== undefined) {
+          acc[key] = value
+        }
+        return acc
+      },
+      { q: query } as Record<string, string | number>
+    )
+
+    const { data } = await axiosInstance.get<
+      ApiResponse<{
+        posts?: Post[]
+        users?: Array<{
+          id: string
+          username: string
+          name: string
+          avatar: string | null
+          verified: boolean
+          isFollowing?: boolean
+        }>
+        tags?: string[]
+      }>
+    >(API_ENDPOINTS.POSTS.SEARCH, { params: cleanParams })
     return data.data!
   },
 
@@ -194,6 +236,45 @@ export const postService = {
     const { data } = await axiosInstance.get<ApiResponse<PostResponse>>(
       API_ENDPOINTS.POSTS.TRENDING,
       { params: cleanParams }
+    )
+    return data.data!
+  },
+}
+
+export interface UserAchievement {
+  id: string
+  achievementId: string
+  achievementName: string
+  achievementSlug: string
+  description: string | null
+  category: 'onboarding' | 'engagement' | 'content' | 'exploration'
+  tierAchieved: string | null
+  progress: number
+  iconEmoji: string | null
+  completedAt: string | null
+  xpEarned: number
+}
+
+export interface AchievementsResponse {
+  achievements: UserAchievement[]
+  totalXP: number
+  level: number
+  levelTitle: string
+  nextLevelXP: number
+  progressToNextLevel: number
+}
+
+export const achievementService = {
+  async getMyAchievements(): Promise<AchievementsResponse> {
+    const { data } = await axiosInstance.get<ApiResponse<AchievementsResponse>>(
+      API_ENDPOINTS.ACHIEVEMENTS.GET_ME
+    )
+    return data.data!
+  },
+
+  async getUserAchievements(userId: string): Promise<AchievementsResponse> {
+    const { data } = await axiosInstance.get<ApiResponse<AchievementsResponse>>(
+      API_ENDPOINTS.ACHIEVEMENTS.GET_BY_USER(userId)
     )
     return data.data!
   },

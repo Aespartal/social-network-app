@@ -3,6 +3,7 @@ import { ApiResponse } from 'social-network-app-shared/types/api.type'
 import axiosInstance from './axiosInstance'
 import { User } from 'social-network-app-shared/types/auth.type'
 import { API_ENDPOINTS } from '@/constants'
+import { LevelInfo } from '@/constants/levels'
 
 /**
  * Servicio encargado de las operaciones relacionadas con los perfiles de usuario.
@@ -80,5 +81,12 @@ export const profileService = {
     }
 
     return data.data
+  },
+
+  async getUserLevel(userId: string): Promise<LevelInfo> {
+    const { data } = await axiosInstance.get<ApiResponse<LevelInfo>>(
+      API_ENDPOINTS.PROFILE.LEVEL(userId)
+    )
+    return data.data!
   },
 }

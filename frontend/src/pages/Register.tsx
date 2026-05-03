@@ -2,13 +2,13 @@ import React, { useState } from 'react'
 import {
   Container,
   Paper,
-  TextField,
+  Input as TextField,
   Button,
-  Typography,
+  Text as Typography,
   Box,
   Alert,
-  Link,
-} from '@mui/material'
+} from '@/components/ui'
+import { Link } from '@mui/material'
 import { useAuth, useForm } from '@/hooks'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { CreateUserRequest } from 'social-network-app-shared/types/auth.type'

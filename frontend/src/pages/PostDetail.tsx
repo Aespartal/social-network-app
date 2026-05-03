@@ -1,26 +1,17 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import {
-  Box,
-  CircularProgress,
-  Typography,
-  Button,
-  Fade,
-  alpha,
-} from '@mui/material'
+import { Box, Loading as Spinner, Text as Typography } from '@/components/ui'
+import { Fade, alpha, useTheme } from '@mui/material'
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
 import { CreatePostAction } from '@/components/social/post/CreatePostAction'
 import { PostHeader } from '@/components/social/post/PostHeader'
 import { usePostDetail } from '@/hooks'
 import { PostRepliesList } from '@/components/social/post/PostRepliesList'
 import { PostHeroCard } from '@/components/social/post/PostHeroCard'
-import { HomeSidebar } from '@/components/social/home/HomeSidebar'
-import { useTheme, useMediaQuery } from '@mui/material'
 
 export const PostDetail = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const {
     post,
     replies,
@@ -43,81 +34,105 @@ export const PostDetail = () => {
         flexDirection='column'
         alignItems='center'
         justifyContent='center'
-        minHeight='60vh'
+        minHeight='80vh'
       >
-        <CircularProgress size={30} thickness={4} />
-        <Typography variant='caption' sx={{ mt: 2, color: 'text.secondary' }}>
-          Cargando conversación...
+        <Spinner size='lg' />
+        <Typography
+          variant='caption'
+          sx={{
+            mt: 3,
+            opacity: 0.6,
+            fontFamily: 'Lora, serif',
+            fontStyle: 'italic',
+          }}
+        >
+          Sintonizando la profundidad...
         </Typography>
       </Box>
     )
 
   if (!post)
     return (
-      <Box textAlign='center' py={10} px={2}>
+      <Box textAlign='center' py={15} px={2}>
         <ErrorOutlineIcon
-          sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }}
+          sx={{ fontSize: 64, color: 'text.disabled', mb: 3, opacity: 0.3 }}
         />
-        <Typography variant='h6'>Este post no está disponible</Typography>
-        <Typography color='text.secondary' mb={3}>
-          Es posible que haya sido eliminado.
+        <Typography variant='h4' sx={{ fontWeight: 800, mb: 1 }}>
+          Este eco se ha desvanecido
         </Typography>
-        <Button variant='contained' onClick={() => navigate(-1)}>
-          Volver atrás
-        </Button>
+        <Typography
+          variant='body1'
+          color='text.secondary'
+          mb={4}
+          sx={{ maxWidth: 400, mx: 'auto' }}
+        >
+          El pensamiento que buscas ya no resuena en el lienzo. Es posible que
+          haya sido eliminado por su autor.
+        </Typography>
+        <Box
+          component='button'
+          onClick={() => navigate(-1)}
+          sx={{
+            bgcolor: 'primary.main',
+            color: 'white',
+            border: 'none',
+            px: 4,
+            py: 1.5,
+            borderRadius: '50px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            '&:hover': { transform: 'scale(1.05)' },
+            transition: 'all 0.2s',
+          }}
+        >
+          Regresar al Lienzo
+        </Box>
       </Box>
     )
 
   return (
-    <Fade in={!loading}>
+    <Fade in={!loading} timeout={800}>
       <Box
         sx={{
           display: 'flex',
+          flexDirection: 'column',
           minHeight: '100vh',
-          bgcolor: 'background.default',
+          // bgcolor: 'background.default',
+          width: '100%',
         }}
       >
-        {/* COLUMNA PRINCIPAL */}
+        {/* 1. Header Zen (Flotante y transparente) */}
+        <Box
+          sx={{
+            position: 'sticky',
+            top: 0,
+            bgcolor: alpha(theme.palette.background.paper, 0.8),
+            backdropFilter: 'blur(20px)',
+            zIndex: 1100,
+            borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          }}
+        >
+          <Box sx={{ maxWidth: '800px', mx: 'auto', width: '100%' }}>
+            <PostHeader
+              onNavigateBack={() => navigate(-1)}
+              title='Hilo de Resonancia'
+            />
+          </Box>
+        </Box>
+
+        {/* 2. Contenido Centralizado */}
         <Box
           sx={{
             width: '100%',
-            maxWidth: '600px',
-            borderLeft: 'none', // El Nav ya tiene el borde de división
-            borderRight: '1px solid',
-            borderColor: 'divider',
+            maxWidth: '800px',
+            mx: 'auto',
             position: 'relative',
-            pb: 10,
+            px: { xs: 2, sm: 4 },
+            pt: 4,
+            pb: 12,
           }}
         >
-          {/* Header Sticky con efecto blur premium */}
-          <Box
-            sx={{
-              borderBottom: '1px solid',
-              borderColor: 'divider',
-              position: 'sticky',
-              top: 0,
-              bgcolor: alpha(theme.palette.background.paper, 0.85),
-              backdropFilter: 'blur(12px)',
-              zIndex: 1100,
-            }}
-          >
-            <PostHeader onNavigateBack={() => navigate(-1)} title='Post' />
-          </Box>
-
-          {/* SI EL POST ES UNA RESPUESTA, MOSTRAR EL PADRE ARRIBA */}
-          {/* TODO: Implementar componente específico para mostrar ParentPost
-          {post.parent && (
-            <StyledPostCard
-              post={post.parent}
-              onLike={() => handleLike(post.parent!.id)}
-              onBookmark={() => handleBookmark(post.parent!.id)}
-              onReply={() => handleReply(post.parent!)}
-              isThreadParent={true}
-            />
-          )}
-          */}
-
-          {/* EL POST DETALLADO (HERO) */}
+          {/* EL POST DETALLADO (HERO ZEN) */}
           <PostHeroCard
             post={post}
             onLike={handleLike}
@@ -125,54 +140,58 @@ export const PostDetail = () => {
             onReply={handleReply}
           />
 
-          {/* LISTA DE RESPUESTAS */}
-          <PostRepliesList
-            replies={replies}
-            onLike={handleLike}
-            onBookmark={handleBookmark}
-            onReply={handleReply}
-          />
+          {/* LISTA DE RESPUESTAS (ECOS) */}
+          <Box sx={{ mt: 2 }}>
+            <Typography
+              variant='h6'
+              sx={{ mb: 3, fontWeight: 800, opacity: 0.8 }}
+            >
+              Ecos de este pensamiento
+            </Typography>
+            <PostRepliesList
+              replies={replies}
+              onLike={handleLike}
+              onBookmark={handleBookmark}
+              onReply={handleReply}
+            />
+          </Box>
 
           {hasMore && (
-            <Box sx={{ p: 2, textAlign: 'center' }}>
-              <Button
+            <Box sx={{ p: 4, textAlign: 'center' }}>
+              <Box
+                component='button'
                 onClick={loadMoreReplies}
                 disabled={loadingMore}
-                variant='text'
-                size='small'
-                sx={{ fontWeight: 600 }}
+                sx={{
+                  bgcolor: 'transparent',
+                  border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                  px: 4,
+                  py: 1,
+                  borderRadius: '50px',
+                  color: 'text.secondary',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.primary.main, 0.05),
+                    color: 'primary.main',
+                  },
+                }}
               >
-                {loadingMore ? (
-                  <CircularProgress size={16} />
-                ) : (
-                  'Mostrar más respuestas'
-                )}
-              </Button>
+                {loadingMore ? 'Sincronizando ecos...' : 'Explorar más ecos'}
+              </Box>
             </Box>
           )}
-
-          {/* Action Button / Input */}
-          <CreatePostAction
-            onSave={handleSaveReply}
-            loading={false}
-            replyToPost={replyToPost}
-            onCloseReply={() => setReplyToPost(null)}
-          />
         </Box>
 
-        {/* COLUMNA LATERAL (Opcional en Detail, para consistencia) */}
-        {!isMobile && (
-          <Box
-            sx={{
-              width: '350px',
-              p: 2,
-              display: { xs: 'none', lg: 'block' },
-            }}
-          >
-            <HomeSidebar />
-          </Box>
-        )}
+        {/* Action Modal (Aura Composer) */}
+        <CreatePostAction
+          onSave={handleSaveReply}
+          loading={false}
+          replyToPost={replyToPost}
+          onCloseReply={() => setReplyToPost(null)}
+        />
       </Box>
     </Fade>
   )
 }
+
+export default PostDetail

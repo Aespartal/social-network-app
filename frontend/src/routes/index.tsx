@@ -1,6 +1,5 @@
 import { lazy } from 'react'
 import { RouteObject } from 'react-router-dom'
-import { Role } from '@/enums/role.enum'
 
 // Eager loading para páginas principales
 import Home from '@/pages/Home'
@@ -26,6 +25,9 @@ const Search = lazy(() =>
 const Explore = lazy(() =>
   import('@/pages/Explore').then(m => ({ default: m.Explore }))
 )
+const ExplorePeople = lazy(() =>
+  import('@/pages/ExplorePeople').then(m => ({ default: m.ExplorePeople }))
+)
 const Notifications = lazy(() =>
   import('@/pages/social/NotificationsPage').then(m => ({
     default: m.NotificationsPage,
@@ -34,6 +36,7 @@ const Notifications = lazy(() =>
 
 // Guards
 import { RoleGuard } from '@/guards/RoleGuard'
+import { Role } from '@/enums/role.enum'
 
 export const routes: RouteObject[] = [
   {
@@ -53,7 +56,7 @@ export const routes: RouteObject[] = [
     element: <About />,
   },
   {
-    path: '/profile/:username',
+    path: '/profile/:username/:section?',
     element: <Profile />,
   },
   {
@@ -67,6 +70,10 @@ export const routes: RouteObject[] = [
   {
     path: '/explore',
     element: <Explore />,
+  },
+  {
+    path: '/explore/people',
+    element: <ExplorePeople />,
   },
   {
     path: '/notifications',

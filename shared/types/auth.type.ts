@@ -1,4 +1,5 @@
-import { Role } from "../../backend/src/enums/role.enum";
+import { Role } from "../enums/role.enum";
+export { Role };
 
 export interface RegisterRequest {
   email: string;
@@ -19,6 +20,8 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   role: Role;
+  totalXP: number;
+  currentLevel: number;
   _count: {
     followers: number;
     following: number;

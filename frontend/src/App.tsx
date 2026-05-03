@@ -1,20 +1,30 @@
-import { Suspense } from 'react'
-import { useRoutes } from 'react-router-dom'
-import { CircularProgress, Box } from '@mui/material'
+import { Suspense, useEffect } from 'react'
+import { useRoutes, useLocation } from 'react-router-dom'
+import { Box, Loading } from '@/components/ui'
 import { Layout } from '@/components/MuiLayout'
 import { ThemeProvider } from '@/theme/ThemeProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { NotificationProvider } from '@/context/NotificationContext'
+import { NotificationProvider } from '@/contexts/NotificationContext'
 import { routes } from '@/routes'
+
+// Componente para restaurar el scroll suavemente al navegar
+const ScrollToTop = () => {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
 
 const LoadingFallback = () => (
   <Box
     display='flex'
     justifyContent='center'
     alignItems='center'
-    minHeight='80vh'
+    minHeight='100vh'
+    // sx={{ bgcolor: 'background.default' }}
   >
-    <CircularProgress />
+    <Loading text='Entrando en el Aura...' size='lg' />
   </Box>
 )
 
@@ -26,6 +36,7 @@ function App() {
       <AuthProvider>
         <NotificationProvider>
           <Layout>
+            <ScrollToTop />
             <Suspense fallback={<LoadingFallback />}>{element}</Suspense>
           </Layout>
         </NotificationProvider>

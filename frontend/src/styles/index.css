@@ -22,7 +22,14 @@ body {
   width: 100%;
   min-height: 100vh;
   overflow-y: scroll;
-  background-color: var(--color-bg-default);
+  /* Enhanced Aura Background Effect */
+  /* background-image: 
+    radial-gradient(circle at 10% 20%, rgba(58, 120, 50, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(58, 120, 50, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(58, 120, 50, 0.05) 0%, transparent 60%),
+    radial-gradient(circle at 30% 80%, rgba(224, 255, 79, 0.02) 0%, transparent 30%),
+    url("https://www.transparenttextures.com/patterns/stardust.png"); */
+  background-attachment: fixed;
   color: var(--color-text-primary);
 }
 

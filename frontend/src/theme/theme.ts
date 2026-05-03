@@ -14,49 +14,50 @@ import { tokens, themeColors, semanticColors } from './tokens'
 // ============================================================================
 
 const baseTypography: ThemeOptions['typography'] = {
-  fontFamily: [
-    'Inter',
-    '-apple-system',
-    'BlinkMacSystemFont',
-    '"Segoe UI"',
-    'Roboto',
-    'sans-serif',
-  ].join(','),
+  fontFamily: ['Inter', 'Montserrat', 'Lora', 'sans-serif'].join(','),
   h1: {
+    fontFamily: 'Montserrat, sans-serif',
     fontSize: tokens.fontSize['4xl'],
     fontWeight: tokens.fontWeight.bold,
     letterSpacing: tokens.letterSpacing.tight,
     lineHeight: tokens.lineHeight.tight,
   },
   h2: {
+    fontFamily: 'Montserrat, sans-serif',
     fontSize: tokens.fontSize['3xl'],
     fontWeight: tokens.fontWeight.bold,
     letterSpacing: tokens.letterSpacing.tight,
     lineHeight: tokens.lineHeight.tight,
   },
   h3: {
+    fontFamily: 'Montserrat, sans-serif',
     fontSize: tokens.fontSize['2xl'],
     fontWeight: tokens.fontWeight.semibold,
     letterSpacing: tokens.letterSpacing.tight,
   },
   h4: {
+    fontFamily: 'Montserrat, sans-serif',
     fontSize: tokens.fontSize.xl,
     fontWeight: tokens.fontWeight.semibold,
     letterSpacing: tokens.letterSpacing.tight,
   },
   h5: {
+    fontFamily: 'Montserrat, sans-serif',
     fontSize: tokens.fontSize.lg,
     fontWeight: tokens.fontWeight.semibold,
   },
   h6: {
+    fontFamily: 'Montserrat, sans-serif',
     fontSize: tokens.fontSize.base,
     fontWeight: tokens.fontWeight.semibold,
   },
   body1: {
+    fontFamily: 'Lora, serif',
     fontSize: tokens.fontSize.base,
     lineHeight: tokens.lineHeight.relaxed,
   },
   body2: {
+    fontFamily: 'Lora, serif',
     fontSize: tokens.fontSize.sm,
     lineHeight: tokens.lineHeight.normal,
   },
@@ -186,7 +187,7 @@ export const lightTheme = createTheme(
     },
     typography: baseTypography,
     shape: {
-      borderRadius: tokens.borderRadius.md,
+      borderRadius: 8,
     },
     components: {
       ...sharedComponents,
@@ -265,7 +266,7 @@ export const darkTheme = createTheme(
     },
     typography: baseTypography,
     shape: {
-      borderRadius: tokens.borderRadius.md,
+      borderRadius: 8,
     },
     components: {
       ...sharedComponents,

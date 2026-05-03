@@ -87,18 +87,20 @@ export const letterSpacing = {
 // ============================================================================
 
 export const semanticColors = {
-  /** Azul Twitter/X primario */
-  primary: '#1d9bf0',
-  /** Like/Rosa */
-  like: '#f91880',
-  /** Retweet/Verde */
+  /** Verde Bosque - Transmite calma */
+  primary: '#3A7832', // Un poco más vibrante para contraste
+  /** Lima Eléctrico - Para acciones disruptivas (Aura) */
+  accent: '#E0FF4F',
+  /** Like/Rosa Aura */
+  like: '#FF4D80',
+  /** Retweet/Verde Sincronía */
   retweet: '#00ba7c',
   /** Verificado */
-  verified: '#1d9bf0',
+  verified: '#4D9FFF',
   /** Error */
-  error: '#f4212e',
+  error: '#FF4D4D',
   /** Warning */
-  warning: '#ffad1f',
+  warning: '#FFAD1F',
   /** Success */
   success: '#00ba7c',
   /** Información */
@@ -126,17 +128,17 @@ export const themeColors = {
   },
   dark: {
     background: {
-      default: '#000000',
-      paper: '#16181c',
-      elevated: '#202327',
+      default: '#05080A', // Midnight Abyss
+      paper: '#0D1216', // Obsidian Deep
+      elevated: '#161B22', // Charcoal Night
     },
     text: {
-      primary: '#e7e9ea',
-      secondary: '#71767b',
-      disabled: '#56595c',
+      primary: '#F0F4F8', // Starlight White
+      secondary: 'rgba(240, 244, 248, 0.65)',
+      disabled: 'rgba(240, 244, 248, 0.4)',
     },
-    border: '#2f3336',
-    divider: '#2f3336',
+    border: 'rgba(255, 255, 255, 0.06)',
+    divider: 'rgba(255, 255, 255, 0.06)',
   },
 } as const
 
@@ -148,17 +150,19 @@ export const borderRadius = {
   /** 0px */
   none: 0,
   /** 4px - Muy suave */
-  sm: 4,
+  sm: '4px',
   /** 8px - Suave */
-  md: 8,
+  md: '8px',
   /** 12px - Moderado */
-  lg: 12,
+  lg: '12px',
   /** 16px - Pronunciado */
-  xl: 16,
+  xl: '16px',
   /** 24px - Muy pronunciado (botones) */
-  '2xl': 24,
+  '2xl': '24px',
+  /** 32px - Radio característico de Aura (Cards principales) */
+  aura: '32px',
   /** 9999px - Completo */
-  full: 9999,
+  full: '9999px',
 } as const
 
 export const borderWidth = {
@@ -176,7 +180,7 @@ export const shadows = {
   none: 'none',
   card: {
     light: '0 4px 12px rgba(0, 0, 0, 0.03)',
-    dark: 'none',
+    dark: '0 4px 20px rgba(0, 0, 0, 0.4)',
   },
   hover: {
     light: '0 8px 24px rgba(0, 0, 0, 0.08)',

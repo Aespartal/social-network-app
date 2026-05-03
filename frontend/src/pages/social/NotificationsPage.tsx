@@ -1,30 +1,35 @@
 import React, { useEffect } from 'react'
 import {
   Box,
-  Typography,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Divider,
+  Text as Typography,
   IconButton,
   Tooltip,
-  Paper,
-  CircularProgress,
+  Loading,
   Button,
-} from '@mui/material'
+} from '@/components/ui'
 import { OptimizedAvatar } from '@/components/common'
 import {
   DoneAll as DoneAllIcon,
-  Favorite as FavoriteIcon,
-  ChatBubble as ReplyIcon,
-  PersonAdd as FollowIcon,
+  FavoriteBorder as LikeIcon,
+  ChatBubbleOutline as ReplyIcon,
+  PersonAddOutlined as FollowIcon,
   AlternateEmail as MentionIcon,
+  EmojiEventsOutlined as AchievementIcon,
 } from '@mui/icons-material'
-import { useNotifications } from '@/context/NotificationContext'
+import { useNotifications } from '@/contexts/NotificationContext'
 import { formatTimeAgo } from '@/utils/date'
 import { useNavigate } from 'react-router-dom'
 import { Notification } from 'social-network-app-shared/types/social.type'
+
+// Estilos Zen
+import {
+  NotificationsContainer,
+  SyncHeader,
+  SyncTitle,
+  NotificationCard,
+  SyncMessage,
+  SyncIconBox,
+} from './Notifications.styles'
 
 export const NotificationsPage: React.FC = () => {
   const {
@@ -44,29 +49,38 @@ export const NotificationsPage: React.FC = () => {
   const getIcon = (type: string) => {
     switch (type) {
       case 'LIKE':
-        return <FavoriteIcon sx={{ color: 'error.main' }} />
+        return <LikeIcon fontSize='small' />
       case 'REPLY':
-        return <ReplyIcon sx={{ color: 'primary.main' }} />
+        return <ReplyIcon fontSize='small' />
       case 'FOLLOW':
-        return <FollowIcon sx={{ color: 'info.main' }} />
+        return <FollowIcon fontSize='small' />
       case 'MENTION':
-        return <MentionIcon sx={{ color: 'warning.main' }} />
+        return <MentionIcon fontSize='small' />
+      case 'ACHIEVEMENT':
+        return <AchievementIcon fontSize='small' />
       default:
         return null
     }
   }
 
-  const getMessage = (notification: Notification) => {
-    const issuerName = <strong>{notification.issuer.name}</strong>
+  const getSyncMessage = (notification: Notification) => {
+    const issuer = <strong>{notification.issuer.name}</strong>
     switch (notification.type) {
       case 'LIKE':
-        return <>{issuerName} le dio me gusta a tu post</>
+        return <>Tu pensamiento ha resonado con {issuer}</>
       case 'REPLY':
-        return <>{issuerName} respondió a tu post</>
+        return <>{issuer} ha expandido tu idea</>
       case 'FOLLOW':
-        return <>{issuerName} comenzó a seguirte</>
+        return <>Has entrado en sincronía con {issuer}</>
       case 'MENTION':
-        return <>{issuerName} te mencionó en un post</>
+        return <>{issuer} ha invocado tu presencia</>
+      case 'ACHIEVEMENT':
+        return (
+          <>
+            Tu Aura ha evolucionado:{' '}
+            <strong>{notification.metadata?.achievementName}</strong>
+          </>
+        )
       default:
         return ''
     }
@@ -74,6 +88,10 @@ export const NotificationsPage: React.FC = () => {
 
   const handleNotificationClick = (notification: Notification) => {
     markOneAsRead(notification.id)
+    if (notification.type === 'ACHIEVEMENT') {
+      navigate(`/profile/${notification.issuer.username}/achievements`)
+      return
+    }
     if (notification.postId) {
       navigate(`/post/${notification.postId}`)
     } else if (notification.type === 'FOLLOW') {
@@ -82,126 +100,122 @@ export const NotificationsPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', p: 2 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-        }}
-      >
-        <Typography variant='h5' fontWeight='bold'>
-          Notificaciones
-        </Typography>
-        <Tooltip title='Marcar todas como leídas'>
-          <IconButton onClick={markAllAsRead}>
+    <NotificationsContainer>
+      <SyncHeader>
+        <SyncTitle>
+          <Typography variant='h1' component='h1'>
+            Registro de Sincronicidad
+          </Typography>
+          <Typography variant='body1'>
+            Momentos en los que tu Aura ha resonado con otros.
+          </Typography>
+        </SyncTitle>
+        <Tooltip title='Marcar todos como leídos'>
+          <IconButton
+            onClick={markAllAsRead}
+            sx={{
+              bgcolor: 'action.hover',
+              '&:hover': { bgcolor: 'primary.main', color: 'white' },
+            }}
+          >
             <DoneAllIcon />
           </IconButton>
         </Tooltip>
-      </Box>
+      </SyncHeader>
 
-      <Paper variant='outlined' sx={{ borderRadius: 2, overflow: 'hidden' }}>
-        <List sx={{ p: 0 }}>
-          {notifications.map((notification, index) => {
-            if (!notification || !notification.issuer) return null
+      <Box sx={{ mt: 4 }}>
+        {notifications.map(notification => {
+          if (!notification || !notification.issuer) return null
 
-            return (
-              <React.Fragment key={notification.id}>
-                <ListItem
-                  alignItems='flex-start'
-                  onClick={() => handleNotificationClick(notification)}
+          return (
+            <NotificationCard
+              key={notification.id}
+              unread={!notification.read}
+              onClick={() => handleNotificationClick(notification)}
+            >
+              <Box sx={{ position: 'relative' }}>
+                <OptimizedAvatar
+                  src={notification.issuer.avatar}
+                  alt={notification.issuer.name}
+                  size={56}
+                />
+                <Box
                   sx={{
-                    cursor: 'pointer',
-                    bgcolor: notification.read ? 'transparent' : 'action.hover',
-                    '&:hover': { bgcolor: 'action.selected' },
-                    transition: 'background-color 0.2s',
+                    position: 'absolute',
+                    bottom: -4,
+                    right: -4,
+                    bgcolor: 'background.paper',
+                    borderRadius: '50%',
+                    p: 0.5,
+                    display: 'flex',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                   }}
                 >
-                  <ListItemAvatar sx={{ minWidth: 56 }}>
-                    <Box sx={{ position: 'relative' }}>
-                      <OptimizedAvatar
-                        src={notification.issuer.avatar}
-                        alt={notification.issuer.name || 'Usuario'}
-                        size='md'
-                      />
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          bottom: -4,
-                          right: -4,
-                          bgcolor: 'background.paper',
-                          borderRadius: '50%',
-                          p: 0.2,
-                          display: 'flex',
-                        }}
-                      >
-                        {getIcon(notification.type)}
-                      </Box>
-                    </Box>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={getMessage(notification)}
-                    secondary={
-                      <Box
-                        component='span'
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          mt: 0.5,
-                        }}
-                      >
-                        {notification.post && (
-                          <Typography
-                            variant='body2'
-                            color='text.secondary'
-                            noWrap
-                            sx={{ fontStyle: 'italic', mb: 0.5 }}
-                          >
-                            "{notification.post.content}"
-                          </Typography>
-                        )}
-                        <Typography variant='caption' color='text.disabled'>
-                          {notification.createdAt
-                            ? formatTimeAgo(new Date(notification.createdAt))
-                            : ''}
-                        </Typography>
-                      </Box>
-                    }
-                  />
-                </ListItem>
-                {index < notifications.length - 1 && <Divider component='li' />}
-              </React.Fragment>
-            )
-          })}
+                  {getIcon(notification.type)}
+                </Box>
+              </Box>
 
-          {notifications.length === 0 && !loading && (
-            <Box sx={{ p: 4, textAlign: 'center' }}>
-              <Typography color='text.secondary'>
-                No tienes notificaciones aún.
-              </Typography>
-            </Box>
-          )}
+              <SyncMessage>
+                <Typography variant='body1'>
+                  {getSyncMessage(notification)}
+                </Typography>
 
-          {loading && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress size={24} />
-            </Box>
-          )}
+                {notification.post && (
+                  <Typography variant='body2' color='text.secondary'>
+                    "{notification.post.content}"
+                  </Typography>
+                )}
 
-          {hasMore && !loading && (
-            <Box sx={{ p: 2, textAlign: 'center' }}>
-              <Button
-                onClick={() =>
-                  fetchNotifications(notifications[notifications.length - 1].id)
-                }
-              >
-                Cargar más
-              </Button>
-            </Box>
-          )}
-        </List>
-      </Paper>
-    </Box>
+                <Typography
+                  variant='caption'
+                  color='text.disabled'
+                  sx={{ mt: 1, display: 'block' }}
+                >
+                  {notification.createdAt
+                    ? formatTimeAgo(new Date(notification.createdAt))
+                    : ''}
+                </Typography>
+              </SyncMessage>
+
+              <SyncIconBox>{getIcon(notification.type)}</SyncIconBox>
+            </NotificationCard>
+          )
+        })}
+
+        {notifications.length === 0 && !loading && (
+          <Box sx={{ py: 12, textAlign: 'center', opacity: 0.5 }}>
+            <Typography
+              variant='h5'
+              sx={{ fontFamily: 'Lora, serif', fontStyle: 'italic' }}
+            >
+              Aún no hay ecos en tu lienzo.
+            </Typography>
+            <Typography variant='body2' sx={{ mt: 1 }}>
+              Sigue compartiendo tu aura para generar nuevas sincronías.
+            </Typography>
+          </Box>
+        )}
+
+        {loading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <Loading size='md' />
+          </Box>
+        )}
+
+        {hasMore && !loading && (
+          <Box sx={{ mt: 4, textAlign: 'center' }}>
+            <Button
+              variant='outline'
+              onClick={() =>
+                fetchNotifications(notifications[notifications.length - 1].id)
+              }
+              sx={{ borderRadius: '50px', px: 6 }}
+            >
+              Explorar más sincronías
+            </Button>
+          </Box>
+        )}
+      </Box>
+    </NotificationsContainer>
   )
 }
