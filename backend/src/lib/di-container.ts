@@ -1,7 +1,7 @@
 import { Container } from 'inversify'
 import { TYPES } from './di-types'
 import { prisma } from './prisma'
-import { PrismaClient } from '@/generated/prisma'
+import type { PrismaClient } from '@/generated/prisma'
 import { MemoryCacheService } from './cache.service'
 import { InMemoryEventBus } from './events/in-memory-event-bus'
 import { EventBus } from './events/event-bus.interface'
@@ -56,15 +56,27 @@ import { GetMeHandler } from '../modules/auth/application/queries'
 import { PrismaUserRepository } from '../modules/users/infrastructure/repositories/prisma-user.repository'
 import { PrismaUserQueryProvider } from '../modules/users/infrastructure/services/prisma-user-query.provider'
 import { UserController } from '../modules/users/infrastructure/controllers/user.controller'
+import { AchievementController } from '../modules/achievements/infrastructure/controllers/achievement.controller'
+import {
+  GetUserAchievementsHandler,
+  CheckAchievementHandler,
+} from '../modules/achievements/application'
+import { GamificationService } from '../modules/achievements/domain/services/gamification.service'
+import { AchievementNotificationSubscriber } from '../modules/achievements/application/subscribers/achievement-notification.subscriber'
+import { SearchUsersHandler } from '../modules/users/application/queries'
 import {
   FollowUserHandler,
   UnfollowUserHandler,
-} from '../modules/users/application/commands'
-import {
+  UpdateUserHandler,
+  CreateUserHandler,
+  DeleteUserUseCase,
   GetFollowersHandler,
   GetFollowingHandler,
   IsFollowingHandler,
-} from '../modules/users/application/queries'
+  GetUserByUsernameHandler,
+  GetSuggestedUsersHandler,
+  GetUserMeHandler,
+} from '../modules/users/application'
 
 // --- NOTIFICATIONS ---
 import { PrismaNotificationRepository } from '../modules/notifications/infrastructure/repositories/prisma-notification.repository'
@@ -74,6 +86,9 @@ import { MarkAsReadHandler } from '../modules/notifications/application/commands
 import { GetNotificationsHandler } from '../modules/notifications/application/queries/get-notifications/get-notifications.handler'
 import { NotificationService } from '../modules/notifications/application/services/notification.service'
 import { NotificationListener } from '../modules/notifications/infrastructure/services/notification-listener'
+
+// --- ADMIN ---
+import { AdminController } from '../modules/admin/infrastructure/controllers/admin.controller'
 
 const container = new Container()
 
@@ -148,10 +163,44 @@ container
   .inSingletonScope()
 container.bind(TYPES.FollowUserHandler).to(FollowUserHandler)
 container.bind(TYPES.UnfollowUserHandler).to(UnfollowUserHandler)
+container.bind(TYPES.UpdateUserHandler).to(UpdateUserHandler)
+container.bind(TYPES.CreateUserHandler).to(CreateUserHandler)
+container.bind(TYPES.DeleteUserUseCase).to(DeleteUserUseCase)
 container.bind(TYPES.GetFollowersHandler).to(GetFollowersHandler)
 container.bind(TYPES.GetFollowingHandler).to(GetFollowingHandler)
 container.bind(TYPES.IsFollowingHandler).to(IsFollowingHandler)
+container.bind(TYPES.GetUserByUsernameHandler).to(GetUserByUsernameHandler)
+container.bind(TYPES.GetSuggestedUsersHandler).to(GetSuggestedUsersHandler)
+container.bind(TYPES.GetUserMeHandler).to(GetUserMeHandler)
+container.bind(TYPES.SearchUsersHandler).to(SearchUsersHandler)
+container.bind(TYPES.GetUserAchievementsHandler).to(GetUserAchievementsHandler)
+container.bind(TYPES.CheckAchievementHandler).to(CheckAchievementHandler)
+container
+  .bind(TYPES.GamificationService)
+  .to(GamificationService)
+  .inSingletonScope()
+container
+  .bind(TYPES.AchievementNotificationSubscriber)
+  .to(AchievementNotificationSubscriber)
+  .inSingletonScope()
+container.bind(TYPES.AchievementController).to(AchievementController)
 container.bind<UserController>(TYPES.UserController).to(UserController)
+
+// --- VISITS BINDINGS ---
+import { PrismaVisitRepository } from '../modules/visits/infrastructure/repositories/prisma-visit.repository'
+import { VisitController } from '../modules/visits/infrastructure/controllers/visit.controller'
+import {
+  RecordVisitHandler,
+  GetProfileVisitsHandler,
+} from '../modules/visits/application'
+
+container
+  .bind(TYPES.VisitRepository)
+  .to(PrismaVisitRepository)
+  .inSingletonScope()
+container.bind(TYPES.RecordVisitHandler).to(RecordVisitHandler)
+container.bind(TYPES.GetProfileVisitsHandler).to(GetProfileVisitsHandler)
+container.bind<VisitController>(TYPES.VisitController).to(VisitController)
 
 // --- NOTIFICATIONS BINDINGS ---
 container
@@ -171,5 +220,8 @@ container
 container
   .bind<NotificationController>(TYPES.NotificationController)
   .to(NotificationController)
+
+// --- ADMIN BINDINGS ---
+container.bind<AdminController>(TYPES.AdminController).to(AdminController)
 
 export { container }

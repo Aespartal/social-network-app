@@ -49,6 +49,17 @@ export const TYPES = {
   GetFollowersHandler: Symbol.for('GetFollowersHandler'),
   GetFollowingHandler: Symbol.for('GetFollowingHandler'),
   IsFollowingHandler: Symbol.for('IsFollowingHandler'),
+  GetUserByUsernameHandler: Symbol.for('GetUserByUsernameHandler'),
+  GetSuggestedUsersHandler: Symbol.for('GetSuggestedUsersHandler'),
+  GetUserMeHandler: Symbol.for('GetUserMeHandler'),
+  SearchUsersHandler: Symbol.for('SearchUsersHandler'),
+  CreateUserHandler: Symbol.for('CreateUserHandler'),
+  UpdateUserHandler: Symbol.for('UpdateUserHandler'),
+  DeleteUserUseCase: Symbol.for('DeleteUserUseCase'),
+  GetUserAchievementsHandler: Symbol.for('GetUserAchievementsHandler'),
+  CheckAchievementHandler: Symbol.for('CheckAchievementHandler'),
+  GamificationService: Symbol.for('GamificationService'),
+  AchievementController: Symbol.for('AchievementController'),
   UserController: Symbol.for('UserController'),
   CacheService: Symbol.for('CacheService'),
 
@@ -61,4 +72,16 @@ export const TYPES = {
   NotificationService: Symbol.for('NotificationService'),
   EventBus: Symbol.for('EventBus'),
   NotificationListener: Symbol.for('NotificationListener'),
+
+  // Visits
+  VisitRepository: Symbol.for('VisitRepository'),
+  RecordVisitHandler: Symbol.for('RecordVisitHandler'),
+  GetProfileVisitsHandler: Symbol.for('GetProfileVisitsHandler'),
+  VisitController: Symbol.for('VisitController'),
+
+  // Subscribers
+  AchievementNotificationSubscriber: Symbol.for(
+    'AchievementNotificationSubscriber'
+  ),
+  AdminController: Symbol.for('AdminController'),
 }

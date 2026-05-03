@@ -43,3 +43,12 @@ export class UserMentionedEvent implements DomainEvent {
     readonly mentionedUserId: string
   ) {}
 }
+
+export class UserProfileUpdatedEvent implements DomainEvent {
+  readonly occurredOn = new Date()
+
+  constructor(
+    readonly userId: string,
+    readonly eventName: string
+  ) {}
+}
