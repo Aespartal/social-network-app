@@ -56,7 +56,7 @@ export const usePostDetail = (id: string | undefined) => {
   useEffect(() => {
     loadPostData()
     window.scrollTo(0, 0)
-  }, [id])
+  }, [id, loadPostData])
 
   const handleLike = async (postId: string) => {
     await handleToggleLike(postId)

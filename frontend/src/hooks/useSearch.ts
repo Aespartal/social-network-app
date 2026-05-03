@@ -2,52 +2,81 @@ import { useState, useCallback } from 'react'
 import { postService } from '@/services/post.service'
 import { Post } from 'social-network-app-shared/types/social.type'
 
+interface SearchUser {
+  id: string
+  username: string
+  name: string
+  avatar: string | null
+  verified: boolean
+  isFollowing?: boolean
+}
+
 export const useSearch = () => {
   const [posts, setPosts] = useState<Post[]>([])
+  const [users, setUsers] = useState<SearchUser[]>([])
+  const [tags, setTags] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [nextCursor, setNextCursor] = useState<string | undefined>(undefined)
   const [hasMore, setHasMore] = useState(false)
+  const [searchType, setSearchType] = useState<
+    'all' | 'posts' | 'users' | 'tags'
+  >('all')
 
   const search = useCallback(
-    async (query: string, isInitial: boolean = true) => {
+    async (
+      query: string,
+      isInitial: boolean = true,
+      type: 'all' | 'posts' | 'users' | 'tags' = 'all'
+    ) => {
       if (!query.trim()) return
 
       try {
         if (isInitial) {
           setLoading(true)
           setPosts([])
+          setUsers([])
+          setTags([])
         } else {
           setLoadingMore(true)
         }
 
         setError(null)
+        setSearchType(type)
 
-        const response = await postService.searchPosts(query, {
-          cursor: isInitial ? undefined : nextCursor,
+        const response = await postService.search(query, {
+          type,
           limit: 20,
         })
 
-        if (isInitial) {
-          setPosts(response.posts)
-        } else {
-          setPosts(prev => [...prev, ...response.posts])
+        if (type === 'all' || type === 'posts') {
+          if (isInitial) {
+            setPosts(response.posts || [])
+          } else {
+            setPosts(prev => [...prev, ...(response.posts || [])])
+          }
         }
 
-        setNextCursor(response.meta.nextCursor || undefined)
-        setHasMore(response.meta.hasMore)
+        if (type === 'all' || type === 'users') {
+          setUsers(response.users || [])
+        }
+
+        if (type === 'all' || type === 'tags') {
+          setTags(response.tags || [])
+        }
+
+        setHasMore((response.posts?.length || 0) >= 20)
       } catch (err: unknown) {
         setError(
           (err as { response?: { data?: { error?: string } } }).response?.data
-            ?.error || 'Error al buscar posts'
+            ?.error || 'Error al buscar'
         )
       } finally {
         setLoading(false)
         setLoadingMore(false)
       }
     },
-    [nextCursor]
+    []
   )
 
   const handleToggleLike = async (postId: string) => {
@@ -78,10 +107,13 @@ export const useSearch = () => {
 
   return {
     posts,
+    users,
+    tags,
     loading,
     loadingMore,
     error,
     hasMore,
+    searchType,
     search,
     handleToggleLike,
     handleToggleBookmark,

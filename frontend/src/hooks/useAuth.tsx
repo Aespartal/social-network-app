@@ -1,6 +1,6 @@
 import { useContext } from 'react'
 import { AuthContext } from '../contexts/AuthContext'
-import { Role } from '../enums/role.enum'
+import { Role } from '@/enums/role.enum'
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
