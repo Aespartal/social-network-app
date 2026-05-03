@@ -202,11 +202,12 @@ export default fp(async function postsPlugin(fastify: FastifyInstance) {
       {
         schema: {
           tags: ['posts'],
-          summary: 'Buscar posts por texto o hashtag',
+          summary: 'Buscar posts, usuarios, hashtags o temas',
           querystring: {
             type: 'object',
             properties: {
               q: { type: 'string' },
+              type: { type: 'string', enum: ['posts', 'users', 'tags', 'all'] },
               cursor: { type: 'string' },
               limit: { type: 'number' },
             },
@@ -219,7 +220,7 @@ export default fp(async function postsPlugin(fastify: FastifyInstance) {
           },
         },
       },
-      postController.searchPosts.bind(postController)
+      postController.search.bind(postController)
     )
   })
 

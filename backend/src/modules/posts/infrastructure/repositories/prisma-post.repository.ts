@@ -33,49 +33,67 @@ export class PrismaPostRepository implements PostRepository {
    * Uses transaction to ensure atomicity
    */
   async save(post: Post): Promise<Post> {
-    return await this.prisma.$transaction(async tx => {
-      const tagObjects =
-        post.tags.length > 0
-          ? await Promise.all(
-              post.tags.map(name =>
-                tx.tag.upsert({
-                  where: { name: name.toLowerCase().trim() },
-                  update: {},
-                  create: { name: name.toLowerCase().trim() },
-                })
+    console.log('[PrismaPostRepository] Starting save transaction...')
+    try {
+      return await this.prisma.$transaction(async tx => {
+        const tagObjects =
+          post.tags.length > 0
+            ? await Promise.all(
+                post.tags.map(name =>
+                  tx.tag.upsert({
+                    where: { name: name.toLowerCase().trim() },
+                    update: {},
+                    create: { name: name.toLowerCase().trim() },
+                  })
+                )
               )
-            )
-          : []
+            : []
 
-      const prismaPost = await tx.post.create({
-        data: {
-          content: post.content,
-          image: post.image,
-          authorId: post.authorId,
-          parentId: post.parentId,
-          tags:
-            tagObjects.length > 0
-              ? { create: tagObjects.map(t => ({ tagId: t.id })) }
-              : undefined,
-          mentions:
-            post.mentions.length > 0
-              ? { create: post.mentions.map(userId => ({ userId })) }
-              : undefined,
-          country: post.country,
-          city: post.city,
-        },
-        include: COMMAND_POST_INCLUDE,
-      })
+        console.log(
+          `[PrismaPostRepository] Tags processed: ${tagObjects.length}`
+        )
 
-      if (post.parentId) {
-        await tx.post.update({
-          where: { id: post.parentId },
-          data: { repliesCount: { increment: 1 } },
+        const prismaPost = await tx.post.create({
+          data: {
+            content: post.content,
+            image: post.image,
+            authorId: post.authorId,
+            parentId: post.parentId,
+            tags:
+              tagObjects.length > 0
+                ? { create: tagObjects.map(t => ({ tagId: t.id })) }
+                : undefined,
+            mentions:
+              post.mentions.length > 0
+                ? { create: post.mentions.map(userId => ({ userId })) }
+                : undefined,
+            country: post.country,
+            city: post.city,
+            readingTime: post.readingTime,
+          },
+          include: COMMAND_POST_INCLUDE,
         })
-      }
 
-      return PostMapper.toDomain(prismaPost)
-    }, TRANSACTION_OPTIONS.DEFAULT)
+        console.log(
+          `[PrismaPostRepository] Post created in DB: ${prismaPost.id}`
+        )
+
+        if (post.parentId) {
+          console.log(
+            `[PrismaPostRepository] Incrementing repliesCount for parent ${post.parentId}`
+          )
+          await tx.post.update({
+            where: { id: post.parentId },
+            data: { repliesCount: { increment: 1 } },
+          })
+        }
+
+        return PostMapper.toDomain(prismaPost)
+      }, TRANSACTION_OPTIONS.DEFAULT)
+    } catch (error) {
+      console.error('[PrismaPostRepository] Error in save transaction:', error)
+      throw error
+    }
   }
 
   /**

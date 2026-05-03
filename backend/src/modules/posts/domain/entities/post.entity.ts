@@ -40,6 +40,7 @@ export interface PostProps {
   mentions?: string[]
   country?: string | null
   city?: string | null
+  readingTime: number
 }
 
 // Props for creating new Post
@@ -51,6 +52,7 @@ export interface CreatePostProps {
   tags?: string[]
   country?: string | null
   city?: string | null
+  readingTime?: number
 }
 
 /**
@@ -75,6 +77,7 @@ export class Post {
   private _mentions: string[]
   private _country: string | null
   private _city: string | null
+  private _readingTime: number
 
   // Optional relations (loaded by repository when needed)
   private _author?: PostAuthor
@@ -96,6 +99,7 @@ export class Post {
     this._mentions = props.mentions ?? []
     this._country = props.country ?? null
     this._city = props.city ?? null
+    this._readingTime = props.readingTime ?? 1
     this._author = props.author
     this._parent = props.parent
   }
@@ -138,6 +142,9 @@ export class Post {
       mentions: [], // Will be added by application service after resolving usernames
       country: props.country,
       city: props.city,
+      readingTime:
+        props.readingTime ??
+        Post.calculateReadingTime(props.content, !!props.image),
     })
 
     // Auto-extract tags if content exists
@@ -159,6 +166,24 @@ export class Post {
    */
   public static reconstitute(props: PostProps): Post {
     return new Post(props)
+  }
+
+  /**
+   * Calculates estimated reading time in minutes
+   */
+  public static calculateReadingTime(
+    content: string,
+    hasImage: boolean
+  ): number {
+    const wordsPerMinute = 200
+    const words = content.trim().split(/\s+/).length
+    let minutes = Math.ceil(words / wordsPerMinute)
+
+    if (hasImage) {
+      minutes += 1 // Bonus for visual content processing
+    }
+
+    return Math.max(1, minutes)
   }
 
   // ========== Business Methods ==========
@@ -320,6 +345,10 @@ export class Post {
 
   get city(): string | null {
     return this._city
+  }
+
+  get readingTime(): number {
+    return this._readingTime
   }
 
   public setMentions(userIds: string[]): void {

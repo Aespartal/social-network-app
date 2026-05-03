@@ -78,15 +78,27 @@ export class SearchPostsQueryHandler {
     }
 
     // Full Text Search using Postgres native features
-    // We use plainto_tsquery or websearch_to_tsquery for natural language
-    const rawPosts = (await this.prisma.$queryRaw`
+    // We use websearch_to_tsquery for natural language search
+    let rawPosts = (await this.prisma.$queryRaw`
       SELECT p.id
       FROM posts p
-      WHERE p.search_vector @@ websearch_to_tsquery('spanish', ${query})
+      WHERE p."search_vector" @@ websearch_to_tsquery('spanish', ${query})
         AND p."deletedAt" IS NULL
-      ORDER BY ts_rank(p.search_vector, websearch_to_tsquery('spanish', ${query})) DESC, p."likesCount" DESC
+      ORDER BY ts_rank(p."search_vector", websearch_to_tsquery('spanish', ${query})) DESC, p."likesCount" DESC
       LIMIT ${limit + 1}
     `) as { id: string }[]
+
+    // Fallback to ILIKE if FTS returns no results
+    if (rawPosts.length === 0) {
+      rawPosts = (await this.prisma.$queryRaw`
+        SELECT p.id
+        FROM posts p
+        WHERE p."content" ILIKE ${`%${query}%`}
+          AND p."deletedAt" IS NULL
+        ORDER BY p."likesCount" DESC
+        LIMIT ${limit + 1}
+      `) as { id: string }[]
+    }
 
     if (rawPosts.length === 0) {
       return {

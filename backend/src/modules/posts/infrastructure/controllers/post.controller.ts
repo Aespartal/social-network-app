@@ -25,6 +25,7 @@ import {
   ClearRecentSearchesHandler,
   AddRecentSearchCommandHandler,
 } from '../../application'
+import { SearchUsersHandler } from '@/modules/users/application/queries'
 import {
   PostParams,
   GetFeedQuery,
@@ -75,6 +76,8 @@ export class PostController {
     private readonly toggleBookmarkHandler: ToggleBookmarkCommandHandler,
     @inject(TYPES.SearchPostsHandler)
     private readonly searchPostsHandler: SearchPostsQueryHandler,
+    @inject(TYPES.SearchUsersHandler)
+    private readonly searchUsersHandler: SearchUsersHandler,
     @inject(TYPES.GetRecentSearchesHandler)
     private readonly getRecentSearchesHandler: GetRecentSearchesHandler,
     @inject(TYPES.DeleteRecentSearchHandler)
@@ -577,6 +580,73 @@ export class PostController {
       return reply.send({
         success: true,
         data: result,
+      })
+    } catch (error) {
+      return this.handleError(error, reply)
+    }
+  }
+
+  async search(
+    request: FastifyRequest<{
+      Querystring: { q: string; type?: string; cursor?: string; limit?: number }
+    }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { q, type = 'all', limit = 20 } = request.query
+      const userId = request.user?.id
+
+      if (!q || typeof q !== 'string') {
+        return reply.status(400).send({
+          success: false,
+          error: 'Se requiere un término de búsqueda (q)',
+        })
+      }
+
+      const results: {
+        posts?: unknown[]
+        users?: unknown[]
+        tags?: string[]
+      } = {}
+
+      if (type === 'all' || type === 'posts') {
+        const postsResult = await this.searchPostsHandler.execute({
+          query: q,
+          userId,
+          limit,
+        })
+        results.posts = postsResult.posts
+      }
+
+      if (type === 'all' || type === 'users') {
+        const usersResult = await this.searchUsersHandler.execute({
+          query: q,
+          limit,
+          currentUserId: userId,
+        })
+        results.users = usersResult.users
+      }
+
+      if (type === 'all' || type === 'tags') {
+        const tags = await this.prisma.tag.findMany({
+          where: {
+            name: { contains: q, mode: 'insensitive' },
+          },
+          select: { name: true },
+          take: 10,
+        })
+        results.tags = tags.map(t => t.name)
+      }
+
+      if (userId) {
+        this.addRecentSearchHandler
+          .execute({ userId, query: q })
+          .catch(err => console.error('Error saving recent search:', err))
+      }
+
+      return reply.send({
+        success: true,
+        data: results,
       })
     } catch (error) {
       return this.handleError(error, reply)

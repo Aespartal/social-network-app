@@ -47,6 +47,7 @@ export interface PrismaPost {
   deletedAt: Date | null
   country: string | null
   city: string | null
+  readingTime: number
   // Fields for user context (from some queries)
   likes?: Array<{ id: string }>
   bookmarks?: Array<{ id: string }>
@@ -119,6 +120,7 @@ export class PostMapper {
           : false,
       country: entity.country ?? undefined,
       city: entity.city ?? undefined,
+      readingTime: entity.readingTime,
     }
   }
 
@@ -193,6 +195,7 @@ export class PostMapper {
       tags,
       country: prismaPost.country,
       city: prismaPost.city,
+      readingTime: prismaPost.readingTime ?? 1,
     })
   }
 

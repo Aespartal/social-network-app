@@ -4,8 +4,8 @@ import type { PostRepository } from '../../../domain/repositories/post.repositor
 import { PostError } from '../../../domain/errors'
 import { PostResponseDTO } from '../../dto/post.dto'
 import { PostMapper } from '../../../infrastructure/mappers/post.mapper'
-import { Role } from '@/enums/role.enum'
 import type { UpdatePostCommand } from './update-post.command'
+import { Role } from '@/enums/role.enum'
 
 /**
  * UpdatePostCommandHandler - CQRS Command Handler

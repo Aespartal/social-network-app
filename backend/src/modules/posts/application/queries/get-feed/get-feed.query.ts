@@ -1,4 +1,4 @@
-export interface GetFeedQuery {
+export interface GetFeedQueryInput {
   followingUserIds: string[]
   userId: string
   page: {

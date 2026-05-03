@@ -190,6 +190,10 @@ export const PostResponseSchema = Type.Object({
   ),
   country: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   city: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  readingTime: Type.Number({
+    default: 1,
+    description: 'Tiempo estimado de lectura en minutos',
+  }),
 })
 
 /**
