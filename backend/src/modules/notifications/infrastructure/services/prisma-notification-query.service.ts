@@ -60,6 +60,7 @@ export class PrismaNotificationQueryProvider implements NotificationQueryProvide
             createdAt: n.createdAt,
             issuer: n.issuer || undefined,
             post: n.post || undefined,
+            metadata: (n.metadata as Record<string, unknown>) || undefined,
           })
       ),
       meta: {
@@ -109,6 +110,7 @@ export class PrismaNotificationQueryProvider implements NotificationQueryProvide
       createdAt: n.createdAt,
       issuer: n.issuer || undefined,
       post: n.post || undefined,
+      metadata: (n.metadata as Record<string, unknown>) || undefined,
     })
   }
 }

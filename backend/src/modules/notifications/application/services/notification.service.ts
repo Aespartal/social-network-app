@@ -86,4 +86,30 @@ export class NotificationService {
     }
     return created
   }
+
+  async notifyAchievement(
+    recipientId: string,
+    achievementName: string,
+    tier: string,
+    xpEarned: number,
+    badgeSlug?: string
+  ) {
+    const notification = Notification.create({
+      type: NotificationType.ACHIEVEMENT,
+      recipientId,
+      issuerId: recipientId,
+      postId: undefined,
+      metadata: {
+        achievementName,
+        tier,
+        xpEarned,
+        badgeSlug,
+      },
+    })
+    const created = await this.repository.create(notification)
+    if (created) {
+      await this.emitNotification(created)
+    }
+    return created
+  }
 }

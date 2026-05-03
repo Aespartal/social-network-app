@@ -3,6 +3,7 @@ export enum NotificationType {
   REPLY = 'REPLY',
   FOLLOW = 'FOLLOW',
   MENTION = 'MENTION',
+  ACHIEVEMENT = 'ACHIEVEMENT',
 }
 
 export interface NotificationProps {
@@ -21,6 +22,7 @@ export interface NotificationProps {
   post?: {
     content: string
   }
+  metadata?: Record<string, unknown>
 }
 
 export class Notification {
@@ -52,6 +54,9 @@ export class Notification {
   }
   get post() {
     return this.props.post
+  }
+  get metadata() {
+    return this.props.metadata
   }
 
   static create(

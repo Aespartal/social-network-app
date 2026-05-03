@@ -16,6 +16,7 @@ export interface NotificationDTO {
   post?: {
     content: string
   }
+  metadata?: Record<string, unknown>
 }
 
 export class NotificationMapper {
@@ -30,6 +31,7 @@ export class NotificationMapper {
       createdAt: notification.createdAt.toISOString(),
       issuer: notification.issuer,
       post: notification.post,
+      metadata: notification.metadata,
     }
   }
 

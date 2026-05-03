@@ -7,6 +7,7 @@ import {
   UserFollowedEvent,
   UserMentionedEvent,
 } from '@/lib/events/domain-events'
+import { AchievementUnlockedEvent } from '../../../achievements/domain/events/achievement.events'
 import { FastifyInstance } from 'fastify'
 import { NotificationService } from '../../application/services/notification.service'
 import { NotificationQueryProvider } from '../../application/queries/common/notification-query.provider.interface'
@@ -42,6 +43,28 @@ export class NotificationListener {
     this.eventBus.subscribe('user.mentioned', (event: UserMentionedEvent) =>
       this.handleUserMentioned(event)
     )
+    this.eventBus.subscribe(
+      'AchievementUnlockedEvent',
+      (event: AchievementUnlockedEvent) => this.handleAchievementUnlocked(event)
+    )
+  }
+
+  private async handleAchievementUnlocked(event: AchievementUnlockedEvent) {
+    console.log(
+      `[NotificationListener] Achievement unlocked for user ${event.userId}: ${event.achievementName}`
+    )
+    const notification = await this.notificationService.notifyAchievement(
+      event.userId,
+      event.achievementName,
+      event.tierAchieved,
+      event.xpEarned,
+      event.badgeSlug
+    )
+
+    if (notification && notification.id) {
+      const full = await this.queryProvider.getById(notification.id)
+      await this.sendRealTime(event.userId, full || notification)
+    }
   }
 
   private async handlePostLiked(event: PostLikedEvent) {
@@ -52,7 +75,7 @@ export class NotificationListener {
     )
     if (notification && notification.id) {
       const full = await this.queryProvider.getById(notification.id)
-      this.sendRealTime(
+      await this.sendRealTime(
         event.authorId,
         full || { type: 'LIKE', from: event.userId, postId: event.postId }
       )
@@ -67,7 +90,7 @@ export class NotificationListener {
     )
     if (notification && notification.id) {
       const full = await this.queryProvider.getById(notification.id)
-      this.sendRealTime(
+      await this.sendRealTime(
         event.parentAuthorId,
         full || { type: 'REPLY', from: event.authorId, postId: event.postId }
       )
@@ -81,7 +104,7 @@ export class NotificationListener {
     )
     if (notification && notification.id) {
       const full = await this.queryProvider.getById(notification.id)
-      this.sendRealTime(
+      await this.sendRealTime(
         event.followedId,
         full || { type: 'FOLLOW', from: event.followerId }
       )
@@ -96,22 +119,42 @@ export class NotificationListener {
     )
     if (notification && notification.id) {
       const full = await this.queryProvider.getById(notification.id)
-      this.sendRealTime(
+      await this.sendRealTime(
         event.mentionedUserId,
         full || { type: 'MENTION', from: event.issuerId, postId: event.postId }
       )
     }
   }
 
-  private sendRealTime(
+  private async sendRealTime(
     userId: string,
     data: Notification | Record<string, unknown>
   ) {
+    const cleanUserId = userId.trim()
+
+    // Si el socket aún no está listo, esperamos un poco (máximo 3 intentos)
+    let attempts = 0
+    while (!this.server?.io && attempts < 3) {
+      console.log(
+        `⏳ [Socket] Esperando a que el motor de sockets esté listo... (Intento ${attempts + 1})`
+      )
+      await new Promise(resolve => setTimeout(resolve, 500))
+      attempts++
+    }
+
     if (this.server?.io) {
       const payload =
         data instanceof Notification ? NotificationMapper.toDTO(data) : data
 
-      this.server.io.to(`user:${userId}`).emit('notification', payload)
+      console.log(
+        `📤 [Socket] ENVIANDO notificación tipo ${payload.type} a la sala 'user:${cleanUserId}'`
+      )
+
+      this.server.io.to(`user:${cleanUserId}`).emit('notification', payload)
+    } else {
+      console.error(
+        '❌ [Socket] ERROR CRÍTICO: El motor de sockets no está disponible después de varios intentos'
+      )
     }
   }
 }

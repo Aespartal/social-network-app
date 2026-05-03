@@ -14,7 +14,12 @@ export class PrismaNotificationRepository implements NotificationRepository {
   ) {}
 
   async create(notification: Notification): Promise<Notification | void> {
-    if (notification.recipientId === notification.issuerId) return
+    // Los logros son auto-notificados (recipientId === issuerId), así que los permitimos siempre
+    if (
+      notification.recipientId === notification.issuerId &&
+      notification.type !== NotificationType.ACHIEVEMENT
+    )
+      return
 
     const created = await this.prisma.notification.create({
       data: {
@@ -23,6 +28,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
         issuerId: notification.issuerId,
         postId: notification.postId,
         read: false,
+        metadata: notification.metadata as object | undefined,
       },
       include: {
         issuer: {
@@ -50,6 +56,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
       createdAt: created.createdAt,
       issuer: created.issuer,
       post: created.post || undefined,
+      metadata: (created.metadata as Record<string, unknown>) || undefined,
     })
   }
 
