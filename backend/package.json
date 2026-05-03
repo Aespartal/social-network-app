@@ -23,6 +23,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:test": "dotenv -e .env.test -- prisma migrate deploy",
+    "prisma:seed": "tsx src/modules/achievements/infrastructure/seed.ts",
     "prisma:studio": "prisma studio",
     "prisma:studio:test": "dotenv -e .env.test -- prisma studio"
   },

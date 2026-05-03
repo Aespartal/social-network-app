@@ -55,6 +55,9 @@ async function cleanDatabase() {
     'posts',
     'tags',
     'follows',
+    'user_achievements',
+    'achievement_tiers',
+    'achievements',
     'users',
   ]
 
