@@ -100,3 +100,4 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+package-lock.json
