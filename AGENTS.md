@@ -26,12 +26,12 @@ npm run build:shared          # Shared types package
 ### Testing
 ```bash
 npm run test                  # Run all tests
-cd frontend && npm test       # Frontend tests
-cd backend && npm test        # Backend tests
-cd backend && dotenv -e .env.test -- vitest run tests/integration/posts.routes.test.ts  # Single test file
-cd backend && dotenv -e .env.test -- vitest tests/integration/posts.routes.test.ts      # Watch single test
-cd backend && npm run test:ui         # Test UI
-cd backend && npm run test:coverage   # Coverage report
+cd frontend; npm test       # Frontend tests
+cd backend; npm test        # Backend tests
+cd backend; dotenv -e .env.test -- vitest run tests/integration/posts.routes.test.ts  # Single test file
+cd backend; dotenv -e .env.test -- vitest tests/integration/posts.routes.test.ts      # Watch single test
+cd backend; npm run test:ui         # Test UI
+cd backend; npm run test:coverage   # Coverage report
 cd backend && npm run test:e2e        # E2E tests
 ```
 
