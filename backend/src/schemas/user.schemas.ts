@@ -52,6 +52,9 @@ export const UserSchema = Type.Object({
       }),
     })
   ),
+  role: Type.String({ description: 'Rol del usuario' }),
+  currentLevel: Type.Number({ description: 'Nivel actual' }),
+  totalXP: Type.Number({ description: 'XP total' }),
 })
 
 export const UserPrivateSchema = Type.Intersect([
