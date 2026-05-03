@@ -1,64 +1,75 @@
-import { memo } from 'react'
-import { Stack, IconButton, Typography } from '@mui/material'
-import FavoriteIcon from '@mui/icons-material/FavoriteBorder'
-import FavoriteFilledIcon from '@mui/icons-material/Favorite'
-import CommentIcon from '@mui/icons-material/Comment'
-import BookmarkIcon from '@mui/icons-material/BookmarkBorder'
-import BookmarkFilledIcon from '@mui/icons-material/Bookmark'
+import { Typography, Box, IconButton, useTheme } from '@mui/material'
+import {
+  FavoriteBorder as FavoriteIcon,
+  Favorite as FavoriteFilledIcon,
+  ChatBubbleOutline as CommentIcon,
+  BookmarkBorder as BookmarkIcon,
+  Bookmark as BookmarkFilledIcon,
+  IosShare as ShareIcon,
+} from '@mui/icons-material'
 import { Post } from 'social-network-app-shared/types/social.type'
+import type { getPostCardStyles } from '../PostCard.styles'
+
+type PostCardStyles = ReturnType<typeof getPostCardStyles>
 
 interface PostCardActionsProps {
   post: Post
-  onLike: (id: string) => void
-  onBookmark: (id: string) => void
-  onReply: (post: Post) => void
+  onLike: () => void
+  onBookmark: () => void
+  onReply: () => void
+  styles: PostCardStyles
 }
 
-export const PostCardActions = memo(
-  ({ post, onLike, onBookmark, onReply }: PostCardActionsProps) => {
-    return (
-      <Stack direction='row' spacing={2} alignItems='center' sx={{ mt: 1.5 }}>
-        {/* LIKES */}
-        <Stack direction='row' alignItems='center'>
-          <IconButton
-            size='small'
-            onClick={() => onLike(post.id)}
-            color={post.isLiked ? 'error' : 'default'}
-          >
-            {post.isLiked ? (
-              <FavoriteFilledIcon fontSize='small' />
-            ) : (
-              <FavoriteIcon fontSize='small' />
-            )}
-          </IconButton>
-          <Typography variant='caption' color='text.secondary'>
-            {post.likesCount}
-          </Typography>
-        </Stack>
+export const PostCardActions: React.FC<PostCardActionsProps> = ({
+  post,
+  onLike,
+  onBookmark,
+  onReply,
+  styles,
+}) => {
+  const theme = useTheme()
 
-        {/* RESPUESTAS */}
-        <Stack direction='row' alignItems='center'>
-          <IconButton size='small' onClick={() => onReply(post)}>
-            <CommentIcon fontSize='small' />
-          </IconButton>
-          <Typography variant='caption' color='text.secondary'>
-            {post.repliesCount}
-          </Typography>
-        </Stack>
-
-        {/* BOOKMARK */}
-        <IconButton
-          size='small'
-          onClick={() => onBookmark(post.id)}
-          color={post.isBookmarked ? 'primary' : 'default'}
-        >
-          {post.isBookmarked ? (
-            <BookmarkFilledIcon fontSize='small' />
-          ) : (
-            <BookmarkIcon fontSize='small' />
-          )}
+  return (
+    <Box sx={styles.actions} onClick={e => e.stopPropagation()}>
+      <Box
+        sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+      >
+        <IconButton onClick={onReply} sx={styles.actionIcon()}>
+          <CommentIcon />
         </IconButton>
-      </Stack>
-    )
-  }
-)
+        {post.repliesCount > 0 && (
+          <Typography sx={styles.countText}>{post.repliesCount}</Typography>
+        )}
+      </Box>
+
+      <Box
+        sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+      >
+        <IconButton
+          onClick={onLike}
+          sx={styles.actionIcon(
+            post.isLiked ? theme.palette.error.main : undefined
+          )}
+        >
+          {post.isLiked ? <FavoriteFilledIcon /> : <FavoriteIcon />}
+        </IconButton>
+        {post.likesCount > 0 && (
+          <Typography sx={styles.countText}>{post.likesCount}</Typography>
+        )}
+      </Box>
+
+      <IconButton
+        onClick={onBookmark}
+        sx={styles.actionIcon(
+          post.isBookmarked ? theme.palette.primary.main : undefined
+        )}
+      >
+        {post.isBookmarked ? <BookmarkFilledIcon /> : <BookmarkIcon />}
+      </IconButton>
+
+      <IconButton sx={styles.actionIcon()}>
+        <ShareIcon />
+      </IconButton>
+    </Box>
+  )
+}

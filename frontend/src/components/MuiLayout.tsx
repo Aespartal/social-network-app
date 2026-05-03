@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
+import { Box, Text as Typography, IconButton, Paper } from '@/components/ui'
 import {
   Toolbar,
-  Typography,
-  IconButton,
   Drawer,
   SwipeableDrawer,
   List,
@@ -10,15 +9,14 @@ import {
   ListItemIcon,
   ListItemText,
   ListItemButton,
-  Box,
   useMediaQuery,
   useTheme as useMuiTheme,
   Tooltip,
   alpha,
   BottomNavigation,
   BottomNavigationAction,
-  Paper,
   Theme,
+  Badge,
 } from '@mui/material'
 import { OptimizedAvatar } from '@/components/common'
 import {
@@ -33,7 +31,6 @@ import {
   Explore as ExploreIcon,
   Notifications as NotificationsIcon,
 } from '@mui/icons-material'
-import { Badge } from '@mui/material'
 import { useNotifications } from '@/context/NotificationContext'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppTheme } from '@/theme'
@@ -109,12 +106,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         {!isCollapsed && (
           <Typography
-            variant='h6'
-            fontWeight='800'
-            color='primary'
-            sx={{ letterSpacing: 1 }}
+            variant='h5'
+            fontWeight='900'
+            sx={{
+              letterSpacing: '0.15em',
+              color: '#88B04B', // The green color from the design
+              fontFamily: 'Montserrat, sans-serif',
+              ml: 1,
+            }}
           >
-            SOCIAL
+            AURA
           </Typography>
         )}
         {!isMobile && (
@@ -130,11 +131,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </Toolbar>
 
       {/* 2. MENÚ PRINCIPAL */}
-      <List sx={{ px: 1, flexGrow: 1 }}>
+      <List sx={{ px: 2, flexGrow: 1, mt: 2 }}>
         {filteredMenuItems.map(item => {
           const isActive = location.pathname === item.path
+          const isNotifications = item.text === 'Notificaciones'
+
           return (
-            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+            <ListItem key={item.text} disablePadding sx={{ mb: 1.5 }}>
               <Tooltip title={isCollapsed ? item.text : ''} placement='right'>
                 <ListItemButton
                   onClick={() => {
@@ -143,12 +146,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   }}
                   sx={{
                     justifyContent: isCollapsed ? 'center' : 'initial',
-                    borderRadius: 2,
+                    borderRadius: '16px',
                     backgroundColor: isActive
-                      ? alpha(muiTheme.palette.primary.main, 0.1)
+                      ? alpha('#E0FF4F', 0.05)
                       : 'transparent',
-                    color: isActive ? 'primary.main' : 'text.primary',
-                    minHeight: 48,
+                    color: isActive ? '#E0FF4F' : 'text.secondary',
+                    minHeight: 56,
+                    '&:hover': {
+                      backgroundColor: alpha('#E0FF4F', 0.08),
+                      color: '#E0FF4F',
+                    },
                   }}
                 >
                   <ListItemIcon
@@ -156,16 +163,34 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       minWidth: 0,
                       mr: isCollapsed ? 0 : 2,
                       justifyContent: 'center',
-                      color: isActive ? 'primary.main' : 'inherit',
+                      color: isActive ? '#E0FF4F' : 'inherit',
+                      position: 'relative',
                     }}
                   >
                     {item.icon}
+                    {isNotifications && unreadCount > 0 && !isCollapsed && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          right: -DRAWER_WIDTH + 80,
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          bgcolor: '#88B04B',
+                          boxShadow: '0 0 10px rgba(136, 176, 75, 0.6)',
+                        }}
+                      />
+                    )}
                   </ListItemIcon>
                   {!isCollapsed && (
                     <ListItemText
                       primary={item.text}
                       primaryTypographyProps={{
-                        fontWeight: isActive ? 600 : 400,
+                        fontWeight: isActive ? 800 : 500,
+                        fontSize: '1.05rem',
+                        fontFamily: 'Montserrat, sans-serif',
                       }}
                     />
                   )}
@@ -177,14 +202,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </List>
 
       {/* 3. SECCIÓN INFERIOR: AJUSTES Y PERFIL */}
-      <List sx={{ px: 1, py: 2 }}>
+      <List
+        sx={{
+          px: 2,
+          py: 3,
+          borderTop: `1px solid ${alpha(muiTheme.palette.divider, 0.05)}`,
+        }}
+      >
         {/* Toggle de Tema */}
-        <ListItem disablePadding sx={{ mb: 0.5 }}>
+        <ListItem disablePadding sx={{ mb: 1 }}>
           <ListItemButton
             onClick={toggleTheme}
             sx={{
-              borderRadius: 2,
+              borderRadius: '12px',
               justifyContent: isCollapsed ? 'center' : 'initial',
+              minHeight: 48,
+              color: 'text.primary',
             }}
           >
             <ListItemIcon
@@ -192,24 +225,32 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 minWidth: 0,
                 mr: isCollapsed ? 0 : 2,
                 justifyContent: 'center',
+                color: 'inherit',
               }}
             >
               {isDark ? <Brightness7 /> : <Brightness4 />}
             </ListItemIcon>
             {!isCollapsed && (
-              <ListItemText primary={isDark ? 'Modo Claro' : 'Modo Oscuro'} />
+              <ListItemText
+                primary={isDark ? 'Modo Claro' : 'Modo Oscuro'}
+                primaryTypographyProps={{
+                  fontWeight: 600,
+                  fontSize: '0.95rem',
+                }}
+              />
             )}
           </ListItemButton>
         </ListItem>
 
-        {isAuthenticated ? (
+        {isAuthenticated && (
           <ListItem disablePadding>
             <ListItemButton
               onClick={handleLogout}
               sx={{
-                borderRadius: 2,
+                borderRadius: '12px',
                 justifyContent: isCollapsed ? 'center' : 'initial',
-                color: 'error.main',
+                color: '#FF4D4D', // Red color from design
+                minHeight: 48,
               }}
             >
               <ListItemIcon
@@ -217,33 +258,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   minWidth: 0,
                   mr: isCollapsed ? 0 : 2,
                   justifyContent: 'center',
-                  color: 'error.main',
+                  color: 'inherit',
                 }}
               >
                 <Logout />
               </ListItemIcon>
-              {!isCollapsed && <ListItemText primary='Cerrar sesión' />}
-            </ListItemButton>
-          </ListItem>
-        ) : (
-          <ListItem disablePadding>
-            <ListItemButton
-              onClick={() => navigate('/login')}
-              sx={{
-                borderRadius: 2,
-                justifyContent: isCollapsed ? 'center' : 'initial',
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  minWidth: 0,
-                  mr: isCollapsed ? 0 : 2,
-                  justifyContent: 'center',
-                }}
-              >
-                <Logout sx={{ transform: 'rotate(180deg)' }} />
-              </ListItemIcon>
-              {!isCollapsed && <ListItemText primary='Iniciar Sesión' />}
+              {!isCollapsed && (
+                <ListItemText
+                  primary='Cerrar sesión'
+                  primaryTypographyProps={{
+                    fontWeight: 600,
+                    fontSize: '0.95rem',
+                  }}
+                />
+              )}
             </ListItemButton>
           </ListItem>
         )}
@@ -254,17 +282,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <Box
       sx={{
-        display: 'flex',
         minHeight: '100vh',
-        bgcolor: 'background.default',
-        justifyContent: 'center',
+        // bgcolor: 'background.default',
       }}
     >
       <Box
         sx={{
           display: 'flex',
           width: '100%',
-          maxWidth: '1250px',
           position: 'relative',
         }}
       >
@@ -298,7 +323,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 width: DRAWER_WIDTH,
                 borderRight: '1px solid',
                 borderColor: 'divider',
-                bgcolor: 'background.default',
+                // bgcolor: 'background.default',
               },
             }}
           >
@@ -316,9 +341,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 transition: 'width 0.3s',
                 overflowX: 'hidden',
                 borderRight: '1px solid',
-                borderColor: 'divider',
+                borderColor: 'rgba(255, 255, 255, 0.03)',
                 boxShadow: 'none',
-                bgcolor: 'background.default',
+                bgcolor: '#0D1117', // Slightly lighter gray for sidebar as requested
                 position: 'relative',
                 height: '100%',
               },

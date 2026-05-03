@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Box } from '@mui/material'
+import { Box } from '@/components/ui'
 
 interface PostThreadLineProps {
   isThreadParent: boolean

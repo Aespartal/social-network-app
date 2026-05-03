@@ -3,26 +3,22 @@ import {
   Paper,
   InputBase,
   IconButton,
-  alpha,
-  useTheme,
   Box,
   Typography,
   List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  ListItemSecondaryAction,
   ClickAwayListener,
   Fade,
+  useTheme,
 } from '@mui/material'
-import {
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  History as HistoryIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material'
+import { Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useRecentSearches } from '@/hooks'
+
+// Piezas Atómicas
+import { RecentSearchItem } from './parts/RecentSearchItem'
+
+// Estilos
+import { getSearchBarStyles } from './SearchBar.styles'
 
 interface SearchBarProps {
   placeholder?: string
@@ -30,7 +26,7 @@ interface SearchBarProps {
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
-  placeholder = 'Buscar en SocialNetwork',
+  placeholder = 'Buscar en Aura',
   initialValue = '',
 }) => {
   const [value, setValue] = useState(initialValue)
@@ -42,6 +38,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const { recentSearches, deleteSearch, clearAll, refresh } =
     useRecentSearches()
 
+  const styles = getSearchBarStyles(theme, isFocused)
+
   useEffect(() => {
     setValue(initialValue)
   }, [initialValue])
@@ -50,7 +48,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     if (searchTerm.trim()) {
       setIsFocused(false)
       navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`)
-      refresh() // Refresh to get the new search in the list
+      refresh()
     }
   }
 
@@ -66,27 +64,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <ClickAwayListener onClickAway={() => setIsFocused(false)}>
-      <Box sx={{ position: 'relative', width: '100%' }} ref={containerRef}>
+      <Box sx={styles.container} ref={containerRef}>
         <Paper
           component='form'
           onSubmit={onSubmit}
           elevation={0}
-          sx={{
-            p: '2px 4px',
-            display: 'flex',
-            alignItems: 'center',
-            width: '100%',
-            borderRadius: theme.tokens.borderRadius.md,
-            bgcolor:
-              theme.palette.mode === 'dark'
-                ? alpha(theme.palette.divider, 0.1)
-                : '#eff3f4',
-            border: '1px solid',
-            borderColor: isFocused ? 'primary.main' : 'transparent',
-            transition: `all ${theme.tokens.transition.normal}`,
-            zIndex: 11,
-            position: 'relative',
-          }}
+          sx={styles.searchPaper}
         >
           <IconButton
             type='submit'
@@ -96,7 +79,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             <SearchIcon />
           </IconButton>
           <InputBase
-            sx={{ ml: 1, flex: 1, fontSize: '0.95rem' }}
+            sx={styles.input}
             placeholder={placeholder}
             value={value}
             onChange={e => setValue(e.target.value)}
@@ -117,43 +100,16 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         </Paper>
 
         <Fade in={isFocused}>
-          <Paper
-            elevation={4}
-            sx={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              right: 0,
-              mt: 1,
-              zIndex: 10,
-              maxHeight: '400px',
-              overflowY: 'auto',
-              borderRadius: theme.tokens.borderRadius.none,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-              border: '1px solid',
-              borderColor: 'divider',
-            }}
-          >
+          <Paper elevation={4} sx={styles.dropdownPaper}>
             {recentSearches.length > 0 ? (
               <Box>
-                <Box
-                  sx={{
-                    p: 2,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Typography variant='subtitle1' fontWeight={800}>
+                <Box sx={styles.dropdownHeader}>
+                  <Typography variant='subtitle1' sx={styles.dropdownTitle}>
                     Recientes
                   </Typography>
                   <Typography
                     variant='caption'
-                    color='primary'
-                    sx={{
-                      cursor: 'pointer',
-                      '&:hover': { textDecoration: 'underline' },
-                    }}
+                    sx={styles.clearAll}
                     onClick={clearAll}
                   >
                     Borrar todo
@@ -161,39 +117,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 </Box>
                 <List sx={{ p: 0 }}>
                   {recentSearches.map(search => (
-                    <ListItem
-                      component='div'
+                    <RecentSearchItem
                       key={search.id}
-                      sx={{
-                        px: 2,
-                        py: 1.5,
-                        cursor: 'pointer',
-                        '&:hover': { bgcolor: 'action.hover' },
+                      id={search.id}
+                      query={search.query}
+                      onClick={query => {
+                        setValue(query)
+                        handleSearch(query)
                       }}
-                      onClick={() => {
-                        setValue(search.query)
-                        handleSearch(search.query)
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 40 }}>
-                        <HistoryIcon fontSize='small' color='disabled' />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={search.query}
-                        primaryTypographyProps={{
-                          variant: 'body2',
-                          fontWeight: 600,
-                        }}
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton
-                          size='small'
-                          onClick={e => handleDelete(e, search.id)}
-                        >
-                          <CloseIcon fontSize='small' />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
+                      onDelete={handleDelete}
+                      styles={styles}
+                    />
                   ))}
                 </List>
               </Box>
@@ -204,8 +138,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 </Typography>
               </Box>
             )}
-
-            {/* Opcional: Sugerencias o Trending topics aquí */}
           </Paper>
         </Fade>
       </Box>

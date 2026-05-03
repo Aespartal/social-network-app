@@ -1,11 +1,11 @@
-import { Stack, Typography, Divider } from '@mui/material'
+import { Stack, Typography, Box } from '@mui/material'
 import { Post } from 'social-network-app-shared/types/social.type'
-import { StyledPostCard } from './PostCard.styles'
+import { PostCard } from './PostCard'
 
 interface PostRepliesListProps {
   replies: Post[]
-  onLike: (id: string) => Promise<void>
-  onBookmark: (id: string) => Promise<void>
+  onLike: (id: string) => void
+  onBookmark: (id: string) => void
   onReply: (post: Post) => void
 }
 
@@ -17,20 +17,27 @@ export const PostRepliesList = ({
 }: PostRepliesListProps) => {
   if (!replies || replies.length === 0) {
     return (
-      <Typography color='text.secondary' sx={{ p: 4, textAlign: 'center' }}>
-        Aún no hay respuestas. ¡Sé el primero!
-      </Typography>
+      <Box sx={{ p: 8, textAlign: 'center', opacity: 0.5 }}>
+        <Typography
+          variant='body1'
+          sx={{ fontFamily: 'Lora, serif', fontStyle: 'italic' }}
+        >
+          El silencio impera aquí...
+        </Typography>
+        <Typography variant='caption'>
+          Aún no hay ecos de este pensamiento. Sé el primero en expandir la
+          idea.
+        </Typography>
+      </Box>
     )
   }
 
   return (
-    <Stack spacing={0} divider={<Divider sx={{ opacity: 0.6 }} />}>
-      {replies.map((reply, index) => (
-        <StyledPostCard
+    <Stack spacing={2} sx={{ mt: 2 }}>
+      {replies.map(reply => (
+        <PostCard
           key={reply.id}
           post={reply}
-          isThreadChild={true}
-          isThreadParent={index < replies.length - 1}
           onLike={() => onLike(reply.id)}
           onBookmark={() => onBookmark(reply.id)}
           onReply={() => onReply(reply)}

@@ -7,7 +7,6 @@ import {
   TextField,
   Box,
   Typography,
-  Divider,
   IconButton,
   useTheme,
   useMediaQuery,
@@ -24,6 +23,12 @@ import {
   MAX_CHARS,
   MAX_FILE_SIZE_MB,
 } from './constants/posts'
+
+// Piezas Atómicas
+import { PostImagePreview } from './parts'
+
+// Estilos
+import { getCreatePostStyles } from './CreatePost.styles'
 
 export interface CreatePostDialogProps {
   open: boolean
@@ -51,11 +56,14 @@ export const CreatePostDialog = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isWriting, setIsWriting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const charCount = content.length
   const isOverLimit = charCount > MAX_CHARS
   const isNearLimit = MAX_CHARS - charCount <= 20
+
+  const styles = getCreatePostStyles(theme, isWriting)
 
   useEffect(() => {
     return () => {
@@ -94,7 +102,7 @@ export const CreatePostDialog = ({
     if (!content.trim() && !selectedFile) return
     try {
       await onSave(content, selectedFile || undefined)
-      handleInternalClose() // Limpiar tras éxito
+      handleInternalClose()
     } catch {
       setError('No se pudo publicar. Inténtalo de nuevo.')
     }
@@ -107,20 +115,11 @@ export const CreatePostDialog = ({
       fullWidth
       maxWidth='sm'
       fullScreen={isMobile}
-      PaperProps={{
-        sx: { borderRadius: isMobile ? 0 : 3, backgroundImage: 'none' },
-      }}
+      sx={styles.dialog}
     >
-      <DialogTitle
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          py: 1.5,
-        }}
-      >
-        <Typography variant='subtitle1' fontWeight={800}>
-          {parentPost ? 'Responder' : 'Nueva publicación'}
+      <DialogTitle sx={styles.title}>
+        <Typography variant='subtitle1' sx={styles.titleText}>
+          {parentPost ? 'Responder' : 'Aura Composer'}
         </Typography>
         <IconButton
           onClick={handleInternalClose}
@@ -131,47 +130,45 @@ export const CreatePostDialog = ({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent
-        sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}
-      >
+      <DialogContent sx={styles.content}>
         {/* Contexto de respuesta */}
         {parentPost && <ParentPostContext post={parentPost} />}
 
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
+        <Box sx={styles.inputLayout}>
           <OptimizedAvatar src={user?.avatar} alt={user?.name} size='lg' />
           <Box sx={{ flex: 1 }}>
             <TextField
               fullWidth
               multiline
               placeholder={
-                parentPost ? 'Postea tu respuesta' : '¿Qué está pasando?'
+                parentPost ? 'Postea tu respuesta...' : 'Comparte tu aura...'
               }
               variant='standard'
               value={content}
               onChange={e => setContent(e.target.value)}
+              onFocus={() => setIsWriting(true)}
+              onBlur={() => setIsWriting(false)}
               disabled={loading}
               InputProps={{
                 disableUnderline: true,
-                sx: { fontSize: '1.2rem', lineHeight: 1.4, mt: 0.5 },
+                sx: styles.textField['& .MuiInputBase-root'],
               }}
             />
 
-            {/* Previsualización de Imagen */}
+            {/* Previsualización de Imagen (Componente Atómico) */}
             {previewUrl && (
-              <ImagePreview
+              <PostImagePreview
                 url={previewUrl}
                 onRemove={handleRemoveImage}
                 loading={loading}
-                theme={theme}
+                styles={styles}
               />
             )}
           </Box>
         </Box>
       </DialogContent>
 
-      <Divider sx={{ mx: 2, opacity: 0.5 }} />
-
-      <DialogActions sx={{ px: 3, py: 1.5, justifyContent: 'space-between' }}>
+      <DialogActions sx={styles.footer}>
         <Box>
           <input
             type='file'
@@ -193,14 +190,7 @@ export const CreatePostDialog = ({
           {charCount > 0 && (
             <Typography
               variant='caption'
-              color={
-                isOverLimit
-                  ? 'error'
-                  : isNearLimit
-                    ? 'warning.main'
-                    : 'text.secondary'
-              }
-              sx={{ fontWeight: isNearLimit ? 700 : 400 }}
+              sx={styles.charCount(isOverLimit, isNearLimit)}
             >
               {MAX_CHARS - charCount}
             </Typography>
@@ -211,11 +201,7 @@ export const CreatePostDialog = ({
             disabled={
               loading || (!content.trim() && !selectedFile) || isOverLimit
             }
-            sx={{
-              borderRadius: theme.tokens.borderRadius.sm,
-              px: 3,
-              fontWeight: 700,
-            }}
+            sx={styles.submitButton}
           >
             {loading ? (
               <CircularProgress size={20} color='inherit' />
@@ -237,75 +223,43 @@ export const CreatePostDialog = ({
   )
 }
 
+/**
+ * Contexto del post padre (Mantenido internamente por simplicidad visual en el modal)
+ */
 const ParentPostContext = ({ post }: { post: Post }) => (
-  <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
-    <Box
-      sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-    >
+  <Box
+    sx={{
+      mb: 3,
+      p: 2,
+      bgcolor: 'action.hover',
+      borderRadius: '16px',
+      border: '1px solid divider',
+    }}
+  >
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
       <OptimizedAvatar
         src={post.author.avatar}
         alt={post.author.name}
-        size='lg'
+        size='xs'
       />
-      <Box sx={{ width: 2, flex: 1, bgcolor: 'divider', my: 1 }} />
-    </Box>
-    <Box sx={{ pt: 0.5 }}>
-      <Typography variant='subtitle2' fontWeight={700}>
-        @{post.author.username}
-      </Typography>
-      <Typography variant='body2' color='text.secondary' sx={{ mt: 0.5 }}>
-        {post.content}
+      <Typography variant='caption' fontWeight={700} color='text.secondary'>
+        En respuesta a @{post.author.username}
       </Typography>
     </Box>
-  </Box>
-)
-
-const ImagePreview = ({
-  url,
-  onRemove,
-  loading,
-  theme,
-}: {
-  url: string
-  onRemove: () => void
-  loading: boolean
-  theme: { tokens: { borderRadius: { md: number } } }
-}) => (
-  <Box
-    sx={{
-      mt: 2,
-      position: 'relative',
-      borderRadius: theme.tokens.borderRadius.md,
-      overflow: 'hidden',
-      border: '1px solid',
-      borderColor: 'divider',
-    }}
-  >
-    <IconButton
-      onClick={onRemove}
-      disabled={loading}
+    <Typography
+      variant='body2'
       sx={{
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        bgcolor: 'rgba(0,0,0,0.7)',
-        color: 'white',
-        '&:hover': { bgcolor: 'rgba(0,0,0,0.9)' },
+        fontFamily: 'Lora, serif',
+        fontStyle: 'italic',
+        opacity: 0.7,
+        lineHeight: 1.5,
+        display: '-webkit-box',
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
       }}
-      size='small'
     >
-      <CloseIcon fontSize='small' />
-    </IconButton>
-    <Box
-      component='img'
-      src={url}
-      alt='Preview'
-      sx={{
-        width: '100%',
-        maxHeight: 350,
-        objectFit: 'cover',
-        display: 'block',
-      }}
-    />
+      "{post.content}"
+    </Typography>
   </Box>
 )

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
-import { List, Typography, Paper, Box, Divider, useTheme } from '@mui/material'
+import { Box, Text as Typography } from '@/components/ui'
+import { List, Paper, Divider, useTheme } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { User } from 'social-network-app-shared/types/auth.type'
 import { profileService } from '@/services'

@@ -1,228 +1,102 @@
 import { useState, memo } from 'react'
 import { Post } from 'social-network-app-shared/types/social.type'
-import { Link, useNavigate } from 'react-router-dom'
-import { Box, Typography, useTheme } from '@mui/material'
-
-import { Card, CardContent } from '@/components/ui'
+import { useNavigate } from 'react-router-dom'
+import { Box, Card } from '@/components/ui'
+import { useTheme } from '@mui/material'
+import type { SxProps, Theme } from '@mui/material/styles'
 import { ImageModal } from '@/components/common/ImageModal'
-import { OptimizedImage } from '@/components/common/OptimizedImage'
-import { OptimizedAvatar } from '@/components/common/OptimizedAvatar'
-import { formatTimeAgo } from '@/utils/date'
 
-// Sub-piezas
-import { PostCardHeader } from './parts/PostCardHeader'
-import { PostCardActions } from './parts/PostCardActions'
-import { PostThreadLine } from './parts/PostThreadLine'
+// Sub-piezas Atómicas Zen
+import {
+  PostCardHeader,
+  PostCardActions,
+  PostCardContent,
+  PostCardFooter,
+} from './parts'
+
+// Estilos
+import { getPostCardStyles } from './PostCard.styles'
 
 export interface PostCardProps {
   post: Post
   onLike: (postId: string) => void
   onBookmark: (postId: string) => void
   onReply: (post: Post) => void
-  isThreadParent?: boolean
-  isThreadChild?: boolean
   className?: string
-  sx?: object
+  sx?: SxProps<Theme>
 }
 
+/**
+ * PostCard: Zen Edition
+ * Un diseño biofílico que prioriza el contenido y la calma.
+ */
 export const PostCard = memo(
-  ({
-    post,
-    onLike,
-    onBookmark,
-    onReply,
-    isThreadParent = false,
-    isThreadChild = false,
-    className,
-    sx,
-  }: PostCardProps) => {
+  ({ post, onLike, onBookmark, onReply, className, sx }: PostCardProps) => {
     const navigate = useNavigate()
     const theme = useTheme()
     const [imageModalOpen, setImageModalOpen] = useState(false)
 
+    const getAuraEffect = () => {
+      const impact = post.likesCount || 0
+      if (impact === 0) return 'none'
+      const intensity = Math.min(impact * 0.02, 0.2) // Un poco más vibrante en el nuevo diseño
+      const accentColor = '#E0FF4F'
+      const hexIntensity = Math.floor(intensity * 255)
+        .toString(16)
+        .padStart(2, '0')
+      return `radial-gradient(circle at bottom right, ${accentColor}${hexIntensity}, transparent 70%)`
+    }
+
+    const auraStyle = getAuraEffect()
+    const styles = getPostCardStyles(theme, auraStyle)
+
     const handleCardClick = (e: React.MouseEvent) => {
       const target = e.target as HTMLElement
-      if (target.closest('button') || target.closest('a')) return
+      if (
+        target.closest('button') ||
+        target.closest('a') ||
+        target.closest('img')
+      )
+        return
       if (globalThis.location.pathname === `/post/${post.id}`) return
       navigate(`/post/${post.id}`)
     }
 
     return (
-      <Box sx={{ position: 'relative', width: '100%' }}>
+      <Box sx={styles.container}>
         <Card
           variant='outlined'
           onClick={handleCardClick}
           className={className}
-          sx={{
-            ...sx,
-            border: 'none',
-            borderBottom: isThreadParent ? 'none' : '1px solid',
-            borderColor: 'divider',
-          }}
+          sx={styles.card(sx)}
         >
-          <CardContent
-            sx={{
-              pb: 0,
-              pt: isThreadChild ? 1 : 2,
-              px: 0,
-              '&:last-child': { pb: 0 },
+          {/* 1. Cabecera Zen (Contexto y Tiempo de Lectura) */}
+          <PostCardHeader post={post} styles={styles} />
+
+          {/* 2. Cuerpo (Título, Texto con degradado, Media) */}
+          <PostCardContent
+            post={post}
+            styles={styles}
+            onImageClick={e => {
+              e.stopPropagation()
+              setImageModalOpen(true)
             }}
-          >
-            {/* Layout Principal (Avatar | Contenido) */}
-            <Box
-              sx={{ display: 'grid', gridTemplateColumns: '56px 1fr', gap: 0 }}
-            >
-              {/* Carril de la línea de tiempo */}
-              <Box
-                sx={{
-                  position: 'relative',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  px: 1,
-                }}
-              >
-                <PostThreadLine
-                  isThreadParent={isThreadParent}
-                  isThreadChild={isThreadChild}
-                />
+          />
 
-                <Box
-                  component={Link}
-                  to={`/profile/${post.author?.username}`}
-                  sx={{
-                    zIndex: 3,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    borderRadius: '50%',
-                  }}
-                >
-                  <OptimizedAvatar
-                    src={post.author?.avatar}
-                    alt={post.author?.name}
-                    size='md'
-                    lazy={true}
-                    sx={{
-                      border: theme =>
-                        `2px solid ${theme.palette.background.paper}`,
-                    }}
-                  />
-                </Box>
-              </Box>
-
-              {/* Columna de Contenido */}
-              <Box sx={{ minWidth: 0, pr: 2 }}>
-                {/* Contexto de respuesta - Post Padre */}
-                {post.parentId && post.parent?.author && !isThreadChild && (
-                  <Box
-                    sx={{
-                      mb: 1.5,
-                      p: 1.5,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: theme.tokens.borderRadius.sm,
-                      bgcolor: 'action.hover',
-                      cursor: 'pointer',
-                      transition: `all ${theme.tokens.transition.normal}`,
-                      '&:hover': {
-                        bgcolor: 'action.selected',
-                        borderColor: 'primary.main',
-                      },
-                    }}
-                    onClick={e => {
-                      e.stopPropagation()
-                      navigate(`/post/${post.parent!.id}`)
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        mb: 0.5,
-                      }}
-                    >
-                      <OptimizedAvatar
-                        src={post.parent.author.avatar}
-                        alt={post.parent.author.name}
-                        size='xs'
-                        lazy={true}
-                      />
-                      <Typography
-                        variant='caption'
-                        fontWeight='bold'
-                        color='text.primary'
-                      >
-                        {post.parent.author.name}
-                      </Typography>
-                      <Typography variant='caption' color='text.secondary'>
-                        @{post.parent.author.username}
-                      </Typography>
-                      {post.parent.createdAt && (
-                        <>
-                          <Typography variant='caption' color='text.secondary'>
-                            ·
-                          </Typography>
-                          <Typography variant='caption' color='text.secondary'>
-                            {formatTimeAgo(post.parent.createdAt)}
-                          </Typography>
-                        </>
-                      )}
-                    </Box>
-                    <Typography
-                      variant='body2'
-                      color='text.secondary'
-                      sx={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                      }}
-                    >
-                      {post.parent.content}
-                    </Typography>
-                  </Box>
-                )}
-
-                <PostCardHeader post={post} />
-
-                <Typography
-                  variant='body1'
-                  sx={{ mt: 0.5, wordBreak: 'break-word' }}
-                >
-                  {post.content}
-                </Typography>
-
-                {post.image && (
-                  <OptimizedImage
-                    src={post.image}
-                    alt='Post content'
-                    onClick={e => {
-                      e.stopPropagation()
-                      setImageModalOpen(true)
-                    }}
-                    maxHeight='512px'
-                    aspectRatio={
-                      post.image.includes('portrait') ? '4/5' : undefined
-                    }
-                    sx={{
-                      mt: 1.5,
-                      borderRadius: theme.tokens.borderRadius.md,
-                      border: (t: { palette: { divider: string } }) =>
-                        `1px solid ${t.palette.divider}`,
-                    }}
-                  />
-                )}
-
-                <PostCardActions
-                  post={post}
-                  onLike={onLike}
-                  onBookmark={onBookmark}
-                  onReply={onReply}
-                />
-              </Box>
-            </Box>
-          </CardContent>
+          {/* 3. Pie de Tarjeta (Autor Minimalista y Acciones) */}
+          <PostCardFooter
+            post={post}
+            styles={styles}
+            actions={
+              <PostCardActions
+                post={post}
+                onLike={() => onLike(post.id)}
+                onBookmark={() => onBookmark(post.id)}
+                onReply={() => onReply(post)}
+                styles={styles}
+              />
+            }
+          />
         </Card>
 
         {post.image && (
@@ -230,10 +104,12 @@ export const PostCard = memo(
             open={imageModalOpen}
             onClose={() => setImageModalOpen(false)}
             imageUrl={post.image}
-            altText='Imagen del post'
+            altText='Contenido visual de Aura'
           />
         )}
       </Box>
     )
   }
 )
+
+PostCard.displayName = 'PostCard'

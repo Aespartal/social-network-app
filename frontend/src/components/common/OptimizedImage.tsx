@@ -1,5 +1,6 @@
+import { Box } from '@/components/ui'
 import React, { useState, useMemo } from 'react'
-import { Box, Skeleton, SxProps, Theme } from '@mui/material'
+import { Box as MuiBox, Skeleton, SxProps, Theme } from '@mui/material'
 
 interface OptimizedImageProps {
   src: string
@@ -168,7 +169,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
             sizes={sizes || imageData.sizes}
           />
           {/* Fallback */}
-          <Box
+          <MuiBox
             component='img'
             src={imageData.src}
             alt={alt}

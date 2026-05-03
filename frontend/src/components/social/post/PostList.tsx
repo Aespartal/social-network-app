@@ -1,7 +1,10 @@
-import { Box, CircularProgress, Typography } from '@mui/material'
+import { Box, Text as Typography, Button } from '@/components/ui'
 import { Post } from 'social-network-app-shared/types/social.type'
-import { Virtuoso } from 'react-virtuoso'
-import { StyledPostCard } from './PostCard.styles'
+import { PostCard } from '@/components/social/post/PostCard'
+import { useTheme } from '@mui/material'
+
+// Estilos
+import { getPostListStyles } from './PostList.styles'
 
 interface PostListProps {
   posts: Post[]
@@ -13,6 +16,10 @@ interface PostListProps {
   onLoadMore: () => void
 }
 
+/**
+ * PostList Refactorizado: Mosaic Feed (Aura)
+ * Abandona la lista lineal por un diseño de mosaico dinámico.
+ */
 export const PostList = ({
   posts,
   onLike,
@@ -22,63 +29,66 @@ export const PostList = ({
   loadingMore,
   onLoadMore,
 }: PostListProps) => {
+  const theme = useTheme()
+  const styles = getPostListStyles(theme)
+
   if (posts.length === 0 && !loadingMore) {
     return (
-      <Box
-        textAlign='center'
-        py={12}
-        px={4}
-        display='flex'
-        flexDirection='column'
-        alignItems='center'
-        gap={2}
-      >
-        <Typography variant='h6' fontWeight={700}>
-          No hay nada que ver por aquí... todavía
+      <Box sx={styles.emptyContainer}>
+        <Typography variant='h5' sx={styles.emptyTitle}>
+          Tu lienzo está vacío
+        </Typography>
+        <Typography variant='body2' color='text.secondary'>
+          Comparte tu aura o busca nuevas conexiones para llenar este espacio.
         </Typography>
       </Box>
     )
   }
 
   return (
-    <Virtuoso
-      useWindowScroll
-      data={posts}
-      endReached={() => {
-        if (hasMore && !loadingMore) {
-          onLoadMore()
-        }
-      }}
-      itemContent={(index, post) => {
-        const nextPost = posts[index + 1]
-        const prevPost = posts[index - 1]
+    <Box sx={{ width: '100%' }}>
+      <Box sx={styles.gridContainer}>
+        {posts.map(post => {
+          const impact = post.likesCount || 0
 
-        const isThreadParent = nextPost && nextPost.parentId === post.id
-        const isThreadChild = prevPost && post.parentId === prevPost.id
-
-        return (
-          <Box sx={{ pb: 0 }}>
-            <StyledPostCard
-              post={post}
-              isThreadParent={isThreadParent}
-              isThreadChild={isThreadChild}
-              onLike={() => onLike(post.id)}
-              onBookmark={() => onBookmark(post.id)}
-              onReply={() => onReply(post)}
-            />
-          </Box>
-        )
-      }}
-      components={{
-        Footer: () => {
-          if (!loadingMore) return null
           return (
-            <Box display='flex' justifyContent='center' py={4}>
-              <CircularProgress size={24} />
+            <Box key={post.id} sx={styles.masonryItem(impact)}>
+              <PostCard
+                post={post}
+                onLike={() => onLike(post.id)}
+                onBookmark={() => onBookmark(post.id)}
+                onReply={() => onReply(post)}
+              />
             </Box>
           )
-        },
-      }}
-    />
+        })}
+      </Box>
+
+      {/* Footer / Load More (Intencional) */}
+      {hasMore && (
+        <Box sx={styles.loadingContainer}>
+          <Button
+            variant='outline'
+            onClick={onLoadMore}
+            disabled={loadingMore}
+            loading={loadingMore}
+            sx={{ px: 6, borderRadius: '50px' }}
+          >
+            {loadingMore ? 'Cargando más aura...' : 'Explorar más posts'}
+          </Button>
+        </Box>
+      )}
+
+      {!hasMore && posts.length > 0 && (
+        <Box sx={{ textAlign: 'center', py: 8, opacity: 0.4 }}>
+          <Typography
+            variant='caption'
+            sx={{ fontSize: '0.85rem', letterSpacing: '0.05em' }}
+          >
+            Has llegado al final de tu lienzo actual.
+          </Typography>
+        </Box>
+      )}
+    </Box>
   )
 }

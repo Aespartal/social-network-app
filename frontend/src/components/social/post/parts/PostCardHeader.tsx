@@ -1,62 +1,31 @@
-import { memo } from 'react'
-import { Stack, Typography } from '@mui/material'
-import { Link } from 'react-router-dom'
+import React from 'react'
+import { Box, Typography } from '@mui/material'
 import { Post } from 'social-network-app-shared/types/social.type'
-import { formatTimeAgo } from '@/utils/date'
+import type { getPostCardStyles } from '../PostCard.styles'
+
+type PostCardStyles = ReturnType<typeof getPostCardStyles>
 
 interface PostCardHeaderProps {
   post: Post
+  styles: PostCardStyles
 }
 
-export const PostCardHeader = memo(({ post }: PostCardHeaderProps) => {
-  return (
-    <Stack direction='row' spacing={0.5} alignItems='center' mb={0.5}>
-      <Typography
-        variant='subtitle2'
-        component={Link}
-        to={`/profile/${post.author?.username}`}
-        sx={{
-          color: 'text.primary',
-          textDecoration: 'none',
-          fontWeight: 'bold',
-          '&:hover': { textDecoration: 'underline' },
-        }}
-      >
-        {post.author?.name}
-      </Typography>
-      <Typography variant='caption' color='text.secondary'>
-        @{post.author?.username}
-      </Typography>
-      <Typography variant='caption' color='text.secondary'>
-        ·
-      </Typography>
-      <Typography
-        variant='caption'
-        color='text.secondary'
-        sx={{ whiteSpace: 'nowrap' }}
-      >
-        {formatTimeAgo(post.createdAt)}
-      </Typography>
+export const PostCardHeader: React.FC<PostCardHeaderProps> = ({
+  post,
+  styles,
+}) => {
+  // Obtener el primer tag o un tema por defecto
+  const topic = post.tags?.[0]?.tag?.name || 'Aura'
 
-      {(post.city || post.country) && (
-        <>
-          <Typography variant='caption' color='text.secondary'>
-            ·
-          </Typography>
-          <Typography
-            variant='caption'
-            color='text.secondary'
-            sx={{
-              opacity: 0.8,
-              fontStyle: 'italic',
-            }}
-          >
-            {post.city}
-            {post.city && post.country ? ', ' : ''}
-            {post.country}
-          </Typography>
-        </>
-      )}
-    </Stack>
+  // Usamos el tiempo de lectura calculado por el backend
+  const readingTime = post.readingTime || 1
+
+  return (
+    <Box sx={styles.header}>
+      <Box sx={styles.tag}>#{topic}</Box>
+      <Typography sx={styles.readingTime}>
+        {readingTime} min de lectura
+      </Typography>
+    </Box>
   )
-})
+}

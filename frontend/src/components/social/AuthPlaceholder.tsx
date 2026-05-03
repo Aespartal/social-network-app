@@ -28,7 +28,7 @@ export const AuthPlaceholder = () => {
         }}
       >
         <Typography variant='h4' fontWeight='800' gutterBottom color='primary'>
-          SocialNetwork
+          Aura
         </Typography>
 
         <Typography variant='body1' color='text.secondary' sx={{ mb: 4 }}>

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
-import { Avatar as MuiAvatar, AvatarProps, Skeleton } from '@mui/material'
+import { Avatar as CardAvatar, type AvatarProps } from '@/components/ui'
+import { Skeleton } from '@mui/material'
 
 interface OptimizedAvatarProps extends Omit<AvatarProps, 'src'> {
   src: string | null | undefined
@@ -98,7 +99,7 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
 
   if (!src || error || !imageData) {
     return (
-      <MuiAvatar
+      <CardAvatar
         sx={{
           width: sizeInPx,
           height: sizeInPx,
@@ -108,12 +109,12 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
         {...props}
       >
         {alt ? alt.charAt(0).toUpperCase() : '?'}
-      </MuiAvatar>
+      </CardAvatar>
     )
   }
 
   return (
-    <MuiAvatar
+    <CardAvatar
       sx={{
         width: sizeInPx,
         height: sizeInPx,
@@ -162,7 +163,7 @@ export const OptimizedAvatar: React.FC<OptimizedAvatarProps> = ({
           }}
         />
       </picture>
-    </MuiAvatar>
+    </CardAvatar>
   )
 }
 

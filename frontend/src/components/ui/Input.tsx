@@ -1,19 +1,17 @@
 import React from 'react'
 import { TextField } from '@mui/material'
 
-export interface InputProps extends Omit<
-  React.ComponentProps<typeof TextField>,
-  'error'
-> {
+export interface InputProps extends React.ComponentProps<typeof TextField> {
   label?: string
-  error?: string
-  helperText?: string
+  error?: boolean
+  errorMessage?: string
   variant?: 'outlined' | 'filled' | 'standard'
 }
 
 export const Input: React.FC<InputProps> = ({
   label,
   error,
+  errorMessage,
   helperText,
   variant = 'outlined',
   ...props
@@ -21,8 +19,8 @@ export const Input: React.FC<InputProps> = ({
   return (
     <TextField
       label={label}
-      error={!!error}
-      helperText={error || helperText}
+      error={error}
+      helperText={errorMessage || helperText}
       variant={variant}
       fullWidth
       {...props}

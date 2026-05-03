@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, Typography, Stack } from '@mui/material'
+import { Box, Text as Typography, Stack } from '@/components/ui'
 import { SearchBar } from './SearchBar'
 import { SuggestedUsers } from '@/components/social/profile/SuggestedUsers'
 
@@ -42,7 +42,7 @@ export const HomeSidebar: React.FC = () => (
         display='block'
         sx={{ mt: 2 }}
       >
-        © 2026 SocialNetwork App
+        © 2026 Aura App
       </Typography>
     </Box>
   </Stack>

@@ -2,18 +2,14 @@ import React from 'react'
 import { Alert as MuiAlert, AlertTitle, IconButton } from '@mui/material'
 import { Close as CloseIcon } from '@mui/icons-material'
 
-export interface AlertProps extends Omit<
-  React.ComponentProps<typeof MuiAlert>,
-  'variant'
-> {
-  variant?: 'info' | 'success' | 'warning' | 'error'
+export interface AlertProps extends React.ComponentProps<typeof MuiAlert> {
   title?: string
   children: React.ReactNode
   onClose?: () => void
 }
 
 export const Alert: React.FC<AlertProps> = ({
-  variant = 'info',
+  severity = 'info',
   title,
   children,
   onClose,
@@ -21,7 +17,7 @@ export const Alert: React.FC<AlertProps> = ({
 }) => {
   return (
     <MuiAlert
-      severity={variant}
+      severity={severity}
       action={
         onClose && (
           <IconButton
