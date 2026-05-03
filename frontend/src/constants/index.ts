@@ -54,12 +54,17 @@ export const API_ENDPOINTS = {
     MY_VISITS: '/profile/my-visits',
     SUGGESTIONS: '/profile/suggestions',
     UPDATE: (id: string) => `/profile/${id}`,
+    LEVEL: (id: string) => `/users/${id}/level`,
   },
   NOTIFICATIONS: {
     GET_ALL: '/notifications',
     UNREAD_COUNT: '/notifications/unread-count',
     MARK_READ: '/notifications/mark-read',
     MARK_SINGLE_READ: (id: string) => `/notifications/${id}/mark-read`,
+  },
+  ACHIEVEMENTS: {
+    GET_BY_USER: (userId: string) => `/achievements/${userId}`,
+    GET_ME: '/me/achievements',
   },
 } as const
 
