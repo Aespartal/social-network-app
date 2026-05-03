@@ -1,12 +1,10 @@
-import { FastifyInstance } from 'fastify'
-import {
-  recordVisit,
-  getProfileVisits,
-  getProfile,
-  getUserByUsername,
-  getSuggestedUsers,
-  updateProfile,
-} from '../controllers/profileController'
+import { FastifyInstance, FastifyRequest } from 'fastify'
+import { UserController } from '@/modules/users/infrastructure/controllers/user.controller'
+import { VisitController } from '@/modules/visits/infrastructure/controllers/visit.controller'
+import { container } from '@/lib/di-container'
+import { TYPES } from '@/lib/di-types'
+const userController = container.get<UserController>(TYPES.UserController)
+const visitController = container.get<VisitController>(TYPES.VisitController)
 import { authenticateToken } from '@/middleware/auth.middleware'
 import { UserParamsSchema, UserSchema } from '@/schemas/user.schemas'
 import { ErrorSchema } from '@/schemas'
@@ -34,10 +32,17 @@ export async function profileRoutes(fastify: FastifyInstance) {
           },
         },
       },
-      getProfile
+      (req, rep) => userController.getMe(req, rep)
     )
-    privateContext.post('/profile/visit/:visitedId', recordVisit)
-    privateContext.get('/profile/my-visits', getProfileVisits)
+    privateContext.post('/profile/visit/:visitedId', (req, rep) =>
+      visitController.recordVisit(
+        req as FastifyRequest<{ Params: { visitedId: string } }>,
+        rep
+      )
+    )
+    privateContext.get('/profile/my-visits', (req, rep) =>
+      visitController.getProfileVisits(req, rep)
+    )
     privateContext.get(
       '/profile/suggestions',
       {
@@ -84,7 +89,7 @@ export async function profileRoutes(fastify: FastifyInstance) {
           },
         },
       },
-      getSuggestedUsers
+      (req, rep) => userController.getSuggestedUsers(req, rep)
     )
 
     // Actualizar perfil
@@ -121,7 +126,11 @@ export async function profileRoutes(fastify: FastifyInstance) {
           },
         },
       },
-      updateProfile
+      (req, rep) =>
+        userController.updateProfile(
+          req as FastifyRequest<{ Params: { id: string } }>,
+          rep
+        )
     )
   })
 
@@ -145,6 +154,10 @@ export async function profileRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    getUserByUsername
+    (req, rep) =>
+      userController.getUserByUsername(
+        req as FastifyRequest<{ Params: { username: string } }>,
+        rep
+      )
   )
 }
