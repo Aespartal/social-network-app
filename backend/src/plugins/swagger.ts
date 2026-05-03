@@ -11,7 +11,7 @@ async function swaggerPlugin(fastify: FastifyInstance) {
         title: 'Social Network API',
         description:
           'API REST profesional para red social con validación de esquemas',
-        version: '1.0.0',
+        version: '0.0.1',
       },
       servers: [
         {

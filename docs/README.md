@@ -62,5 +62,5 @@ Si tienes preguntas o necesitas ayuda:
 
 ---
 
-**Última actualización:** Agosto 2025  
-**Versión del proyecto:** 1.0.0
+**Última actualización:** Abril 2026  
+**Versión del proyecto:** 0.0.1
