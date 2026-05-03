@@ -4,7 +4,7 @@ import { useTheme, Fade } from '@mui/material'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Hooks
-import { useExplore } from '@/hooks'
+import { useExplore, useAuth } from '@/hooks'
 
 // Componentes Sociales
 import { PostList } from '@/components/social/post/PostList'
@@ -27,6 +27,7 @@ import {
 
 export const Explore: React.FC = () => {
   const theme = useTheme()
+  const { isAuthenticated } = useAuth()
   const [replyToPost, setReplyToPost] = React.useState<Post | null>(null)
   const [activeTab, setActiveTab] = React.useState(0)
 
@@ -192,13 +193,15 @@ export const Explore: React.FC = () => {
         </ContentWrapper>
       </Fade>
 
-      {/* Acción de Respuesta */}
-      <CreatePostAction
-        onSave={handleCreatePost}
-        loading={isCreating}
-        replyToPost={replyToPost}
-        onCloseReply={() => setReplyToPost(null)}
-      />
+      {/* Acción de Respuesta (Solo para usuarios autenticados) */}
+      {isAuthenticated && (
+        <CreatePostAction
+          onSave={handleCreatePost}
+          loading={isCreating}
+          replyToPost={replyToPost}
+          onCloseReply={() => setReplyToPost(null)}
+        />
+      )}
     </ExploreContainer>
   )
 }

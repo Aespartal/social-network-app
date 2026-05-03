@@ -10,11 +10,15 @@ import { Link } from 'react-router-dom'
 // Piezas Atómicas
 import { SuggestedUserItem } from './parts/SuggestedUserItem'
 
+// Hooks
+import { useAuth } from '@/hooks'
+
 // Estilos
 import { getSuggestedUsersStyles } from './SuggestedUsers.styles'
 
 export const SuggestedUsers: React.FC = () => {
   const theme = useTheme()
+  const { isAuthenticated } = useAuth()
   const [suggestions, setSuggestions] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [followingIds, setFollowingIds] = useState<string[]>([])
@@ -84,6 +88,7 @@ export const SuggestedUsers: React.FC = () => {
                 isFollowing={followingIds.includes(user.id)}
                 onFollow={handleFollow}
                 styles={styles}
+                isAuthenticated={isAuthenticated}
               />
             </motion.div>
           ))}

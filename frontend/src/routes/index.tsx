@@ -33,6 +33,12 @@ const Notifications = lazy(() =>
     default: m.NotificationsPage,
   }))
 )
+const NotFound = lazy(() =>
+  import('@/pages/NotFound').then(m => ({ default: m.NotFound }))
+)
+const Forbidden = lazy(() =>
+  import('@/pages/Forbidden').then(m => ({ default: m.Forbidden }))
+)
 
 // Guards
 import { RoleGuard } from '@/guards/RoleGuard'
@@ -87,5 +93,13 @@ export const routes: RouteObject[] = [
         element: <AdminDashboard />,
       },
     ],
+  },
+  {
+    path: '/forbidden',
+    element: <Forbidden />,
+  },
+  {
+    path: '*',
+    element: <NotFound />,
   },
 ]

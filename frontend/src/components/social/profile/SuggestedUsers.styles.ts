@@ -5,10 +5,13 @@ export const getSuggestedUsersStyles = (theme: Theme) => ({
   container: {
     borderRadius: theme.tokens.borderRadius.aura, // Usando token centralizado
     overflow: 'hidden',
-    bgcolor: alpha('#13191E', 0.7), // Glassmorphism
+    bgcolor: alpha(theme.palette.background.paper, 0.7), // Glassmorphism
     backdropFilter: 'blur(15px)',
-    border: `1px solid rgba(255, 255, 255, 0.05)`,
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+    boxShadow:
+      theme.palette.mode === 'dark'
+        ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+        : '0 8px 32px rgba(0, 0, 0, 0.05)',
     position: 'relative',
 
     '&::before':

@@ -114,17 +114,17 @@ export const semanticColors = {
 export const themeColors = {
   light: {
     background: {
-      default: '#ffffff',
+      default: '#F8FAFC', // Mist White
       paper: '#ffffff',
-      elevated: '#f7f9f9',
+      elevated: '#F1F5F9',
     },
     text: {
-      primary: '#0f1419',
-      secondary: '#536471',
-      disabled: '#8899a6',
+      primary: '#0F172A', // Deep Ink
+      secondary: '#475569', // Slate
+      disabled: '#94A3B8',
     },
-    border: 'rgba(0, 0, 0, 0.08)',
-    divider: 'rgba(0, 0, 0, 0.08)',
+    border: 'rgba(15, 23, 42, 0.08)',
+    divider: 'rgba(15, 23, 42, 0.08)',
   },
   dark: {
     background: {

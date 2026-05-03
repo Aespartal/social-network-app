@@ -9,6 +9,7 @@ import {
 } from '@mui/icons-material'
 import { Post } from 'social-network-app-shared/types/social.type'
 import type { getPostCardStyles } from '../PostCard.styles'
+import { useAuth } from '@/hooks'
 
 type PostCardStyles = ReturnType<typeof getPostCardStyles>
 
@@ -28,13 +29,28 @@ export const PostCardActions: React.FC<PostCardActionsProps> = ({
   styles,
 }) => {
   const theme = useTheme()
+  const { isAuthenticated } = useAuth()
+
+  const handleAction = (callback: () => void) => {
+    if (!isAuthenticated) return
+    callback()
+  }
 
   return (
     <Box sx={styles.actions} onClick={e => e.stopPropagation()}>
       <Box
-        sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          opacity: isAuthenticated ? 1 : 0.4,
+        }}
       >
-        <IconButton onClick={onReply} sx={styles.actionIcon()}>
+        <IconButton
+          onClick={() => handleAction(onReply)}
+          sx={styles.actionIcon()}
+          disabled={!isAuthenticated}
+        >
           <CommentIcon />
         </IconButton>
         {post.repliesCount > 0 && (
@@ -43,13 +59,19 @@ export const PostCardActions: React.FC<PostCardActionsProps> = ({
       </Box>
 
       <Box
-        sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          opacity: isAuthenticated ? 1 : 0.4,
+        }}
       >
         <IconButton
-          onClick={onLike}
+          onClick={() => handleAction(onLike)}
           sx={styles.actionIcon(
             post.isLiked ? theme.palette.error.main : undefined
           )}
+          disabled={!isAuthenticated}
         >
           {post.isLiked ? <FavoriteFilledIcon /> : <FavoriteIcon />}
         </IconButton>
@@ -59,10 +81,14 @@ export const PostCardActions: React.FC<PostCardActionsProps> = ({
       </Box>
 
       <IconButton
-        onClick={onBookmark}
-        sx={styles.actionIcon(
-          post.isBookmarked ? theme.palette.primary.main : undefined
-        )}
+        onClick={() => handleAction(onBookmark)}
+        sx={{
+          ...styles.actionIcon(
+            post.isBookmarked ? theme.palette.primary.main : undefined
+          ),
+          opacity: isAuthenticated ? 1 : 0.4,
+        }}
+        disabled={!isAuthenticated}
       >
         {post.isBookmarked ? <BookmarkFilledIcon /> : <BookmarkIcon />}
       </IconButton>

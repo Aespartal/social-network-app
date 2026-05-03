@@ -10,9 +10,9 @@ export const GlobalTrends: React.FC = () => {
   const containerStyle = {
     borderRadius: theme.tokens.borderRadius.aura,
     overflow: 'hidden',
-    bgcolor: alpha('#13191E', 0.7),
+    bgcolor: alpha(theme.palette.background.paper, 0.7),
     backdropFilter: 'blur(15px)',
-    border: `1px solid rgba(255, 255, 255, 0.05)`,
+    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
     p: 3,
     position: 'relative',
     '&::before':

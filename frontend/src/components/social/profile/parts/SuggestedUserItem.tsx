@@ -12,6 +12,7 @@ interface SuggestedUserItemProps {
   isFollowing: boolean
   onFollow: (id: string) => void
   styles: SuggestedUsersStyles
+  isAuthenticated?: boolean
 }
 
 export const SuggestedUserItem: React.FC<SuggestedUserItemProps> = ({
@@ -19,6 +20,7 @@ export const SuggestedUserItem: React.FC<SuggestedUserItemProps> = ({
   isFollowing,
   onFollow,
   styles,
+  isAuthenticated = true,
 }) => {
   return (
     <Box sx={styles.item}>
@@ -55,13 +57,16 @@ export const SuggestedUserItem: React.FC<SuggestedUserItemProps> = ({
       <Button
         variant={isFollowing ? 'primary' : 'outline'}
         size='small'
-        disabled={isFollowing}
+        disabled={isFollowing || !isAuthenticated}
         onClick={e => {
           e.preventDefault()
-          onFollow(user.id)
+          if (isAuthenticated) onFollow(user.id)
         }}
         className='connect-button'
-        sx={styles.button(isFollowing)}
+        sx={{
+          ...styles.button(isFollowing),
+          opacity: isAuthenticated ? 1 : 0.4,
+        }}
       >
         {isFollowing ? 'CONECTADO' : 'CONECTAR'}
       </Button>

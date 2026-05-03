@@ -148,13 +148,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     justifyContent: isCollapsed ? 'center' : 'initial',
                     borderRadius: '16px',
                     backgroundColor: isActive
-                      ? alpha('#E0FF4F', 0.05)
+                      ? alpha(muiTheme.palette.primary.main, 0.05)
                       : 'transparent',
-                    color: isActive ? '#E0FF4F' : 'text.secondary',
+                    color: isActive ? 'primary.main' : 'text.secondary',
                     minHeight: 56,
                     '&:hover': {
-                      backgroundColor: alpha('#E0FF4F', 0.08),
-                      color: '#E0FF4F',
+                      backgroundColor: alpha(
+                        muiTheme.palette.primary.main,
+                        0.08
+                      ),
+                      color: 'primary.main',
                     },
                   }}
                 >
@@ -163,7 +166,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       minWidth: 0,
                       mr: isCollapsed ? 0 : 2,
                       justifyContent: 'center',
-                      color: isActive ? '#E0FF4F' : 'inherit',
+                      color: isActive ? 'primary.main' : 'inherit',
                       position: 'relative',
                     }}
                   >
@@ -178,8 +181,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                           width: 8,
                           height: 8,
                           borderRadius: '50%',
-                          bgcolor: '#88B04B',
-                          boxShadow: '0 0 10px rgba(136, 176, 75, 0.6)',
+                          bgcolor: muiTheme.palette.primary.main,
+                          boxShadow: `0 0 10px ${alpha(muiTheme.palette.primary.main, 0.6)}`,
                         }}
                       />
                     )}
@@ -341,9 +344,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 transition: 'width 0.3s',
                 overflowX: 'hidden',
                 borderRight: '1px solid',
-                borderColor: 'rgba(255, 255, 255, 0.03)',
+                borderColor: 'divider',
                 boxShadow: 'none',
-                bgcolor: '#0D1117', // Slightly lighter gray for sidebar as requested
+                bgcolor: 'background.paper',
                 position: 'relative',
                 height: '100%',
               },

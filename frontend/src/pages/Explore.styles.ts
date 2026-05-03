@@ -64,9 +64,9 @@ export const ResonanceGrid = styled(Box)(({ theme }) => ({
 export const ResonanceNode = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
   borderRadius: '24px',
-  backgroundColor: alpha('#13191E', 0.7),
+  backgroundColor: alpha(theme.palette.background.paper, 0.7),
   backdropFilter: 'blur(15px)',
-  border: `1px solid rgba(255, 255, 255, 0.05)`,
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
   cursor: 'pointer',
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   display: 'flex',
@@ -74,9 +74,12 @@ export const ResonanceNode = styled(Box)(({ theme }) => ({
   gap: theme.spacing(0.5),
   '&:hover': {
     transform: 'translateY(-5px)',
-    backgroundColor: alpha('#13191E', 0.9),
+    backgroundColor: alpha(theme.palette.background.paper, 0.9),
     borderColor: theme.palette.primary.main,
-    boxShadow: `0 12px 24px rgba(0, 0, 0, 0.3)`,
+    boxShadow:
+      theme.palette.mode === 'dark'
+        ? `0 12px 24px rgba(0, 0, 0, 0.3)`
+        : `0 12px 24px rgba(0, 0, 0, 0.05)`,
   },
 }))
 

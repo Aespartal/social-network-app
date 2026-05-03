@@ -1,3 +1,4 @@
+import { alpha } from '@mui/material/styles'
 import type { Theme } from '@mui/material/styles'
 
 export const getSearchBarStyles = (theme: Theme, isFocused: boolean) => ({
@@ -13,8 +14,8 @@ export const getSearchBarStyles = (theme: Theme, isFocused: boolean) => ({
     borderRadius: '50px', // Pill shape biofílica
     bgcolor:
       theme.palette.mode === 'dark'
-        ? '#13191E' // Darker color from design
-        : '#eff3f4',
+        ? alpha(theme.palette.background.paper, 0.6)
+        : alpha(theme.palette.text.primary, 0.04),
     border: '1px solid',
     borderColor: isFocused ? 'primary.main' : 'transparent',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',

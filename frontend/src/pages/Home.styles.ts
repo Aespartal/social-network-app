@@ -68,7 +68,7 @@ export const FeedSelectorItem = styled(Box, {
     fontFamily: 'Montserrat, sans-serif',
     fontSize: '1rem',
     fontWeight: active ? 800 : 400,
-    color: active ? '#ffffff' : theme.palette.text.secondary,
+    color: active ? theme.palette.text.primary : theme.palette.text.secondary,
     opacity: active ? 1 : 0.6,
     transition: 'all 0.3s ease',
   },

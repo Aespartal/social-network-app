@@ -14,8 +14,8 @@ export const getPostCardStyles = (theme: Theme, auraStyle: string) => ({
       borderRadius: theme.tokens.borderRadius.aura, // Token Aura centralizado
       background:
         auraStyle !== 'none'
-          ? `linear-gradient(135deg, ${alpha('#13191E', 0.9)}, ${alpha('#13191E', 0.95)}), ${auraStyle}`
-          : alpha('#13191E', 0.8),
+          ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.95)}), ${auraStyle}`
+          : alpha(theme.palette.background.paper, 0.8),
       backdropFilter: 'blur(20px)', // Stronger blur
       transition: 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
       position: 'relative',
@@ -67,14 +67,14 @@ export const getPostCardStyles = (theme: Theme, auraStyle: string) => ({
     fontWeight: 800,
     fontSize: '1.25rem',
     mb: 1.5,
-    color: '#ffffff',
+    color: 'text.primary',
     lineHeight: 1.3,
   },
   text: (isLong: boolean) => ({
     fontFamily: 'Lora, serif',
     fontSize: '1.15rem',
     lineHeight: 1.6,
-    color: '#E0E0E0', // Muted white
+    color: 'text.secondary', // Use theme text color
     opacity: 0.95,
     position: 'relative',
     // Degradado si el texto es largo
