@@ -6,6 +6,7 @@ import { FollowUserCommand } from './follow-user.command'
 import { EventBus } from '@/lib/events/event-bus.interface'
 import { UserFollowedEvent } from '@/lib/events/domain-events'
 import { CheckAchievementHandler } from '@/modules/achievements/application/commands/check-achievement'
+import { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class FollowUserHandler {
@@ -14,7 +15,8 @@ export class FollowUserHandler {
     private readonly userRepository: UserRepository,
     @inject(TYPES.EventBus) private readonly eventBus: EventBus,
     @inject(TYPES.CheckAchievementHandler)
-    private readonly checkAchievementHandler: CheckAchievementHandler
+    private readonly checkAchievementHandler: CheckAchievementHandler,
+    @inject(TYPES.Logger) private readonly logger: Logger
   ) {}
 
   async execute(command: FollowUserCommand): Promise<void> {
@@ -45,7 +47,6 @@ export class FollowUserHandler {
 
     await this.userRepository.follow(followerId, followedId)
 
-    // Publish domain event for notifications
     await this.eventBus.publish([new UserFollowedEvent(followerId, followedId)])
 
     await Promise.all([
@@ -53,9 +54,12 @@ export class FollowUserHandler {
       this.userRepository.save(followed),
     ])
 
-    // Check achievements - fire and forget
     this.checkAchievementsAfterFollow(followerId, followedId).catch(err => {
-      console.error('[FollowUser] Error checking achievements:', err)
+      this.logger.error(
+        'Error al verificar logros tras seguir usuario',
+        { followerId, followedId },
+        err
+      )
     })
   }
 
@@ -63,14 +67,12 @@ export class FollowUserHandler {
     followerId: string,
     followedId: string
   ): Promise<void> {
-    // Check follow given achievement
     await this.checkAchievementHandler.execute({
       userId: followerId,
       triggerEvent: 'user.followed',
       metadata: { followedId },
     })
 
-    // Check follower gained achievement for the followed user
     await this.checkAchievementHandler.execute({
       userId: followedId,
       triggerEvent: 'user.followed',

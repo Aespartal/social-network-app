@@ -1,5 +1,6 @@
 import { injectable, inject } from 'inversify'
 import { TYPES } from '@/lib/di-types'
+import { Logger } from '@/lib/logger/logger.interface'
 import type { PrismaClient } from '@/generated/prisma'
 import type { DomainEvent, EventBus } from '@/lib/events/event-bus.interface'
 import {
@@ -15,6 +16,7 @@ import {
   EVENT_PROGRESS_STRATEGIES,
   SLUG_PROGRESS_STRATEGIES,
 } from '@/modules/achievements/infrastructure/strategies/achievement-progress-strategies'
+
 type UserTransactionClient = Pick<PrismaClient, 'user'>
 
 @injectable()
@@ -23,7 +25,8 @@ export class CheckAchievementHandler {
     @inject(TYPES.PrismaClient) private readonly prisma: PrismaClient,
     @inject(TYPES.EventBus) private readonly eventBus: EventBus,
     @inject(TYPES.GamificationService)
-    private readonly gamificationService: GamificationService
+    private readonly gamificationService: GamificationService,
+    @inject(TYPES.Logger) private readonly logger: Logger
   ) {}
 
   async execute(
@@ -31,14 +34,13 @@ export class CheckAchievementHandler {
   ): Promise<CheckAchievementResult[]> {
     const { userId, triggerEvent } = command
 
-    console.log(
-      `🔍 [CheckAchievement] Procesando evento: ${triggerEvent} para usuario: ${userId}`
-    )
+    this.logger.info('Procesando verificación de logros', {
+      userId,
+      triggerEvent,
+    })
 
-    // Pequeño delay de 200ms para asegurar consistencia en la lectura de DB
     await new Promise(resolve => setTimeout(resolve, 200))
 
-    // 1. Cargar metadatos de logros
     const achievements = await this.prisma.achievement.findMany({
       where: { triggerEvent },
       include: { tiers: { orderBy: { threshold: 'asc' } } },
@@ -46,8 +48,6 @@ export class CheckAchievementHandler {
 
     if (achievements.length === 0) return []
 
-    // 2. Ejecutar estrategias de cálculo en paralelo (fuera de la transacción de escritura)
-    // Esto evita bloquear la base de datos durante los conteos.
     const progressData = await Promise.all(
       achievements.map(async achievement => {
         const strategy =
@@ -57,11 +57,12 @@ export class CheckAchievementHandler {
 
         if (strategy) {
           newProgress = await strategy(this.prisma, userId)
-          console.log(
-            `📊 [CheckAchievement] Progreso para '${achievement.slug}' (${triggerEvent}): ${newProgress}`
-          )
+          this.logger.debug('Progreso calculado mediante estrategia', {
+            achievementSlug: achievement.slug,
+            triggerEvent,
+            newProgress,
+          })
         } else {
-          // Si no hay estrategia, buscamos el progreso actual
           const existing = await this.prisma.userAchievement.findFirst({
             where: {
               userId,
@@ -77,7 +78,6 @@ export class CheckAchievementHandler {
       })
     )
 
-    // 3. Cargar logros ya obtenidos para validación de tiers
     const userAchievements = await this.prisma.userAchievement.findMany({
       where: {
         userId,
@@ -89,14 +89,11 @@ export class CheckAchievementHandler {
     const eventsToPublish: DomainEvent[] = []
     let totalXPEarnedThisExecution = 0
 
-    // 4. Iniciar transacción solo para persistencia en bloque
-    // 4. Iniciar transacción solo para persistencia de nuevos hitos alcanzados
     try {
       await this.prisma.$transaction(async tx => {
         const dbOperations: Promise<unknown>[] = []
 
         for (const { achievement, newProgress } of progressData) {
-          // Calcular tiers alcanzados
           const tierAchieved = this.gamificationService.calculateTier(
             achievement,
             newProgress
@@ -110,9 +107,11 @@ export class CheckAchievementHandler {
             )
 
             if (!existingTierRecord) {
-              console.log(
-                `🏆 [CheckAchievement] ¡Logro desbloqueado! ${achievement.name} - Tier: ${tierAchieved}`
-              )
+              this.logger.info('¡Logro desbloqueado!', {
+                userId,
+                achievementName: achievement.name,
+                tierAchieved,
+              })
               dbOperations.push(
                 tx.userAchievement.create({
                   data: {
@@ -172,10 +171,13 @@ export class CheckAchievementHandler {
                 )
               }
             } else if (newProgress > existingTierRecord.progress) {
-              // Si ya tiene el tier, pero el progreso ha aumentado, actualizamos el registro
-              console.log(
-                `📈 [CheckAchievement] Actualizando progreso para ${achievement.name} (${tierAchieved}): ${existingTierRecord.progress} -> ${newProgress}`
-              )
+              this.logger.info('Actualizando progreso de hito', {
+                userId,
+                achievementName: achievement.name,
+                tierAchieved,
+                oldProgress: existingTierRecord.progress,
+                newProgress,
+              })
               dbOperations.push(
                 tx.userAchievement.update({
                   where: { id: existingTierRecord.id },
@@ -186,37 +188,42 @@ export class CheckAchievementHandler {
           }
         }
 
-        // Ejecutar persistencias en paralelo (solo si hubo hitos nuevos)
         if (dbOperations.length > 0) {
-          console.log(
-            `[CheckAchievement] Ejecutando ${dbOperations.length} operaciones de DB...`
-          )
+          this.logger.debug('Ejecutando persistencia de logros', {
+            operationsCount: dbOperations.length,
+            userId,
+          })
           await Promise.all(dbOperations)
         }
 
-        // Actualizar experiencia si se consiguieron logros
         if (totalXPEarnedThisExecution > 0) {
-          console.log(
-            `[CheckAchievement] Sumando ${totalXPEarnedThisExecution} XP al usuario ${userId}`
-          )
+          this.logger.info('Sumando experiencia ganada por logros', {
+            userId,
+            xpEarned: totalXPEarnedThisExecution,
+          })
           await this.applyUserExperience(tx, userId, totalXPEarnedThisExecution)
         }
       })
     } catch (error) {
-      console.error(
-        `❌ [CheckAchievement] Error en transacción para usuario ${userId}:`,
-        error
+      this.logger.error(
+        'Error crítico en la transacción de logros',
+        { userId },
+        error as Error
       )
       throw error
     }
 
-    // 5. Notificar eventos
     if (eventsToPublish.length > 0) {
-      console.log(
-        `[CheckAchievement] Publishing ${eventsToPublish.length} events for user ${userId}`
-      )
+      this.logger.info('Publicando eventos de gamificación', {
+        userId,
+        eventsCount: eventsToPublish.length,
+      })
       await this.eventBus.publish(eventsToPublish).catch(err => {
-        console.error(`❌ [CheckAchievement] Error al publicar eventos:`, err)
+        this.logger.error(
+          'Error al publicar eventos de logros',
+          { userId },
+          err
+        )
       })
     }
 

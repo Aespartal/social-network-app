@@ -5,6 +5,8 @@ import type { PrismaClient } from '@/generated/prisma'
 import { MemoryCacheService } from './cache.service'
 import { InMemoryEventBus } from './events/in-memory-event-bus'
 import { EventBus } from './events/event-bus.interface'
+import { AppLogger } from './logger/app-logger'
+import { Logger } from './logger/logger.interface'
 
 // --- POSTS ---
 import { PrismaPostRepository } from '../modules/posts/infrastructure/repositories/prisma-post.repository'
@@ -38,6 +40,8 @@ import {
   SearchPostsQueryHandler,
   GetRecentSearchesHandler,
 } from '../modules/posts/application/queries'
+import { NodeActivitySubscriber } from '../modules/posts/infrastructure/subscribers/node-activity.subscriber'
+import { TuneIntoNodeHandler } from '../modules/posts/application/commands/tune-into-node/tune-into-node.handler'
 
 // --- AUTH ---
 import { PrismaAuthRepository } from '../modules/auth/infrastructure/repositories/prisma-auth.repository'
@@ -90,6 +94,14 @@ import { GetNotificationsHandler } from '../modules/notifications/application/qu
 import { NotificationService } from '../modules/notifications/application/services/notification.service'
 import { NotificationListener } from '../modules/notifications/infrastructure/services/notification-listener'
 
+// --- VISITS ---
+import { PrismaVisitRepository } from '../modules/visits/infrastructure/repositories/prisma-visit.repository'
+import { VisitController } from '../modules/visits/infrastructure/controllers/visit.controller'
+import {
+  RecordVisitHandler,
+  GetProfileVisitsHandler,
+} from '../modules/visits/application'
+
 // --- ADMIN ---
 import { AdminController } from '../modules/admin/infrastructure/controllers/admin.controller'
 
@@ -99,11 +111,11 @@ const container = new Container()
 container.bind<PrismaClient>(TYPES.PrismaClient).toConstantValue(prisma)
 container.bind(TYPES.CacheService).to(MemoryCacheService).inSingletonScope()
 container.bind<EventBus>(TYPES.EventBus).to(InMemoryEventBus).inSingletonScope()
+container.bind<Logger>(TYPES.Logger).to(AppLogger).inSingletonScope()
 container
   .bind(TYPES.NotificationListener)
   .to(NotificationListener)
   .inSingletonScope()
-import { NodeActivitySubscriber } from '../modules/posts/infrastructure/subscribers/node-activity.subscriber'
 container
   .bind(TYPES.NodeActivitySubscriber)
   .to(NodeActivitySubscriber)
@@ -141,8 +153,6 @@ container.bind(TYPES.GetRecentSearchesHandler).to(GetRecentSearchesHandler)
 container
   .bind(TYPES.DeleteRecentSearchHandler)
   .to(DeleteRecentSearchCommandHandler)
-import { TuneIntoNodeHandler } from '../modules/posts/application/commands/tune-into-node/tune-into-node.handler'
-
 container
   .bind(TYPES.ClearRecentSearchesHandler)
   .to(ClearRecentSearchesCommandHandler)
@@ -209,13 +219,6 @@ container.bind(TYPES.AchievementController).to(AchievementController)
 container.bind<UserController>(TYPES.UserController).to(UserController)
 
 // --- VISITS BINDINGS ---
-import { PrismaVisitRepository } from '../modules/visits/infrastructure/repositories/prisma-visit.repository'
-import { VisitController } from '../modules/visits/infrastructure/controllers/visit.controller'
-import {
-  RecordVisitHandler,
-  GetProfileVisitsHandler,
-} from '../modules/visits/application'
-
 container
   .bind(TYPES.VisitRepository)
   .to(PrismaVisitRepository)

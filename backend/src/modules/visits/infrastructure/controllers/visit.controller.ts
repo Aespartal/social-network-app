@@ -3,6 +3,7 @@ import { FastifyReply, FastifyRequest } from 'fastify'
 import { TYPES } from '@/lib/di-types'
 import { RecordVisitHandler } from '../../application/commands/record-visit/record-visit.handler'
 import { GetProfileVisitsHandler } from '../../application/queries/get-profile-visits/get-profile-visits.handler'
+import { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class VisitController {
@@ -10,7 +11,8 @@ export class VisitController {
     @inject(TYPES.RecordVisitHandler)
     private readonly recordVisitHandler: RecordVisitHandler,
     @inject(TYPES.GetProfileVisitsHandler)
-    private readonly getProfileVisitsHandler: GetProfileVisitsHandler
+    private readonly getProfileVisitsHandler: GetProfileVisitsHandler,
+    @inject(TYPES.Logger) private readonly logger: Logger
   ) {}
 
   async recordVisit(
@@ -24,7 +26,7 @@ export class VisitController {
       await this.recordVisitHandler.execute({ visitorId, visitedId })
       return reply.status(204).send()
     } catch (error) {
-      console.error('Error recording visit:', error)
+      this.logger.error('Error recording visit:', error as Error)
       return reply.status(500).send({
         success: false,
         error: 'Error recording visit',
@@ -39,7 +41,7 @@ export class VisitController {
       const visits = await this.getProfileVisitsHandler.execute({ userId })
       return reply.send({ success: true, data: visits })
     } catch (error) {
-      console.error('Error getting profile visits:', error)
+      this.logger.error('Error getting profile visits:', error as Error)
       return reply.status(500).send({
         success: false,
         error: 'Error getting profile visits',

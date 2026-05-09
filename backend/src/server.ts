@@ -53,39 +53,25 @@ async function registerPlugins(server: FastifyInstance) {
     }
   })
 
-  // Custom error handler for validation errors
   server.setErrorHandler((error: FastifyError, request, reply) => {
+    const isProduction = config.NODE_ENV === 'production'
+
     if (error.validation) {
-      const validationErrors = error.validation.map((err: ValidationError) => {
+      const details = error.validation.map((err: ValidationError) => {
         const field =
           err.instancePath?.replace(/^\//, '') || err.params?.missingProperty
 
-        // Handle password length validation
-        if (field === 'password' && err.keyword === 'minLength') {
+        if (field === 'password' && err.keyword === 'minLength')
           return 'La contraseña debe tener al menos 8 caracteres'
-        }
-
-        // Handle username validation
-        if (field === 'username') {
-          if (err.keyword === 'minLength') {
-            return 'El nombre de usuario debe tener al menos 3 caracteres'
-          }
-          if (err.keyword === 'pattern') {
-            return 'El nombre de usuario solo puede contener letras, números y guiones bajos'
-          }
-        }
-
-        // Handle email validation
-        if (field === 'email' && err.keyword === 'format') {
+        if (field === 'username' && err.keyword === 'minLength')
+          return 'El nombre de usuario debe tener al menos 3 caracteres'
+        if (field === 'username' && err.keyword === 'pattern')
+          return 'El nombre de usuario solo puede contener letras, números y guiones bajos'
+        if (field === 'email' && err.keyword === 'format')
           return 'El email no es válido'
-        }
-
-        // Handle name validation
-        if (field === 'name' && err.keyword === 'minLength') {
+        if (field === 'name' && err.keyword === 'minLength')
           return 'El nombre es requerido'
-        }
 
-        // Generic error message
         return (
           err.message ||
           `Error de validación en el campo ${field || 'desconocido'}`
@@ -94,18 +80,28 @@ async function registerPlugins(server: FastifyInstance) {
 
       return reply.status(400).send({
         success: false,
-        error: validationErrors[0] || 'Error de validación',
+        error: details[0] || 'Error de validación',
+        details: isProduction ? undefined : details,
         code: 'VALIDATION_ERROR',
         statusCode: 400,
       })
     }
 
-    // Handle other errors
     const statusCode = error.statusCode || 500
+
+    const message =
+      statusCode >= 500 && isProduction
+        ? 'Ocurrió un error interno en el servidor'
+        : error.message || 'Error inesperado'
+
+    if (statusCode >= 500) {
+      request.log.error(error)
+    }
+
     return reply.status(statusCode).send({
       success: false,
-      error: error.message || 'Error interno del servidor',
-      code: error.code,
+      error: message,
+      code: error.code || 'INTERNAL_SERVER_ERROR',
       statusCode,
     })
   })
@@ -144,7 +140,7 @@ async function registerPlugins(server: FastifyInstance) {
         retryAfter: Math.round(context.ttl / 1000),
       }),
       onExceeding: (_req, key) => {
-        console.warn(`General rate limit exceeded: ${key}`)
+        server.log.warn({ rateLimitKey: key }, 'General rate limit exceeded')
       },
     })
   }

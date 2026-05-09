@@ -10,13 +10,15 @@ import type { HashService } from '../../../auth/domain/services/hash.service.int
 import { UserResponseDTO } from '../dto'
 import { Role } from '@/enums/role.enum'
 import { UserMapper } from '../../infrastructure/mappers/user.mapper'
+import { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class UpdateUserUseCase {
   constructor(
     @inject(TYPES.UserRepository)
     private readonly userRepository: UserRepository,
-    @inject(TYPES.HashService) private readonly hashService: HashService
+    @inject(TYPES.HashService) private readonly hashService: HashService,
+    @inject(TYPES.Logger) private readonly logger: Logger
   ) {}
 
   async execute(
@@ -67,7 +69,7 @@ export class UpdateUserUseCase {
       const updatedUser = await this.userRepository.update(id, updateData)
       return UserMapper.toDTO(updatedUser)
     } catch (error) {
-      console.error('Error updating user:', error)
+      this.logger.error('Error updating user:', error as Error)
       throw UserError.updateFailed()
     }
   }

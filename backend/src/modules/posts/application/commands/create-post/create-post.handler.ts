@@ -1,22 +1,12 @@
 import { injectable, inject } from 'inversify'
 import { TYPES } from '@/lib/di-types'
+import { Logger } from '@/lib/logger/logger.interface'
 import { Post } from '../../../domain/entities/post.entity'
 import type { PostRepository } from '../../../domain/repositories/post.repository.interface'
 import { PostError } from '../../../domain/errors'
 import { PostResponseDTO } from '../../dto/post.dto'
 import { PostMapper } from '../../../infrastructure/mappers/post.mapper'
 import type { CreatePostCommand } from './create-post.command'
-
-/**
- * CreatePostCommandHandler - CQRS Command Handler
- *
- * Orchestrates post creation with proper transaction management.
- * Follows Single Responsibility: only creates posts.
- *
- * Domain Events (to implement):
- * - PostCreated: When post is successfully created
- * - ReplyCreated: When creating a reply to another post
- */
 import {
   ReplyCreatedEvent,
   UserMentionedEvent,
@@ -35,7 +25,8 @@ export class CreatePostCommandHandler {
     private readonly userRepository: UserRepository,
     @inject(TYPES.EventBus) private readonly eventBus: EventBus,
     @inject(TYPES.CheckAchievementHandler)
-    private readonly checkAchievementHandler: CheckAchievementHandler
+    private readonly checkAchievementHandler: CheckAchievementHandler,
+    @inject(TYPES.Logger) private readonly logger: Logger
   ) {}
 
   async execute(command: CreatePostCommand): Promise<PostResponseDTO> {
@@ -71,13 +62,14 @@ export class CreatePostCommandHandler {
         post.setMentions(validUserIds)
       }
 
-      console.log(
-        `[CreatePostCommandHandler] Creating post for user ${authorId}`
-      )
+      this.logger.info('Creando post para usuario', { authorId })
+
       const savedPost = await this.postRepository.save(post)
-      console.log(
-        `[CreatePostCommandHandler] Post saved successfully: ${savedPost.id}`
-      )
+
+      this.logger.info('Post guardado exitosamente', {
+        postId: savedPost.id,
+        authorId,
+      })
 
       const events: Array<
         PostCreatedEvent | ReplyCreatedEvent | UserMentionedEvent
@@ -85,9 +77,6 @@ export class CreatePostCommandHandler {
 
       // Notify parent post author if it's a reply
       if (parentId) {
-        console.log(
-          `[CreatePostCommandHandler] Post is a reply to ${parentId}, fetching parent...`
-        )
         const parentPost = await this.postRepository.findById(parentId)
         if (parentPost && parentPost.authorId !== authorId) {
           events.push(
@@ -104,9 +93,6 @@ export class CreatePostCommandHandler {
       // Notify mentioned users
       const mentions = post.mentions
       if (mentions && mentions.length > 0) {
-        console.log(
-          `[CreatePostCommandHandler] Post has ${mentions.length} mentions`
-        )
         mentions.forEach(mentionedUserId => {
           events.push(
             new UserMentionedEvent(savedPost.id, authorId, mentionedUserId)
@@ -115,34 +101,38 @@ export class CreatePostCommandHandler {
       }
 
       if (events.length > 0) {
-        console.log(
-          `[CreatePostCommandHandler] Publishing ${events.length} events...`
-        )
+        this.logger.debug('Publicando eventos de post', {
+          eventsCount: events.length,
+          postId: savedPost.id,
+        })
         await this.eventBus.publish(events)
       }
 
-      // Check achievements - fire and forget (no await to not block post creation)
-      console.log(`[CreatePostCommandHandler] Triggering achievement checks...`)
+      // Check achievements - fire and forget
       this.checkAchievementsAfterPost(savedPost, authorId).catch(err => {
-        console.error('[CreatePost] Error checking achievements:', err)
+        this.logger.error(
+          'Error al verificar logros tras post',
+          { userId: authorId, postId: savedPost.id },
+          err
+        )
       })
 
       return PostMapper.toDTO(savedPost)
     } catch (error) {
       if (error instanceof PostError) {
-        console.warn(
-          `[CreatePostCommandHandler] Domain error: ${error.message} (${error.code})`
-        )
+        this.logger.warn('Error de dominio al crear post', {
+          domainError: error.message,
+          code: error.code,
+          authorId,
+        })
         throw error
       }
 
-      console.error(
-        '[CreatePostCommandHandler] CRITICAL UNEXPECTED ERROR:',
-        error
+      this.logger.error(
+        'Error inesperado al crear post',
+        { authorId },
+        error as Error
       )
-      if (error instanceof Error) {
-        console.error('[CreatePostCommandHandler] Stack:', error.stack)
-      }
       throw PostError.creationFailed()
     }
   }

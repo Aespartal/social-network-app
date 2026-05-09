@@ -10,6 +10,7 @@ import { EventBus } from '@/lib/events/event-bus.interface'
 import { UserProfileUpdatedEvent } from '@/lib/events/domain-events'
 import { CheckAchievementHandler } from '@/modules/achievements/application/commands/check-achievement'
 import { UpdateUserCommand } from './update-user.command'
+import { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class UpdateUserHandler {
@@ -19,7 +20,8 @@ export class UpdateUserHandler {
     @inject(TYPES.HashService) private readonly hashService: HashService,
     @inject(TYPES.EventBus) private readonly eventBus: EventBus,
     @inject(TYPES.CheckAchievementHandler)
-    private readonly checkAchievementHandler: CheckAchievementHandler
+    private readonly checkAchievementHandler: CheckAchievementHandler,
+    @inject(TYPES.Logger) private readonly logger: Logger
   ) {}
 
   async execute(command: UpdateUserCommand): Promise<UserResponseDTO> {
@@ -65,12 +67,10 @@ export class UpdateUserHandler {
     try {
       const updatedUser = await this.userRepository.update(id, updateData)
 
-      // Emitir eventos para logros
       if (input.avatar && input.avatar !== user.avatar) {
         await this.eventBus.publish([
           new UserProfileUpdatedEvent(id, 'user.profile.avatar_updated'),
         ])
-        // Explicit call for safety
         await this.checkAchievementHandler.execute({
           userId: id,
           triggerEvent: 'user.profile.avatar_updated',
@@ -81,7 +81,6 @@ export class UpdateUserHandler {
         await this.eventBus.publish([
           new UserProfileUpdatedEvent(id, 'user.profile.bio_updated'),
         ])
-        // Explicit call for safety
         await this.checkAchievementHandler.execute({
           userId: id,
           triggerEvent: 'user.profile.bio_updated',
@@ -90,7 +89,7 @@ export class UpdateUserHandler {
 
       return UserMapper.toDTO(updatedUser)
     } catch (error) {
-      console.error('Error updating user:', error)
+      this.logger.error('Error updating user:', error as Error)
       throw UserError.updateFailed()
     }
   }

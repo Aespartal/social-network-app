@@ -28,7 +28,6 @@ export class PrismaUserQueryProvider implements UserQueryProvider {
       (f: Follow & { follower: User }) => f.follower
     )
 
-    // Check if current user follows these followers
     let followingIds: Set<string> = new Set()
     if (currentUserId) {
       const following = await this.prisma.follow.findMany({

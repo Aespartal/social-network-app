@@ -5,17 +5,19 @@ import { UserError } from '../../../domain/errors'
 import { UserResponseDTO } from '../../dto'
 import { UserMapper } from '../../../infrastructure/mappers/user.mapper'
 import { HashService } from '@/modules/auth/domain/services/hash.service.interface'
-import { CreateUserQuery } from './create-user.command'
+import { CreateUserCommand } from './create-user.command'
+import { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class CreateUserHandler {
   constructor(
     @inject(TYPES.UserRepository)
     private readonly userRepository: UserRepository,
-    @inject(TYPES.HashService) private readonly hashService: HashService
+    @inject(TYPES.HashService) private readonly hashService: HashService,
+    @inject(TYPES.Logger) private readonly logger: Logger
   ) {}
 
-  async execute(query: CreateUserQuery): Promise<UserResponseDTO> {
+  async execute(query: CreateUserCommand): Promise<UserResponseDTO> {
     const { email, username, name, password, avatar, bio, role } = query
 
     const [emailExists, usernameExists] = await Promise.all([
@@ -41,7 +43,7 @@ export class CreateUserHandler {
 
       return UserMapper.toDTO(user)
     } catch (error) {
-      console.error('[CreateUserHandler] Error:', error)
+      this.logger.error('Error al crear usuario', error as Error)
       throw UserError.creationFailed()
     }
   }

@@ -14,6 +14,7 @@ import { IsFollowingHandler } from '../../application/queries/is-following/is-fo
 import { parseUpdateProfileMultipart } from '@/utils/multipart-helper'
 import { UserError } from '../../domain/errors/user.errors'
 import { GamificationService } from '@/modules/achievements/domain/services/gamification.service'
+import { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class UserController {
@@ -38,7 +39,8 @@ export class UserController {
     @inject(TYPES.IsFollowingHandler)
     private readonly isFollowingHandler: IsFollowingHandler,
     @inject(TYPES.GamificationService)
-    private readonly gamificationService: GamificationService
+    private readonly gamificationService: GamificationService,
+    @inject(TYPES.Logger) private readonly logger: Logger
   ) {}
 
   async getMe(request: FastifyRequest, reply: FastifyReply) {
@@ -142,6 +144,13 @@ export class UserController {
     const userId = request.user!.id
 
     if (id !== userId) {
+      this.logger.warn(
+        'Intento de acceso no autorizado para actualizar perfil',
+        {
+          currentUserId: userId,
+          targetUserId: id,
+        }
+      )
       return reply.status(403).send({
         success: false,
         error: 'No tienes permiso para actualizar este perfil',
@@ -149,6 +158,9 @@ export class UserController {
     }
 
     if (!request.isMultipart()) {
+      this.logger.warn('Intento de actualizar perfil sin multipart/form-data', {
+        userId: userId,
+      })
       return reply.status(400).send({
         success: false,
         error: 'El contenido debe ser multipart/form-data',
@@ -257,7 +269,7 @@ export class UserController {
         },
       })
     } catch (error) {
-      console.error('Error getting user level:', error)
+      this.logger.error('Error getting user level:', error as Error)
       return reply.status(500).send({
         success: false,
         error: 'Error interno del servidor',
@@ -267,6 +279,7 @@ export class UserController {
 
   private handleError(error: unknown, reply: FastifyReply) {
     if (error instanceof UserError) {
+      this.logger.error('User Error:', error as Error)
       return reply.status(error.statusCode).send({
         success: false,
         error: error.message,
@@ -274,7 +287,7 @@ export class UserController {
       })
     }
 
-    console.error('Unexpected User Error:', error)
+    this.logger.error('Unexpected User Error:', error as Error)
     return reply.status(500).send({
       success: false,
       error: 'An internal server error occurred',

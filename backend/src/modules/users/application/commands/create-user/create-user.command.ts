@@ -1,4 +1,4 @@
-export interface CreateUserQuery {
+export interface CreateUserCommand {
   email: string
   username: string
   name: string

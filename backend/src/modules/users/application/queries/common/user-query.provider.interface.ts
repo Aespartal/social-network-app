@@ -4,7 +4,7 @@ export interface FollowerResponseDTO {
   name: string
   avatar: string | null
   verified: boolean
-  isFollowing?: boolean // If the current user follows this follower
+  isFollowing?: boolean
 }
 
 export interface UserQueryProvider {

@@ -91,4 +91,5 @@ export const TYPES = {
   ),
   NodeActivitySubscriber: Symbol.for('NodeActivitySubscriber'),
   AdminController: Symbol.for('AdminController'),
+  Logger: Symbol.for('Logger'),
 }
