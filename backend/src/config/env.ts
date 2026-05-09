@@ -32,6 +32,17 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  TRUST_PROXY: z
+    .preprocess(
+      val => {
+        if (val === 'true') return true
+        if (val === 'false') return false
+        if (typeof val === 'string' && val.includes(',')) return val.split(',')
+        return val
+      },
+      z.union([z.boolean(), z.string(), z.number(), z.array(z.string())])
+    )
+    .default(false),
 })
 
 const parsed = envSchema.safeParse(process.env)

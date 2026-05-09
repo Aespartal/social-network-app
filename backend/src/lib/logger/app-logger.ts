@@ -1,66 +1,65 @@
-import pino, { Logger as PinoLogger } from 'pino'
+import pino, { Logger as PinoLogger, Level } from 'pino'
 import { injectable } from 'inversify'
 import { Logger } from './logger.interface'
 import { config } from '@/config/env'
+import { traceStorage } from './trace-context'
 
 @injectable()
 export class AppLogger implements Logger {
-  private logger: PinoLogger
+  private readonly rootLogger: PinoLogger
 
   constructor() {
-    this.logger = pino({
+    this.rootLogger = pino({
       level: config.LOG_LEVEL || 'info',
-      redact: ['password', 'token', 'refreshToken', 'email'],
+      redact: ['password', 'token', 'refreshToken'],
       formatters: {
-        level: label => {
-          return { level: label.toUpperCase() }
-        },
+        level: label => ({ level: label.toUpperCase() }),
       },
       timestamp: pino.stdTimeFunctions.isoTime,
     })
   }
 
-  info(message: string, context?: object): void {
+  private getLogger(): PinoLogger {
+    const store = traceStorage.getStore()
+    return store?.logger || this.rootLogger
+  }
+
+  private log(level: Level, message: string, context?: object): void {
+    const logger = this.getLogger()
     if (context) {
-      this.logger.info(context, message)
+      logger[level](context, message)
     } else {
-      this.logger.info(message)
+      logger[level](message)
     }
+  }
+
+  info(message: string, context?: object): void {
+    this.log('info', message, context)
   }
 
   warn(message: string, context?: object): void {
-    if (context) {
-      this.logger.warn(context, message)
-    } else {
-      this.logger.warn(message)
-    }
-  }
-
-  error(message: string, context?: object | Error, error?: Error): void {
-    if (error) {
-      this.logger.error({ ...context, err: error }, message)
-    } else if (context instanceof Error) {
-      this.logger.error({ err: context }, message)
-    } else if (context) {
-      this.logger.error(context, message)
-    } else {
-      this.logger.error(message)
-    }
+    this.log('warn', message, context)
   }
 
   debug(message: string, context?: object): void {
-    if (context) {
-      this.logger.debug(context, message)
-    } else {
-      this.logger.debug(message)
-    }
+    this.log('debug', message, context)
   }
 
   trace(message: string, context?: object): void {
-    if (context) {
-      this.logger.trace(context, message)
+    this.log('trace', message, context)
+  }
+
+  error(message: string, context?: object | Error, error?: Error): void {
+    const logger = this.getLogger()
+
+    if (error) {
+      logger.error({ ...context, err: error }, message)
+    } else if (context instanceof Error) {
+      logger.error({ err: context }, message)
+    } else if (context) {
+      logger.error(context, message)
     } else {
-      this.logger.trace(message)
+      logger.error(message)
     }
   }
 }

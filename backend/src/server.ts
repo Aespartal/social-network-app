@@ -16,11 +16,27 @@ import notificationsPlugin from '@/modules/notifications/infrastructure/notifica
 import { achievementRoutes } from '@/modules/achievements/infrastructure/achievements.plugin'
 import socketPlugin from '@/plugins/socket'
 import notificationListenerPlugin from '@/modules/notifications/infrastructure/notification-listener.plugin'
+import { traceStorage } from '@/lib/logger/trace-context'
+import { v4 as uuidv4 } from 'uuid'
 
 export async function buildServer(): Promise<FastifyInstance> {
   const server = fastify({
     logger: { level: config.LOG_LEVEL },
     pluginTimeout: config.PLUGIN_TIMEOUT || 20_000,
+    trustProxy: config.TRUST_PROXY,
+    requestIdHeader: 'x-request-id',
+    genReqId: req => (req.headers['x-request-id'] as string) || uuidv4(),
+  })
+
+  server.addHook('onRequest', (request, _reply, done) => {
+    traceStorage.run({ requestId: request.id, logger: request.log }, () =>
+      done()
+    )
+  })
+
+  server.addHook('onSend', async (request, reply, payload) => {
+    reply.header('x-request-id', request.id)
+    return payload
   })
 
   server.addHook('onClose', async instance => {
