@@ -8,6 +8,7 @@ import jwt from '@fastify/jwt'
 import multipart from '@fastify/multipart'
 import { healthRoutes } from '@/routes/healthRoutes'
 import { profileRoutes } from '@/routes/profileRoutes'
+import { prisma } from '@/lib/prisma'
 import postsPlugin from '@/modules/posts/infrastructure/posts.plugin'
 import authPlugin from '@/modules/auth/infrastructure/auth.plugin'
 import usersPlugin from '@/modules/users/infrastructure/users.plugin'
@@ -20,6 +21,12 @@ export async function buildServer(): Promise<FastifyInstance> {
   const server = fastify({
     logger: { level: config.LOG_LEVEL },
     pluginTimeout: config.PLUGIN_TIMEOUT || 20_000,
+  })
+
+  server.addHook('onClose', async instance => {
+    instance.log.info('Closing database connection...')
+    await prisma.$disconnect()
+    instance.log.info('Database connection closed.')
   })
 
   await registerPlugins(server)

@@ -16,9 +16,26 @@ try {
   process.exit(1)
 }
 
-;['SIGINT', 'SIGTERM'].forEach(signal => {
-  process.on(signal, async () => {
+const gracefulShutdown = async (signal: string) => {
+  server.log.info(`Received ${signal}. Starting graceful shutdown...`)
+
+  // Force exit after 10 seconds if graceful shutdown hangs
+  const forceExitTimeout = setTimeout(() => {
+    server.log.error('Graceful shutdown timed out after 10s. Forcing exit...')
+    process.exit(1)
+  }, 10_000)
+
+  try {
     await server.close()
+    server.log.info('Server closed successfully.')
+    clearTimeout(forceExitTimeout)
     process.exit(0)
-  })
+  } catch (err) {
+    server.log.error(err, 'Error during graceful shutdown:')
+    process.exit(1)
+  }
+}
+
+;['SIGINT', 'SIGTERM'].forEach(signal => {
+  process.on(signal, () => gracefulShutdown(signal))
 })

@@ -50,7 +50,6 @@ export class CreatePostCommandHandler {
         city: command.city,
       })
 
-      // Extract and resolve mentions
       const mentionedUsernames = post.extractMentionedUsernames()
       if (mentionedUsernames.length > 0) {
         const mentionedUsers = await Promise.all(
@@ -75,7 +74,6 @@ export class CreatePostCommandHandler {
         PostCreatedEvent | ReplyCreatedEvent | UserMentionedEvent
       > = [new PostCreatedEvent(savedPost.id, authorId)]
 
-      // Notify parent post author if it's a reply
       if (parentId) {
         const parentPost = await this.postRepository.findById(parentId)
         if (parentPost && parentPost.authorId !== authorId) {
@@ -90,7 +88,6 @@ export class CreatePostCommandHandler {
         }
       }
 
-      // Notify mentioned users
       const mentions = post.mentions
       if (mentions && mentions.length > 0) {
         mentions.forEach(mentionedUserId => {
@@ -108,7 +105,6 @@ export class CreatePostCommandHandler {
         await this.eventBus.publish(events)
       }
 
-      // Check achievements - fire and forget
       this.checkAchievementsAfterPost(savedPost, authorId).catch(err => {
         this.logger.error(
           'Error al verificar logros tras post',
@@ -141,14 +137,12 @@ export class CreatePostCommandHandler {
     post: Post,
     authorId: string
   ): Promise<void> {
-    // Check basic post created achievement
     await this.checkAchievementHandler.execute({
       userId: authorId,
       triggerEvent: 'post.created',
       metadata: { postId: post.id },
     })
 
-    // Check media achievement if post has image
     if (post.image) {
       await this.checkAchievementHandler.execute({
         userId: authorId,
@@ -157,7 +151,6 @@ export class CreatePostCommandHandler {
       })
     }
 
-    // Check tags achievement if post has tags
     if (post.tags && post.tags.length > 0) {
       await this.checkAchievementHandler.execute({
         userId: authorId,
@@ -166,7 +159,6 @@ export class CreatePostCommandHandler {
       })
     }
 
-    // Check night owl achievement (if post created between 00:00-05:00)
     const hour = new Date().getHours()
     if (hour >= 0 && hour < 5) {
       await this.checkAchievementHandler.execute({
@@ -176,7 +168,6 @@ export class CreatePostCommandHandler {
       })
     }
 
-    // Check reply/comment if it's a reply to another post
     if (post.parentId) {
       await this.checkAchievementHandler.execute({
         userId: authorId,
