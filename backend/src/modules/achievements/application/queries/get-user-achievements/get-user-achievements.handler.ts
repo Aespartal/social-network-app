@@ -6,13 +6,16 @@ import {
   UserAchievementDTO,
 } from './get-user-achievements.query'
 import { GamificationService } from '../../../domain/services/gamification.service'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class GetUserAchievementsHandler {
   constructor(
     @inject(TYPES.PrismaClient) private readonly prisma: PrismaClient,
     @inject(TYPES.GamificationService)
-    private readonly gamificationService: GamificationService
+    private readonly gamificationService: GamificationService,
+    @inject(TYPES.Logger)
+    private readonly logger: Logger
   ) {}
 
   async execute(query: GetUserAchievementsQuery): Promise<{
@@ -25,28 +28,24 @@ export class GetUserAchievementsHandler {
   }> {
     const { userId, includeHidden = false } = query
 
-    // 1. Cargar datos del usuario para nivel y XP actual (Fuente de Verdad)
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { totalXP: true, currentLevel: true },
     })
 
     if (!user) {
+      this.logger.error('Usuario no encontrado', { userId })
       throw new Error('Usuario no encontrado')
     }
 
-    // 2. Cargar todos los logros base
     const achievements = await this.prisma.achievement.findMany({
       where: includeHidden ? {} : { isHidden: false },
       include: { tiers: true },
     })
 
-    // 3. Cargar hitos ya completados por el usuario
     const userUnlockedTiers = await this.prisma.userAchievement.findMany({
       where: { userId, tierAchieved: { not: null } },
     })
-
-    // 4. Calcular progreso en tiempo real para cada logro
     const achievementResults = await Promise.all(
       achievements.map(async achievement => {
         const progress = await this.gamificationService.calculateProgress(
@@ -82,15 +81,12 @@ export class GetUserAchievementsHandler {
       })
     )
 
-    // 5. Preparar metadatos de nivel (usando GamificationService para consistencia)
     const currentXP = user.totalXP || 0
     const level = this.gamificationService.calculateLevel(currentXP)
     const nextLevelXP =
       this.gamificationService.getLevelThreshold(level + 1) || currentXP
     const minXP = this.gamificationService.getLevelThreshold(level)
 
-    // Título de nivel (podría venir de una constante o DB, por ahora usamos GamificationService)
-    // Nota: El backend debería tener estos nombres centralizados.
     const levelTitle = this.getLevelTitle(level)
 
     const progressToNextLevel =
@@ -114,7 +110,6 @@ export class GetUserAchievementsHandler {
     }
   }
 
-  // Método auxiliar para títulos (podría moverse a GamificationService)
   private getLevelTitle(level: number): string {
     const titles = [
       'Novato',

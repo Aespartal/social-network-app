@@ -4,6 +4,7 @@ import type { PostQueryProvider } from '../common/post-query.provider.interface'
 import { PostError } from '../../../domain/errors'
 import { PostResponseDTO, PaginatedPostsResponseDTO } from '../../dto/post.dto'
 import type { GetPostDetailQuery } from './get-post-detail.query'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 export interface PostDetailResponseDTO {
   post: PostResponseDTO
@@ -14,7 +15,9 @@ export interface PostDetailResponseDTO {
 export class GetPostDetailHandler {
   constructor(
     @inject(TYPES.PostQueryProvider)
-    private readonly postQueryProvider: PostQueryProvider
+    private readonly postQueryProvider: PostQueryProvider,
+    @inject(TYPES.Logger)
+    private readonly logger: Logger
   ) {}
 
   async execute(query: GetPostDetailQuery): Promise<PostDetailResponseDTO> {
@@ -43,7 +46,7 @@ export class GetPostDetailHandler {
       if (error instanceof PostError) {
         throw error
       }
-      console.error('Error fetching post detail:', error)
+      this.logger.error('Error fetching post detail', { error })
       throw PostError.unableToFetchPost()
     }
   }

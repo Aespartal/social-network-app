@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify'
 import { TYPES } from '@/lib/di-types'
-import { Logger } from '@/lib/logger/logger.interface'
+import type { Logger } from '@/lib/logger/logger.interface'
 import { Post } from '../../../domain/entities/post.entity'
 import type { PostRepository } from '../../../domain/repositories/post.repository.interface'
 import { PostError } from '../../../domain/errors'

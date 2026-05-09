@@ -3,7 +3,7 @@ import { TYPES } from '@/lib/di-types'
 import type { UserRepository } from '../../domain/repositories/user.repository.interface'
 import { UserError } from '../../domain/errors'
 import { Role } from '@/enums/role.enum'
-import { Logger } from '@/lib/logger/logger.interface'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class DeleteUserUseCase {

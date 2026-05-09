@@ -6,6 +6,7 @@ import { PostResponseDTO } from '../../dto/post.dto'
 import { PostMapper } from '../../../infrastructure/mappers/post.mapper'
 import type { UpdatePostCommand } from './update-post.command'
 import { Role } from '@/enums/role.enum'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 /**
  * UpdatePostCommandHandler - CQRS Command Handler
@@ -20,7 +21,9 @@ import { Role } from '@/enums/role.enum'
 export class UpdatePostCommandHandler {
   constructor(
     @inject(TYPES.PostRepository)
-    private readonly postRepository: PostRepository
+    private readonly postRepository: PostRepository,
+    @inject(TYPES.Logger)
+    private readonly logger: Logger
   ) {}
 
   async execute(command: UpdatePostCommand): Promise<PostResponseDTO> {
@@ -49,16 +52,11 @@ export class UpdatePostCommandHandler {
 
       const updatedPost = await this.postRepository.update(post)
 
-      // TODO: Dispatch domain event
-      // await this.eventBus.publish(
-      //   new PostUpdatedEvent(postId, userId, { content, image })
-      // )
-
       return PostMapper.toDTO(updatedPost)
     } catch (error) {
       if (error instanceof PostError) throw error
 
-      console.error('[UpdatePostCommandHandler] Unexpected error:', error)
+      this.logger.error('Unexpected error', { error })
       throw PostError.updateFailed()
     }
   }

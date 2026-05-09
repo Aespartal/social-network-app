@@ -1,11 +1,13 @@
-import { injectable } from 'inversify'
+import { inject, injectable } from 'inversify'
 import { v2 as cloudinary } from 'cloudinary'
 import { ImageService } from '../../domain/services/image.service.interface'
 import { config } from '@/config/env'
+import type { Logger } from '@/lib/logger/logger.interface'
+import { TYPES } from '@/lib/di-types'
 
 @injectable()
 export class CloudinaryImageService implements ImageService {
-  constructor() {
+  constructor(@inject(TYPES.Logger) private readonly logger: Logger) {
     cloudinary.config({
       cloud_name: config.CLOUDINARY_CLOUD_NAME,
       api_key: config.CLOUDINARY_API_KEY,
@@ -30,8 +32,7 @@ export class CloudinaryImageService implements ImageService {
       })
       return result.secure_url
     } catch (error) {
-      console.error('Error uploading to Cloudinary:', error)
-      // fallback to original url if upload fails, or throw error depending on policy
+      this.logger.error('Error uploading to Cloudinary:', { error })
       return url
     }
   }

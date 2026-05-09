@@ -7,6 +7,7 @@ import { InMemoryEventBus } from './events/in-memory-event-bus'
 import { EventBus } from './events/event-bus.interface'
 import { AppLogger } from './logger/app-logger'
 import { Logger } from './logger/logger.interface'
+import { HttpGeoIpService, GeoIpService } from '../utils/geo-ip'
 
 // --- POSTS ---
 import { PrismaPostRepository } from '../modules/posts/infrastructure/repositories/prisma-post.repository'
@@ -69,7 +70,6 @@ import {
   CheckAchievementHandler,
 } from '../modules/achievements/application'
 import { GamificationService } from '../modules/achievements/domain/services/gamification.service'
-import { AchievementNotificationSubscriber } from '../modules/achievements/application/subscribers/achievement-notification.subscriber'
 import { SearchUsersHandler } from '../modules/users/application/queries'
 import {
   FollowUserHandler,
@@ -112,6 +112,10 @@ container.bind<PrismaClient>(TYPES.PrismaClient).toConstantValue(prisma)
 container.bind(TYPES.CacheService).to(MemoryCacheService).inSingletonScope()
 container.bind<EventBus>(TYPES.EventBus).to(InMemoryEventBus).inSingletonScope()
 container.bind<Logger>(TYPES.Logger).to(AppLogger).inSingletonScope()
+container
+  .bind<GeoIpService>(TYPES.GeoIpService)
+  .to(HttpGeoIpService)
+  .inSingletonScope()
 container
   .bind(TYPES.NotificationListener)
   .to(NotificationListener)
@@ -210,10 +214,6 @@ container.bind(TYPES.CheckAchievementHandler).to(CheckAchievementHandler)
 container
   .bind(TYPES.GamificationService)
   .to(GamificationService)
-  .inSingletonScope()
-container
-  .bind(TYPES.AchievementNotificationSubscriber)
-  .to(AchievementNotificationSubscriber)
   .inSingletonScope()
 container.bind(TYPES.AchievementController).to(AchievementController)
 container.bind<UserController>(TYPES.UserController).to(UserController)

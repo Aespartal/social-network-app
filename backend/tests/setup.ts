@@ -58,6 +58,11 @@ async function cleanDatabase() {
     'user_achievements',
     'achievement_tiers',
     'achievements',
+    'user_streaks',
+    'user_nodes',
+    'aura_nodes',
+    'badges',
+    'profile_frames',
     'users',
   ]
 

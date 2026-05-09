@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify'
 import { TYPES } from '@/lib/di-types'
-import { Logger } from '@/lib/logger/logger.interface'
+import type { Logger } from '@/lib/logger/logger.interface'
 import type { PrismaClient } from '@/generated/prisma'
 import type { DomainEvent, EventBus } from '@/lib/events/event-bus.interface'
 import {

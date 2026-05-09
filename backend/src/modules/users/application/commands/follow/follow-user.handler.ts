@@ -6,7 +6,7 @@ import { FollowUserCommand } from './follow-user.command'
 import { EventBus } from '@/lib/events/event-bus.interface'
 import { UserFollowedEvent } from '@/lib/events/domain-events'
 import { CheckAchievementHandler } from '@/modules/achievements/application/commands/check-achievement'
-import { Logger } from '@/lib/logger/logger.interface'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class FollowUserHandler {

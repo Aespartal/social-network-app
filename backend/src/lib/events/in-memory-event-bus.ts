@@ -12,7 +12,6 @@ export class InMemoryEventBus implements EventBus {
 
   constructor() {
     this.emitter = new EventEmitter()
-    // Increase limit for listeners if needed
     this.emitter.setMaxListeners(100)
   }
 

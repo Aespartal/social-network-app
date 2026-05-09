@@ -20,6 +20,7 @@ import {
   RefreshTokenBodyType,
   LogoutBodyType,
 } from '../schemas'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class AuthController {
@@ -34,7 +35,8 @@ export class AuthController {
     private readonly refreshTokenHandler: RefreshTokenCommandHandler,
     @inject(TYPES.LogoutCommandHandler)
     private readonly logoutHandler: LogoutCommandHandler,
-    @inject(TYPES.GetMeHandler) private readonly getMeHandler: GetMeHandler
+    @inject(TYPES.GetMeHandler) private readonly getMeHandler: GetMeHandler,
+    @inject(TYPES.Logger) private readonly logger: Logger
   ) {}
 
   async register(
@@ -182,7 +184,10 @@ export class AuthController {
 
   private handleError(error: unknown, reply: FastifyReply) {
     if (isAuthError(error)) {
+      this.logger.error('AuthController error:', { error })
+
       const statusCode = AUTH_ERROR_HTTP_MAPPING[error.code] || 500
+
       return reply.status(statusCode).send({
         success: false,
         error: error.message,
@@ -191,7 +196,7 @@ export class AuthController {
       })
     }
 
-    console.error('AuthController error:', error)
+    this.logger.error('AuthController error:', { error })
     return reply.status(500).send({
       success: false,
       error: 'Error interno del servidor',

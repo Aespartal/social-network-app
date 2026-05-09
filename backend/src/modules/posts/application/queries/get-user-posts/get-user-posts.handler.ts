@@ -6,12 +6,15 @@ import { PaginatedPostsResponseDTO } from '../../dto/post.dto'
 import type { GetUserPostsQuery } from './get-user-posts.query'
 import { prisma } from '@/lib/prisma'
 import { isInvalidPageLimit } from '@/modules/posts/infrastructure/helpers/prisma-query.helpers'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class GetUserPostsHandler {
   constructor(
     @inject(TYPES.PostQueryProvider)
-    private readonly postQueryProvider: PostQueryProvider
+    private readonly postQueryProvider: PostQueryProvider,
+    @inject(TYPES.Logger)
+    private readonly logger: Logger
   ) {}
 
   async execute(query: GetUserPostsQuery): Promise<PaginatedPostsResponseDTO> {
@@ -38,7 +41,7 @@ export class GetUserPostsHandler {
         page,
       })
     } catch (error) {
-      console.error('Error fetching user posts:', error)
+      this.logger.error('Error fetching user posts', { error })
       throw PostError.unableToFetchFeed()
     }
   }

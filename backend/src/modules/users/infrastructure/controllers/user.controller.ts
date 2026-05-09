@@ -14,7 +14,7 @@ import { IsFollowingHandler } from '../../application/queries/is-following/is-fo
 import { parseUpdateProfileMultipart } from '@/utils/multipart-helper'
 import { UserError } from '../../domain/errors/user.errors'
 import { GamificationService } from '@/modules/achievements/domain/services/gamification.service'
-import { Logger } from '@/lib/logger/logger.interface'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class UserController {

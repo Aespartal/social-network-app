@@ -9,6 +9,7 @@ import {
   ACTIVE_POST_WHERE,
   TRANSACTION_OPTIONS,
 } from '../helpers/prisma-query.helpers'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 /**
  * PrismaPostRepository - Infrastructure Implementation (CQRS - Command Side)
@@ -25,7 +26,9 @@ import {
 @injectable()
 export class PrismaPostRepository implements PostRepository {
   constructor(
-    @inject(TYPES.PrismaClient) private readonly prisma: PrismaClient
+    @inject(TYPES.PrismaClient) private readonly prisma: PrismaClient,
+    @inject(TYPES.Logger)
+    private readonly logger: Logger
   ) {}
 
   /**
@@ -33,7 +36,9 @@ export class PrismaPostRepository implements PostRepository {
    * Uses transaction to ensure atomicity
    */
   async save(post: Post): Promise<Post> {
-    console.log('[PrismaPostRepository] Starting save transaction...')
+    this.logger.debug(
+      `PrismaPostRepository - Starting save transaction for user ${post.authorId}`
+    )
     try {
       return await this.prisma.$transaction(async tx => {
         const tagObjects =
@@ -49,8 +54,8 @@ export class PrismaPostRepository implements PostRepository {
               )
             : []
 
-        console.log(
-          `[PrismaPostRepository] Tags processed: ${tagObjects.length}`
+        this.logger.debug(
+          `PrismaPostRepository - Tags processed: ${tagObjects.length}`
         )
 
         const prismaPost = await tx.post.create({
@@ -74,13 +79,13 @@ export class PrismaPostRepository implements PostRepository {
           include: COMMAND_POST_INCLUDE,
         })
 
-        console.log(
-          `[PrismaPostRepository] Post created in DB: ${prismaPost.id}`
+        this.logger.debug(
+          `PrismaPostRepository - Post created in DB: ${prismaPost.id}`
         )
 
         if (post.parentId) {
-          console.log(
-            `[PrismaPostRepository] Incrementing repliesCount for parent ${post.parentId}`
+          this.logger.debug(
+            `PrismaPostRepository - Incrementing repliesCount for parent ${post.parentId}`
           )
           await tx.post.update({
             where: { id: post.parentId },
@@ -91,7 +96,7 @@ export class PrismaPostRepository implements PostRepository {
         return PostMapper.toDomain(prismaPost)
       }, TRANSACTION_OPTIONS.DEFAULT)
     } catch (error) {
-      console.error('[PrismaPostRepository] Error in save transaction:', error)
+      this.logger.error('Error in save transaction', { error })
       throw error
     }
   }
@@ -100,6 +105,7 @@ export class PrismaPostRepository implements PostRepository {
    * Finds a Post by ID
    */
   async findById(id: string): Promise<Post | null> {
+    this.logger.debug(`PrismaPostRepository - Finding post by ID: ${id}`)
     const post = await this.prisma.post.findUnique({
       where: { id },
       include: COMMAND_POST_INCLUDE,
@@ -114,6 +120,7 @@ export class PrismaPostRepository implements PostRepository {
    * Updates an existing Post
    */
   async update(post: Post): Promise<Post> {
+    this.logger.debug(`PrismaPostRepository - Updating post: ${post.id}`)
     const prismaPost = await this.prisma.post.update({
       where: { id: post.id },
       data: {
@@ -133,6 +140,7 @@ export class PrismaPostRepository implements PostRepository {
    * Uses transaction to ensure atomicity
    */
   async delete(post: Post): Promise<void> {
+    this.logger.debug(`PrismaPostRepository - Deleting post: ${post.id}`)
     await this.prisma.$transaction(async tx => {
       await tx.post.update({
         where: { id: post.id },
@@ -152,6 +160,7 @@ export class PrismaPostRepository implements PostRepository {
    * Checks if a Post exists
    */
   async exists(id: string): Promise<boolean> {
+    this.logger.debug(`PrismaPostRepository - Checking if post exists: ${id}`)
     const post = await this.prisma.post.findUnique({
       where: { id, ...ACTIVE_POST_WHERE },
       select: { id: true },
@@ -167,6 +176,7 @@ export class PrismaPostRepository implements PostRepository {
     postId: string,
     userId: string
   ): Promise<{ isLiked: boolean; likesCount: number }> {
+    this.logger.debug(`PrismaPostRepository - Toggling like for post ${postId}`)
     const existingLike = await this.prisma.like.findUnique({
       where: { userId_postId: { userId, postId } },
     })
@@ -202,6 +212,9 @@ export class PrismaPostRepository implements PostRepository {
     postId: string,
     userId: string
   ): Promise<{ isBookmarked: boolean }> {
+    this.logger.debug(
+      `PrismaPostRepository - Toggling bookmark for post ${postId}`
+    )
     const existingBookmark = await this.prisma.bookmark.findUnique({
       where: { userId_postId: { userId, postId } },
     })

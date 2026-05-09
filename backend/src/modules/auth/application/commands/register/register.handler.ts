@@ -9,13 +9,16 @@ import { TokenService } from '../../../infrastructure/services/token.service'
 import { config } from '@/config/env'
 import type { HashService } from '../../../domain/services/hash.service.interface'
 import type { RegisterCommand } from './register.command'
+import { Logger } from '@/lib/logger/logger.interface'
+
 @injectable()
 export class RegisterCommandHandler {
   constructor(
     @inject(TYPES.AuthRepository)
     private readonly authRepository: AuthRepository,
     @inject(TYPES.HashService) private readonly hashService: HashService,
-    @inject(TYPES.TokenService) private readonly tokenService: TokenService
+    @inject(TYPES.TokenService) private readonly tokenService: TokenService,
+    @inject(TYPES.Logger) private readonly logger: Logger
   ) {}
 
   async execute(command: RegisterCommand): Promise<AuthResponseDTO> {
@@ -61,7 +64,7 @@ export class RegisterCommandHandler {
         expiresIn,
       })
     } catch (error) {
-      console.error('[RegisterCommandHandler] Error:', error)
+      this.logger.error('Error creating user', { error })
       throw AuthError.creationFailed()
     }
   }

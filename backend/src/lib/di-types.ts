@@ -86,10 +86,13 @@ export const TYPES = {
   VisitController: Symbol.for('VisitController'),
 
   // Subscribers
+  NodeActivitySubscriber: Symbol.for('NodeActivitySubscriber'),
   AchievementNotificationSubscriber: Symbol.for(
     'AchievementNotificationSubscriber'
   ),
-  NodeActivitySubscriber: Symbol.for('NodeActivitySubscriber'),
+
+  // Admin
   AdminController: Symbol.for('AdminController'),
   Logger: Symbol.for('Logger'),
+  GeoIpService: Symbol.for('GeoIpService'),
 }

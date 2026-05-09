@@ -9,14 +9,17 @@ import {
 } from '../../domain/entities/session.entity'
 import { AuthMapper } from '../mappers/auth.mapper'
 import bcrypt from 'bcryptjs'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class PrismaAuthRepository implements AuthRepository {
   constructor(
-    @inject(TYPES.PrismaClient) private readonly prisma: PrismaClient
+    @inject(TYPES.PrismaClient) private readonly prisma: PrismaClient,
+    @inject(TYPES.Logger) private readonly logger: Logger
   ) {}
 
   async findByEmail(email: string): Promise<AuthUser | null> {
+    this.logger.info('findByEmail', { email })
     const user = await this.prisma.user.findUnique({
       where: { email },
     })
@@ -27,7 +30,7 @@ export class PrismaAuthRepository implements AuthRepository {
   }
 
   async findByGoogleId(googleId: string): Promise<AuthUser | null> {
-    console.log('googleId', googleId)
+    this.logger.info('findByGoogleId', { googleId })
     const user = await this.prisma.user.findUnique({
       where: { googleId },
       select: {
@@ -55,6 +58,7 @@ export class PrismaAuthRepository implements AuthRepository {
   }
 
   async findByUsername(username: string): Promise<AuthUser | null> {
+    this.logger.info('findByUsername', { username })
     const user = await this.prisma.user.findUnique({
       where: { username },
     })
@@ -65,6 +69,7 @@ export class PrismaAuthRepository implements AuthRepository {
   }
 
   async findById(id: string): Promise<AuthUser | null> {
+    this.logger.info('findById', { id })
     const user = await this.prisma.user.findUnique({
       where: { id },
     })
@@ -75,6 +80,7 @@ export class PrismaAuthRepository implements AuthRepository {
   }
 
   async emailExists(email: string): Promise<boolean> {
+    this.logger.info('emailExists', { email })
     const user = await this.prisma.user.findUnique({
       where: { email },
       select: { id: true },
@@ -83,6 +89,7 @@ export class PrismaAuthRepository implements AuthRepository {
   }
 
   async usernameExists(username: string): Promise<boolean> {
+    this.logger.info('usernameExists', { username })
     const user = await this.prisma.user.findUnique({
       where: { username },
       select: { id: true },
@@ -91,6 +98,7 @@ export class PrismaAuthRepository implements AuthRepository {
   }
 
   async save(user: AuthUser): Promise<AuthUser> {
+    this.logger.info('save', { user })
     const prismaUser = await this.prisma.user.create({
       data: {
         email: user.email,
@@ -110,6 +118,7 @@ export class PrismaAuthRepository implements AuthRepository {
   }
 
   async update(user: AuthUser): Promise<AuthUser> {
+    this.logger.info('update', { user })
     const prismaUser = await this.prisma.user.update({
       where: { id: user.id },
       data: {
@@ -135,6 +144,7 @@ export class PrismaAuthRepository implements AuthRepository {
   }
 
   async createSession(input: CreateSessionInput): Promise<SessionEntity> {
+    this.logger.info('createSession', { input })
     const { token, userId, expiresAt } = input
 
     const session = await this.prisma.session.create({
@@ -178,12 +188,14 @@ export class PrismaAuthRepository implements AuthRepository {
   }
 
   async deleteSession(token: string): Promise<void> {
+    this.logger.info('deleteSession', { token })
     await this.prisma.session.delete({
       where: { token },
     })
   }
 
   async deleteAllUserSessions(userId: string): Promise<void> {
+    this.logger.info('deleteAllUserSessions', { userId })
     await this.prisma.session.deleteMany({
       where: { userId },
     })

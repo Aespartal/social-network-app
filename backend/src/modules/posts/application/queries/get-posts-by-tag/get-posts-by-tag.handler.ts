@@ -5,12 +5,15 @@ import { PostError } from '../../../domain/errors'
 import { PaginatedPostsResponseDTO } from '../../dto/post.dto'
 import type { GetPostsByTagQuery } from './get-posts-by-tag.query'
 import { isInvalidPageLimit } from '@/modules/posts/infrastructure/helpers/prisma-query.helpers'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class GetPostsByTagHandler {
   constructor(
     @inject(TYPES.PostQueryProvider)
-    private readonly postQueryProvider: PostQueryProvider
+    private readonly postQueryProvider: PostQueryProvider,
+    @inject(TYPES.Logger)
+    private readonly logger: Logger
   ) {}
 
   async execute(query: GetPostsByTagQuery): Promise<PaginatedPostsResponseDTO> {
@@ -23,7 +26,7 @@ export class GetPostsByTagHandler {
     try {
       return await this.postQueryProvider.getPostsByTag(query)
     } catch (error) {
-      console.error('Error fetching posts by tag:', error)
+      this.logger.error('Error fetching posts by tag', { error })
       throw PostError.unableToFetchFeed()
     }
   }

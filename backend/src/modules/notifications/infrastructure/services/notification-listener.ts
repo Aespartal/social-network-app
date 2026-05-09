@@ -13,6 +13,7 @@ import { NotificationService } from '../../application/services/notification.ser
 import { NotificationQueryProvider } from '../../application/queries/common/notification-query.provider.interface'
 import { NotificationMapper } from '../../application/mappers/notification.mapper'
 import { Notification } from '../../domain/entities/notification.entity'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class NotificationListener {
@@ -23,7 +24,8 @@ export class NotificationListener {
     @inject(TYPES.NotificationService)
     private readonly notificationService: NotificationService,
     @inject(TYPES.NotificationQueryProvider)
-    private readonly queryProvider: NotificationQueryProvider
+    private readonly queryProvider: NotificationQueryProvider,
+    @inject(TYPES.Logger) private readonly logger: Logger
   ) {}
 
   setServer(server: FastifyInstance) {
@@ -50,8 +52,8 @@ export class NotificationListener {
   }
 
   private async handleAchievementUnlocked(event: AchievementUnlockedEvent) {
-    console.log(
-      `[NotificationListener] Achievement unlocked for user ${event.userId}: ${event.achievementName}`
+    this.logger.info(
+      `Achievement unlocked for user ${event.userId}: ${event.achievementName}`
     )
     const notification = await this.notificationService.notifyAchievement(
       event.userId,
@@ -132,11 +134,10 @@ export class NotificationListener {
   ) {
     const cleanUserId = userId.trim()
 
-    // Si el socket aún no está listo, esperamos un poco (máximo 3 intentos)
     let attempts = 0
     while (!this.server?.io && attempts < 3) {
-      console.log(
-        `⏳ [Socket] Esperando a que el motor de sockets esté listo... (Intento ${attempts + 1})`
+      this.logger.info(
+        `Socket not ready, retrying in 500ms (attempt ${attempts + 1})`
       )
       await new Promise(resolve => setTimeout(resolve, 500))
       attempts++
@@ -146,15 +147,13 @@ export class NotificationListener {
       const payload =
         data instanceof Notification ? NotificationMapper.toDTO(data) : data
 
-      console.log(
-        `📤 [Socket] ENVIANDO notificación tipo ${payload.type} a la sala 'user:${cleanUserId}'`
+      this.logger.info(
+        `Sending notification type ${payload.type} to room 'user:${cleanUserId}'`
       )
 
       this.server.io.to(`user:${cleanUserId}`).emit('notification', payload)
     } else {
-      console.error(
-        '❌ [Socket] ERROR CRÍTICO: El motor de sockets no está disponible después de varios intentos'
-      )
+      this.logger.error(`Socket not ready after multiple attempts.`)
     }
   }
 }

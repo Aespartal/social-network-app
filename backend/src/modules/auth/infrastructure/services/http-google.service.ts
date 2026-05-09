@@ -1,24 +1,22 @@
-import { injectable } from 'inversify'
-import pino from 'pino'
+import { inject, injectable } from 'inversify'
 import { OAuth2Client } from 'google-auth-library'
 import { GoogleService } from '../../domain/services/google.service.interface'
 import { GoogleUserInfo } from '../../domain/entities/google-user.entity'
 import { AuthError } from '../../domain/errors'
 import { config } from '@/config/env'
-
-const logger = pino()
+import { TYPES } from '@/lib/di-types'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class HttpGoogleService implements GoogleService {
   private client: OAuth2Client
 
-  constructor() {
+  constructor(@inject(TYPES.Logger) private readonly logger: Logger) {
     this.client = new OAuth2Client(config.GOOGLE_CLIENT_ID)
   }
 
   async fetchUserInfo(token: string): Promise<GoogleUserInfo> {
     try {
-      // Verificamos el ID Token (JWT)
       const ticket = await this.client.verifyIdToken({
         idToken: token,
         audience: config.GOOGLE_CLIENT_ID,
@@ -27,6 +25,7 @@ export class HttpGoogleService implements GoogleService {
       const payload = ticket.getPayload()
 
       if (!payload) {
+        this.logger.error('Token de Google inválido', { payload })
         throw AuthError.googleError('Token de Google inválido')
       }
 
@@ -41,10 +40,8 @@ export class HttpGoogleService implements GoogleService {
     } catch (error) {
       if (error instanceof AuthError) throw error
 
-      console.error('[HttpGoogleService] Error verifying ID Token:', error)
+      this.logger.error('Error verifying ID Token:', { error })
 
-      // Fallback simple por si el frontend envió un access_token en lugar de id_token
-      // aunque lo ideal es forzar id_token por seguridad.
       return this.fetchFromUserInfoEndpoint(token)
     }
   }
@@ -53,15 +50,15 @@ export class HttpGoogleService implements GoogleService {
     token: string
   ): Promise<GoogleUserInfo> {
     try {
-      logger.warn(
-        { method: 'fetchFromUserInfoEndpoint', security: 'lower' },
-        'Falling back to userinfo endpoint (Less secure)'
-      )
+      this.logger.warn('Falling back to userinfo endpoint (Less secure)', {
+        token,
+      })
       const response = await fetch(
         `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`
       )
 
       if (!response.ok) {
+        this.logger.error('Error al validar token con Google', { response })
         throw AuthError.googleError('Error al validar token con Google')
       }
 
@@ -75,6 +72,7 @@ export class HttpGoogleService implements GoogleService {
         emailVerified: payload.email_verified || false,
       }
     } catch (_error) {
+      this.logger.error('Error al conectar con Google', { error: _error })
       throw AuthError.googleError('Error al conectar con Google')
     }
   }

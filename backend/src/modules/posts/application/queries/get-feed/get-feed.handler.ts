@@ -5,12 +5,15 @@ import { PostError } from '../../../domain/errors'
 import { PaginatedPostsResponseDTO } from '../../dto/post.dto'
 import type { GetFeedQueryInput } from './get-feed.query'
 import { isInvalidPageLimit } from '@/modules/posts/infrastructure/helpers/prisma-query.helpers'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class GetFeedHandler {
   constructor(
     @inject(TYPES.PostQueryProvider)
-    private readonly postQueryProvider: PostQueryProvider
+    private readonly postQueryProvider: PostQueryProvider,
+    @inject(TYPES.Logger)
+    private readonly logger: Logger
   ) {}
 
   async execute(query: GetFeedQueryInput): Promise<PaginatedPostsResponseDTO> {
@@ -23,7 +26,7 @@ export class GetFeedHandler {
     try {
       return await this.postQueryProvider.getFeed(query)
     } catch (error) {
-      console.error('Error fetching feed:', error)
+      this.logger.error('Error fetching feed', { error })
       throw PostError.unableToFetchFeed()
     }
   }

@@ -39,7 +39,8 @@ import {
 import { isPostError, POST_ERROR_HTTP_MAPPING } from '../../domain/errors'
 import type { PrismaClient } from '@/generated/prisma'
 import { parseCreatePostMultipart } from '@/utils/multipart-helper'
-import { getLocationFromIp } from '@/utils/geo-ip'
+import { GeoIpService } from '@/utils/geo-ip'
+import { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class PostController {
@@ -86,7 +87,11 @@ export class PostController {
     private readonly clearRecentSearchesHandler: ClearRecentSearchesHandler,
     @inject(TYPES.AddRecentSearchCommandHandler)
     private readonly addRecentSearchHandler: AddRecentSearchCommandHandler,
-    @inject(TYPES.PrismaClient) private readonly prisma: PrismaClient
+    @inject(TYPES.PrismaClient) private readonly prisma: PrismaClient,
+    @inject(TYPES.Logger)
+    private readonly logger: Logger,
+    @inject(TYPES.GeoIpService)
+    private readonly geoIpService: GeoIpService
   ) {}
 
   async createPost(request: FastifyRequest, reply: FastifyReply) {
@@ -119,7 +124,7 @@ export class PostController {
       let finalCity = clientCity
 
       if (!finalCountry || !finalCity) {
-        const geo = await getLocationFromIp(request.ip)
+        const geo = await this.geoIpService.getLocation(request.ip)
         finalCountry = finalCountry || (geo.country as string)
         finalCity = finalCity || (geo.city as string)
       }
@@ -567,14 +572,15 @@ export class PostController {
         limit: query.limit ? Number(query.limit) : 20,
       })
 
-      // Guardar en búsquedas recientes si el usuario está autenticado
       if (userId) {
         this.addRecentSearchHandler
           .execute({
             userId,
             query: query.q,
           })
-          .catch(err => console.error('Error saving recent search:', err))
+          .catch(err =>
+            this.logger.error('Error saving recent search', { error: err })
+          )
       }
 
       return reply.send({
@@ -641,7 +647,9 @@ export class PostController {
       if (userId) {
         this.addRecentSearchHandler
           .execute({ userId, query: q })
-          .catch(err => console.error('Error saving recent search:', err))
+          .catch(err =>
+            this.logger.error('Error saving recent search', { error: err })
+          )
       }
 
       return reply.send({
@@ -751,6 +759,7 @@ export class PostController {
 
   private handleError(error: unknown, reply: FastifyReply) {
     if (isPostError(error)) {
+      this.logger.error('PostController error', { error })
       const statusCode = POST_ERROR_HTTP_MAPPING[error.code] || 500
       return reply.status(statusCode).send({
         success: false,
@@ -760,10 +769,8 @@ export class PostController {
       })
     }
 
-    console.error('PostController error:', error)
-    if (error instanceof Error) {
-      console.error('Error stack:', error.stack)
-    }
+    this.logger.error('PostController error', { error })
+
     return reply.status(500).send({
       success: false,
       error:

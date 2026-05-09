@@ -5,12 +5,15 @@ import { PostError } from '../../../domain/errors'
 import { PaginatedPostsResponseDTO } from '../../dto/post.dto'
 import type { GetLikedPostsQuery } from './get-liked-posts.query'
 import { isInvalidPageLimit } from '@/modules/posts/infrastructure/helpers/prisma-query.helpers'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class GetLikedPostsHandler {
   constructor(
     @inject(TYPES.PostQueryProvider)
-    private readonly postQueryProvider: PostQueryProvider
+    private readonly postQueryProvider: PostQueryProvider,
+    @inject(TYPES.Logger)
+    private readonly logger: Logger
   ) {}
 
   async execute(query: GetLikedPostsQuery): Promise<PaginatedPostsResponseDTO> {
@@ -23,7 +26,7 @@ export class GetLikedPostsHandler {
     try {
       return await this.postQueryProvider.getLikedPosts(query)
     } catch (error) {
-      console.error('Error fetching liked posts:', error)
+      this.logger.error('Error fetching liked posts', { error })
       throw PostError.unableToFetchLikedPosts()
     }
   }

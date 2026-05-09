@@ -15,7 +15,6 @@ import notificationsPlugin from '@/modules/notifications/infrastructure/notifica
 import { achievementRoutes } from '@/modules/achievements/infrastructure/achievements.plugin'
 import socketPlugin from '@/plugins/socket'
 import notificationListenerPlugin from '@/modules/notifications/infrastructure/notification-listener.plugin'
-import achievementSubscriberPlugin from '@/modules/achievements/infrastructure/achievement-subscriber.plugin'
 
 export async function buildServer(): Promise<FastifyInstance> {
   const server = fastify({
@@ -127,7 +126,6 @@ async function registerPlugins(server: FastifyInstance) {
   // Socket.io for Real-Time
   await server.register(socketPlugin)
   await server.register(notificationListenerPlugin)
-  await server.register(achievementSubscriberPlugin)
 
   // Disable rate limiting in test environment
   if (process.env.NODE_ENV !== 'test') {

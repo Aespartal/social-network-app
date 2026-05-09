@@ -3,7 +3,7 @@ import { TYPES } from '@/lib/di-types'
 import { UserRepository } from '../../../domain/repositories/user.repository.interface'
 import { UserError } from '../../../domain/errors/user.errors'
 import { UnfollowUserCommand } from './unfollow-user.command'
-import { Logger } from '@/lib/logger/logger.interface'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class UnfollowUserHandler {

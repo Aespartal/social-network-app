@@ -27,6 +27,7 @@ import type { ToggleLikeCommand } from './toggle-like.command'
 import { PostLikedEvent } from '@/lib/events/domain-events'
 import type { EventBus } from '@/lib/events/event-bus.interface'
 import { CheckAchievementHandler } from '@/modules/achievements/application/commands/check-achievement'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class ToggleLikeCommandHandler {
@@ -35,7 +36,9 @@ export class ToggleLikeCommandHandler {
     private readonly postRepository: PostRepository,
     @inject(TYPES.EventBus) private readonly eventBus: EventBus,
     @inject(TYPES.CheckAchievementHandler)
-    private readonly checkAchievementHandler: CheckAchievementHandler
+    private readonly checkAchievementHandler: CheckAchievementHandler,
+    @inject(TYPES.Logger)
+    private readonly logger: Logger
   ) {}
 
   async execute(
@@ -50,7 +53,6 @@ export class ToggleLikeCommandHandler {
 
     const result = await this.postRepository.toggleLike(postId, userId)
 
-    // Publish event if liked
     if (result.isLiked) {
       const post = await this.postRepository.findById(postId)
       if (post && post.authorId !== userId) {
@@ -59,9 +61,8 @@ export class ToggleLikeCommandHandler {
         ])
       }
 
-      // Check achievements - fire and forget
       this.checkAchievementsAfterLike(userId, postId).catch(err => {
-        console.error('[ToggleLike] Error checking achievements:', err)
+        this.logger.error('Error checking achievements', { error: err })
       })
     }
 
@@ -72,7 +73,6 @@ export class ToggleLikeCommandHandler {
     userId: string,
     postId: string
   ): Promise<void> {
-    // Check like given achievement
     await this.checkAchievementHandler.execute({
       userId,
       triggerEvent: 'post.liked',

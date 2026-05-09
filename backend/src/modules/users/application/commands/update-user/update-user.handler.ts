@@ -10,7 +10,7 @@ import { EventBus } from '@/lib/events/event-bus.interface'
 import { UserProfileUpdatedEvent } from '@/lib/events/domain-events'
 import { CheckAchievementHandler } from '@/modules/achievements/application/commands/check-achievement'
 import { UpdateUserCommand } from './update-user.command'
-import { Logger } from '@/lib/logger/logger.interface'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class UpdateUserHandler {

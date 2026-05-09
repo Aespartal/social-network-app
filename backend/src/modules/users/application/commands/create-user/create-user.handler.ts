@@ -6,7 +6,7 @@ import { UserResponseDTO } from '../../dto'
 import { UserMapper } from '../../../infrastructure/mappers/user.mapper'
 import { HashService } from '@/modules/auth/domain/services/hash.service.interface'
 import { CreateUserCommand } from './create-user.command'
-import { Logger } from '@/lib/logger/logger.interface'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class CreateUserHandler {

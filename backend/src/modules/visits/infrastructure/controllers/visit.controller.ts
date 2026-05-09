@@ -3,7 +3,7 @@ import { FastifyReply, FastifyRequest } from 'fastify'
 import { TYPES } from '@/lib/di-types'
 import { RecordVisitHandler } from '../../application/commands/record-visit/record-visit.handler'
 import { GetProfileVisitsHandler } from '../../application/queries/get-profile-visits/get-profile-visits.handler'
-import { Logger } from '@/lib/logger/logger.interface'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class VisitController {

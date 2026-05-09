@@ -10,7 +10,7 @@ import type { HashService } from '../../../auth/domain/services/hash.service.int
 import { UserResponseDTO } from '../dto'
 import { Role } from '@/enums/role.enum'
 import { UserMapper } from '../../infrastructure/mappers/user.mapper'
-import { Logger } from '@/lib/logger/logger.interface'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class UpdateUserUseCase {

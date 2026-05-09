@@ -4,6 +4,7 @@ import type { PostRepository } from '../../../domain/repositories/post.repositor
 import { PostError } from '../../../domain/errors'
 import { Role } from '@/enums/role.enum'
 import type { DeletePostCommand } from './delete-post.command'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 /**
  * DeletePostCommandHandler - CQRS Command Handler
@@ -22,7 +23,9 @@ import type { DeletePostCommand } from './delete-post.command'
 export class DeletePostCommandHandler {
   constructor(
     @inject(TYPES.PostRepository)
-    private readonly postRepository: PostRepository
+    private readonly postRepository: PostRepository,
+    @inject(TYPES.Logger)
+    private readonly logger: Logger
   ) {}
 
   async execute(command: DeletePostCommand): Promise<void> {
@@ -43,20 +46,11 @@ export class DeletePostCommandHandler {
     try {
       post.markAsDeleted()
 
-      // Persist deletion (atomic transaction)
-      // Repository handles:
-      // - Setting deletedAt timestamp
-      // - Decrementing parent's repliesCount
       await this.postRepository.delete(post)
-
-      // TODO: Dispatch domain event
-      // await this.eventBus.publish(
-      //   new PostDeletedEvent(postId, userId, post.parentId)
-      // )
     } catch (error) {
       if (error instanceof PostError) throw error
 
-      console.error('[DeletePostCommandHandler] Unexpected error:', error)
+      this.logger.error('Unexpected error', { error })
       throw PostError.deleteFailed()
     }
   }

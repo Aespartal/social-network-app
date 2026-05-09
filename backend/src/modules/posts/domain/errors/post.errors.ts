@@ -16,6 +16,7 @@ export enum PostErrorCode {
   GET_LIKED_POSTS_UNABLE = 'GET_LIKED_POSTS_UNABLE',
   GET_REPLIES_UNABLE = 'GET_REPLIES_UNABLE',
   TAG_EMPTY = 'TAG_EMPTY',
+  GET_RECENT_SEARCHES_UNABLE = 'GET_RECENT_SEARCHES_UNABLE',
 }
 
 export class PostError extends Error {
@@ -129,6 +130,14 @@ export class PostError extends Error {
     )
   }
 
+  static unableToFetchRecentSearches(): PostError {
+    return new PostError(
+      PostErrorCode.GET_RECENT_SEARCHES_UNABLE,
+      'Error al obtener las búsquedas recientes',
+      500
+    )
+  }
+
   static invalidLimit(): PostError {
     return new PostError(
       PostErrorCode.INVALID_LIMIT,
@@ -192,4 +201,5 @@ export const POST_ERROR_HTTP_MAPPING: Record<PostErrorCode, number> = {
   [PostErrorCode.GET_REPLIES_UNABLE]: 500,
   [PostErrorCode.TAG_EMPTY]: 400,
   [PostErrorCode.POST_TOO_SHORT]: 400,
+  [PostErrorCode.GET_RECENT_SEARCHES_UNABLE]: 500,
 }

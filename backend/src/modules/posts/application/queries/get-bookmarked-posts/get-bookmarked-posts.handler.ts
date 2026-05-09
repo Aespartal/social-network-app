@@ -5,12 +5,15 @@ import { PostError } from '../../../domain/errors'
 import { PaginatedPostsResponseDTO } from '../../dto/post.dto'
 import type { GetBookmarkedPostsQuery } from './get-bookmarked-posts.query'
 import { isInvalidPageLimit } from '@/modules/posts/infrastructure/helpers/prisma-query.helpers'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class GetBookmarkedPostsHandler {
   constructor(
     @inject(TYPES.PostQueryProvider)
-    private readonly postQueryProvider: PostQueryProvider
+    private readonly postQueryProvider: PostQueryProvider,
+    @inject(TYPES.Logger)
+    private readonly logger: Logger
   ) {}
 
   async execute(
@@ -25,7 +28,7 @@ export class GetBookmarkedPostsHandler {
     try {
       return await this.postQueryProvider.getBookmarkedPosts(query)
     } catch (error) {
-      console.error('Error fetching bookmarked posts:', error)
+      this.logger.error('Error fetching bookmarked posts', { error })
       throw PostError.unableToFetchBookmarkedPosts()
     }
   }

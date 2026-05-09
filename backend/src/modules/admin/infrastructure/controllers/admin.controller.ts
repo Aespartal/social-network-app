@@ -3,11 +3,13 @@ import { injectable, inject } from 'inversify'
 import { TYPES } from '@/lib/di-types'
 import { PrismaClient } from '@/generated/prisma'
 import { Role } from '@/enums/role.enum'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class AdminController {
   constructor(
-    @inject(TYPES.PrismaClient) private readonly prisma: PrismaClient
+    @inject(TYPES.PrismaClient) private readonly prisma: PrismaClient,
+    @inject(TYPES.Logger) private readonly logger: Logger
   ) {}
 
   async getStats(request: FastifyRequest, reply: FastifyReply) {
@@ -43,7 +45,7 @@ export class AdminController {
         },
       })
     } catch (error) {
-      console.error('Error fetching admin stats:', error)
+      this.logger.error('Error fetching admin stats:', error as Error)
       return reply
         .status(500)
         .send({ success: false, error: 'Error al obtener estadísticas' })
@@ -90,7 +92,7 @@ export class AdminController {
         },
       })
     } catch (error) {
-      console.error('Error fetching admin users:', error)
+      this.logger.error('Error fetching admin users:', error as Error)
       return reply
         .status(500)
         .send({ success: false, error: 'Error al obtener usuarios' })
@@ -113,7 +115,7 @@ export class AdminController {
 
       return reply.send({ success: true, data: updatedUser })
     } catch (error) {
-      console.error('Error updating user role:', error)
+      this.logger.error('Error updating user role:', error as Error)
       return reply
         .status(500)
         .send({ success: false, error: 'Error al actualizar rol' })
@@ -144,7 +146,7 @@ export class AdminController {
 
       return reply.send({ success: true, data: updatedUser })
     } catch (error) {
-      console.error('Error toggling user status:', error)
+      this.logger.error('Error toggling user status:', error as Error)
       return reply
         .status(500)
         .send({ success: false, error: 'Error al cambiar estado' })

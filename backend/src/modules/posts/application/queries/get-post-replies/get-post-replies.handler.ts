@@ -5,12 +5,15 @@ import { PostError } from '../../../domain/errors'
 import { PaginatedPostsResponseDTO } from '../../dto/post.dto'
 import type { GetPostRepliesQuery } from './get-post-replies.query'
 import { isInvalidPageLimit } from '@/modules/posts/infrastructure/helpers/prisma-query.helpers'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class GetPostRepliesHandler {
   constructor(
     @inject(TYPES.PostQueryProvider)
-    private readonly postQueryProvider: PostQueryProvider
+    private readonly postQueryProvider: PostQueryProvider,
+    @inject(TYPES.Logger)
+    private readonly logger: Logger
   ) {}
 
   async execute(
@@ -34,7 +37,7 @@ export class GetPostRepliesHandler {
         query.page
       )
     } catch (error) {
-      console.error('Error fetching replies:', error)
+      this.logger.error('Error fetching replies', { error })
       throw PostError.unableToFetchReplies()
     }
   }
