@@ -37,7 +37,10 @@ const envSchema = z.object({
       val => {
         if (val === 'true') return true
         if (val === 'false') return false
-        if (typeof val === 'string' && val.includes(',')) return val.split(',')
+        if (typeof val === 'string' && /^\d+$/.test(val))
+          return parseInt(val, 10)
+        if (typeof val === 'string' && val.includes(','))
+          return val.split(',').map(v => v.trim())
         return val
       },
       z.union([z.boolean(), z.string(), z.number(), z.array(z.string())])
