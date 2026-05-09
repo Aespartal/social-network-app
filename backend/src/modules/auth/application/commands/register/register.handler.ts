@@ -9,7 +9,7 @@ import { TokenService } from '../../../infrastructure/services/token.service'
 import { config } from '@/config/env'
 import type { HashService } from '../../../domain/services/hash.service.interface'
 import type { RegisterCommand } from './register.command'
-import { Logger } from '@/lib/logger/logger.interface'
+import type { Logger } from '@/lib/logger/logger.interface'
 
 @injectable()
 export class RegisterCommandHandler {
